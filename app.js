@@ -2,7 +2,8 @@
 const SUPABASE_URL = 'https://aiymadawznadvavzspxj.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_fL7vTXJ4NLhC2CJs9nPVAg_fvzWbfCY'; // <-- Pega aquí tu clave que empieza con sb_publishable_...
 
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Inicializar el cliente de Supabase
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const modal = document.getElementById('modal');
 const title = document.getElementById('modalTitle');
@@ -21,16 +22,23 @@ function openModal(mode) {
   subtitle.textContent = signup
     ? 'Join WorlDigi and begin exploring.'
     : 'Sign in to your WorlDigi account.';
-  nameField.style.display = signup ? 'block' : 'none';
+  if (nameField) nameField.style.display = signup ? 'block' : 'none';
   submit.textContent = signup ? 'Create account' : 'Sign in';
   modal.classList.remove('hidden');
 }
 
-document.getElementById('signupBtn').onclick = () => openModal('signup');
-document.getElementById('heroSignup').onclick = () => openModal('signup');
-document.getElementById('loginBtn').onclick = () => openModal('login');
-document.getElementById('heroLogin').onclick = () => openModal('login');
-document.getElementById('closeModal').onclick = () => modal.classList.add('hidden');
+// Asignar eventos a los botones
+const signupBtn = document.getElementById('signupBtn');
+const heroSignup = document.getElementById('heroSignup');
+const loginBtn = document.getElementById('loginBtn');
+const heroLogin = document.getElementById('heroLogin');
+const closeModal = document.getElementById('closeModal');
+
+if (signupBtn) signupBtn.onclick = () => openModal('signup');
+if (heroSignup) heroSignup.onclick = () => openModal('signup');
+if (loginBtn) loginBtn.onclick = () => openModal('login');
+if (heroLogin) heroLogin.onclick = () => openModal('login');
+if (closeModal) closeModal.onclick = () => modal.classList.add('hidden');
 
 modal.addEventListener('click', e => {
   if (e.target === modal) modal.classList.add('hidden');
@@ -41,13 +49,13 @@ document.getElementById('demoForm').addEventListener('submit', async e => {
   
   const email = emailField.value;
   const password = passwordField.value;
-  const name = nameField.value;
+  const name = nameField ? nameField.value : '';
 
   submit.disabled = true;
   submit.textContent = 'Processing...';
 
   if (currentMode === 'signup') {
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await supabaseClient.auth.signUp({
       email: email,
       password: password,
       options: { data: { full_name: name } }
@@ -60,7 +68,7 @@ document.getElementById('demoForm').addEventListener('submit', async e => {
       modal.classList.add('hidden');
     }
   } else {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
       email: email,
       password: password
     });
