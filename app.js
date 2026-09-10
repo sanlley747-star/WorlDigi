@@ -32,7 +32,10 @@ function openModal(mode) {
   subtitle.textContent = signup
     ? 'Join WorlDigi and begin exploring.'
     : 'Sign in to your WorlDigi account.';
-  if (nameField) nameField.style.display = signup ? 'block' : 'none';
+  if (nameField) {
+    nameField.style.display = signup ? 'block' : 'none';
+    nameField.required = signup; // Solo es obligatorio al registrarse
+  }
   submit.textContent = signup ? 'Create account' : 'Sign in';
   modal.classList.remove('hidden');
 }
