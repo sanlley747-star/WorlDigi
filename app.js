@@ -12,8 +12,18 @@ const submit = document.getElementById('formSubmit');
 const nameField = document.getElementById('nameField');
 const emailField = document.getElementById('emailField');
 const passwordField = document.getElementById('passwordField');
+const togglePasswordBtn = document.getElementById('togglePassword');
 
 let currentMode = 'signup';
+
+// Función para mostrar / ocultar contraseña
+if (togglePasswordBtn && passwordField) {
+  togglePasswordBtn.addEventListener('click', () => {
+    const isPassword = passwordField.type === 'password';
+    passwordField.type = isPassword ? 'text' : 'password';
+    togglePasswordBtn.textContent = isPassword ? '🙈 Ocultar' : '👁️ Ver';
+  });
+}
 
 function openModal(mode) {
   currentMode = mode;
@@ -27,7 +37,7 @@ function openModal(mode) {
   modal.classList.remove('hidden');
 }
 
-// Asignar eventos a los botones
+// Asignar eventos a los botones de la interfaz
 const signupBtn = document.getElementById('signupBtn');
 const heroSignup = document.getElementById('heroSignup');
 const loginBtn = document.getElementById('loginBtn');
@@ -44,6 +54,7 @@ modal.addEventListener('click', e => {
   if (e.target === modal) modal.classList.add('hidden');
 });
 
+// Procesar el envío del formulario
 document.getElementById('demoForm').addEventListener('submit', async e => {
   e.preventDefault();
   
@@ -64,21 +75,21 @@ document.getElementById('demoForm').addEventListener('submit', async e => {
     if (error) {
       alert('Error signing up: ' + error.message);
     } else {
-      alert('Account created successfully! Check your email for confirmation.');
+      alert('¡Registro exitoso! Revisa tu correo y haz clic en el enlace de confirmación antes de entrar.');
       modal.classList.add('hidden');
     }
   } else {
+    // Iniciar Sesión
     const { data, error } = await supabaseClient.auth.signInWithPassword({
       email: email,
       password: password
     });
 
     if (error) {
-      alert('Error signing in: ' + error.message);
+      alert('Error al entrar: ' + error.message);
     } else {
-      alert('Welcome back to WorlDigi!');
+      // Redireccionar al Muro Social automáticamente
       window.location.href = 'dashboard.html';
-      modal.classList.add('hidden');
     }
   }
 
