@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorlDigi - Feed</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+  <nav class="bg-slate-900 text-white p-4 flex justify-between items-center shadow-md">
+    <h1 class="text-xl font-bold">WorlDigi</h1>
+    <span id="userStatus" class="text-sm text-gray-300">Cargando usuario...</span>
+  </nav>
+
+  <main class="max-w-2xl mx-auto mt-6 p-4">
+    <!-- Formulario para publicar -->
+    <div class="bg-white p-4 rounded-xl shadow mb-6">
+      <h2 class="text-lg font-bold mb-3">Crear Publicación</h2>
+      <textarea id="postContent" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="¿Qué estás pensando?"></textarea>
+      
+      <div class="flex items-center justify-between mt-3">
+        <input type="file" id="postImage" accept="image/*" class="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+        <button id="btnPublish" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">Publicar</button>
+      </div>
+    </div>
+
+    <!-- Contenedor del Muro de publicaciones -->
+    <div id="feed" class="space-y-4">
+      <p class="text-center text-gray-500">Cargando publicaciones...</p>
+    </div>
+  </main>
+
+  <script>
+    const SUPABASE_URL = 'https://aiymadawznadvavzspxj.supabase.co';
+    const SUPABASE_ANON_KEY = 'TU_PUBLISHABLE_KEY_AQUI'; // Pega tu clave pub/anon aquí
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentUser = null;
+
+    // Verificar sesión al cargar
+    async function init() {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (!user) {
+        window.location.href = 'index.html';
+        return;
+      }
+      currentUser = user;
+      document.getElementById('userStatus').textContent = user.email;
+      loadPosts();
+    }
+
+    // Cargar publicaciones
+    async function loadPosts() {
+      const { data: posts, error } = await supabaseClient
+        .from('posts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      const feed = document.getElementById('feed');
+      if (error || !posts.length) {
+        feed.innerHTML = '<p class="text-center text-gray-500">No hay publicaciones aún. ¡Sé el primero!</p>';
+        return;
+      }
+
+      feed.innerHTML = posts.map(post => `
+        <div class="bg-white p-4 rounded-xl shadow space-y-3">
+          <div class="text-xs text-gray-500 font-bold">${post.user_email || 'Usuario'}</div>
+          ${post.content ? `<p class="text-gray-800">${post.content}</p>` : ''}
+          ${post.image_url ? `<img src="${post.image_url}" class="w-full rounded-lg max-h-96 object-cover">` : ''}
+          <div class="flex items-center space-x-4 border-t pt-2 text-sm text-gray-600">
+            <button onclick="likePost(${post.id}, ${post.likes || 0})" class="hover:text-blue-600 font-semibold">
+              ❤️ ${post.likes || 0} Likes
+            </button>
+            <button onclick="sharePost('${post.content || ''}')" class="hover:text-blue-600 font-semibold">
+              🔗 Compartir
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Publicar texto e imagen
+    document.getElementById('btnPublish').addEventListener('click', async () => {
+      const content = document.getElementById('postContent').value;
+      const fileInput = document.getElementById('postImage');
+      const file = fileInput.files[0];
+      let imageUrl = null;
+
+      if (!content && !file) return alert('Escribe algo o selecciona una imagen.');
+
+      // Subir imagen a Supabase Storage
+      if (file) {
+        const filePath = `${Date.now()}_${file.name}`;
+        const { error: uploadError } = await supabaseClient.storage
+          .from('posts-images')
+          .upload(filePath, file);
+
+        if (uploadError) return alert('Error al subir imagen: ' + uploadError.message);
+
+        const { data: publicUrlData } = supabaseClient.storage
+          .from('posts-images')
+          .getPublicUrl(filePath);
+
+        imageUrl = publicUrlData.publicUrl;
+      }
+
+      // Guardar en la base de datos
+      const { error } = await supabaseClient.from('posts').insert([
+        { user_email: currentUser.email, content: content, image_url: imageUrl, likes: 0 }
+      ]);
+
+      if (error) alert('Error al publicar: ' + error.message);
+      else {
+        document.getElementById('postContent').value = '';
+        fileInput.value = '';
+        loadPosts();
+      }
+    });
+
+    // Dar Like
+    async function likePost(id, currentLikes) {
+      await supabaseClient.from('posts').update({ likes: currentLikes + 1 }).eq('id', id);
+      loadPosts();
+    }
+
+    // Compartir
+    function sharePost(text) {
+      if (navigator.share) {
+        navigator.share({ title: 'WorlDigi', text: text, url: window.location.href });
+      } else {
+        navigator.clipboard.writeText(window.location.href);
+        alert('Enlace copiado al portapapeles.');
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
