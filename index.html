@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorlDigi — Your Digital Universe</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#">
+      <img src="assets/logo.jpg" alt="WorlDigi logo">
+    </a>
+    <div class="nav-actions">
+      <button class="btn btn-ghost" id="loginBtn">Sign in</button>
+      <button class="btn btn-primary" id="signupBtn">Create account</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-glow glow-one"></div>
+      <div class="hero-glow glow-two"></div>
+
+      <div class="hero-content">
+        <div class="logo-wrap">
+          <img src="assets/logo.jpg" alt="WorlDigi" class="hero-logo">
+        </div>
+
+        <p class="eyebrow">WELCOME TO THE NEXT SOCIAL WORLD</p>
+        <h1>Your Digital Universe</h1>
+        <p class="hero-text">
+          Meet people, discover places, share ideas and explore a digital world
+          built around people and communities.
+        </p>
+
+        <div class="hero-actions">
+          <button class="btn btn-primary btn-large" id="heroSignup">Create your account</button>
+          <button class="btn btn-outline btn-large" id="heroLogin">Sign in</button>
+        </div>
+
+        <div class="features">
+          <div><span>🌎</span><strong>Discover</strong><small>People & places</small></div>
+          <div><span>💬</span><strong>Interact</strong><small>Communities & ideas</small></div>
+          <div><span>🚀</span><strong>Explore</strong><small>Your digital universe</small></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal hidden" id="modal">
+    <div class="modal-card">
+      <button class="close" id="closeModal" aria-label="Close">×</button>
+      <h2 id="modalTitle">Create your account</h2>
+      <p id="modalSubtitle">Join WorlDigi and begin exploring.</p>
+      <form id="demoForm">
+        <input id="nameField" type="text" placeholder="Your name" required>
+        <input id="emailField" type="email" placeholder="Email address" required>
+        <input id="passwordField" type="password" placeholder="Password" required>
+        <button class="btn btn-primary btn-large" type="submit" id="formSubmit">Create account</button>
+      </form>
+      <p class="demo-note">Prototype only — account storage will be connected to the real database in the next stage.</p>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
