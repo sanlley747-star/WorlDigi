@@ -77,6 +77,7 @@ document.getElementById('demoForm').addEventListener('submit', async e => {
       alert('Error signing in: ' + error.message);
     } else {
       alert('Welcome back to WorlDigi!');
+      window.location.href = 'dashboard.html';
       modal.classList.add('hidden');
     }
   }
