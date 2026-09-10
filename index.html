@@ -56,7 +56,12 @@
       <form id="demoForm">
         <input id="nameField" type="text" placeholder="Your name" required>
         <input id="emailField" type="email" placeholder="Email address" required>
-        <input id="passwordField" type="password" placeholder="Password" required>
+  <div class="relative">
+    <input type="password" id="passwordField" placeholder="Tu contraseña" class="w-full p-3 border border-gray-300 rounded-lg pr-20 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+    <button type="button" id="togglePassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-600 bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded font-semibold transition">
+      👁️ Ver
+    </button>
+  </div>
         <button class="btn btn-primary btn-large" type="submit" id="formSubmit">Create account</button>
       </form>
       <p class="demo-note">Prototype only — account storage will be connected to the real database in the next stage.</p>
