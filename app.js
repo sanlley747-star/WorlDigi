@@ -61,41 +61,44 @@ modal.addEventListener('click', e => {
 document.getElementById('demoForm').addEventListener('submit', async e => {
   e.preventDefault();
   
-  const email = emailField.value;
+const email = emailField.value;
   const password = passwordField.value;
   const name = nameField ? nameField.value : '';
 
   submit.disabled = true;
   submit.textContent = 'Processing...';
 
-  if (currentMode === 'signup') {
-    const { data, error } = await supabaseClient.auth.signUp({
-      email: email,
-      password: password,
-      options: { data: { full_name: name } }
-    });
+  try {
+    if (currentMode === 'signup') {
+      const { data, error } = await supabaseClient.auth.signUp({
+        email: email,
+        password: password,
+        options: { data: { full_name: name } }
+      });
 
-    if (error) {
-      alert('Error signing up: ' + error.message);
+      if (error) {
+        alert('Error signing up: ' + error.message);
+      } else {
+        alert('¡Registro exitoso! Revisa tu correo y haz clic en el enlace de confirmación antes de entrar.');
+        modal.classList.add('hidden');
+      }
     } else {
-      alert('¡Registro exitoso! Revisa tu correo y haz clic en el enlace de confirmación antes de entrar.');
-      modal.classList.add('hidden');
-    }
-  } else {
-    // Iniciar Sesión
-    const { data, error } = await supabaseClient.auth.signInWithPassword({
-      email: email,
-      password: password
-    });
+      // Iniciar Sesión
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
 
-    if (error) {
-      alert('Error al entrar: ' + error.message);
-    } else {
-      // Redireccionar al Muro Social automáticamente
-      window.location.href = 'dashboard.html';
+      if (error) {
+        alert('Error al entrar: ' + error.message);
+      } else {
+        // Redireccionar al Muro Social automáticamente
+        window.location.href = 'dashboard.html';
+      }
     }
+  } finally {
+    // Estas dos líneas aseguran que el botón siempre vuelva a la normalidad
+    submit.disabled = false;
+    submit.textContent = currentMode === 'signup' ? 'Create account' : 'Sign in';
   }
-
-  submit.disabled = false;
-  submit.textContent = currentMode === 'signup' ? 'Create account' : 'Sign in';
 });
