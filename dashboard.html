@@ -64,21 +64,25 @@
         return;
       }
 
-      feed.innerHTML = posts.map(post => `
-        <div class="bg-white p-4 rounded-xl shadow space-y-3">
-          <div class="text-xs text-gray-500 font-bold">${post.user_email || 'Usuario'}</div>
-          ${post.content ? `<p class="text-gray-800">${post.content}</p>` : ''}
-          ${post.image_url ? `<img src="${post.image_url}" class="w-full rounded-lg max-h-96 object-cover">` : ''}
-          <div class="flex items-center space-x-4 border-t pt-2 text-sm text-gray-600">
-            <button onclick="likePost(${post.id}, ${post.likes || 0})" class="hover:text-blue-600 font-semibold">
-              ❤️ ${post.likes || 0} Likes
-            </button>
-            <button onclick="sharePost('${post.content || ''}')" class="hover:text-blue-600 font-semibold">
-              🔗 Compartir
-            </button>
-          </div>
-        </div>
-      `).join('');
+ feed.innerHTML = posts.map(post => {
+   const author = post.user_name || 'Usuario';
+
+   return `
+    <div class="bg-white p-4 rounded-xl shadow space-y-3">
+      <div class="text-sm font-bold text-gray-800">${author}</div>
+      ${post.content ? `<p class="text-gray-800">${post.content}</p>` : ''}
+      ${post.image_url ? `<img src="${post.image_url}" class="w-full rounded-lg max-h-96 object-cover">` : ''}
+      <div class="flex items-center space-x-4 border-t pt-2 text-sm text-gray-600">
+        <button onclick="likePost(${post.id}, ${post.likes || 0})" class="hover:text-blue-600 font-semibold">
+          ❤️ ${post.likes || 0} Likes
+        </button>
+        <button onclick="sharePost('${post.content || ''}')" class="hover:text-blue-600 font-semibold">
+          🔗 Compartir
+        </button>
+      </div>
+    </div>
+  `;
+}).join('');
     }
 
     // Publicar texto e imagen
@@ -106,9 +110,11 @@
         imageUrl = publicUrlData.publicUrl;
       }
 
+      // Toma directamente el nombre ingresado en la casilla "Your name"
+      const authorName = currentUser.user_metadata?.full_name || 'Usuario';
       // Guardar en la base de datos
       const { error } = await supabaseClient.from('posts').insert([
-        { user_email: currentUser.email, content: content, image_url: imageUrl, likes: 0 }
+        { user_email: currentUser.email, user_name: authorName, content: content, image_url: imageUrl, likes: 0 }
       ]);
 
       if (error) alert('Error al publicar: ' + error.message);
