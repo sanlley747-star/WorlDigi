@@ -176,31 +176,63 @@
 
         return `
           <div id="post-${post.id}" class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 space-y-3">
-            <div class="flex items-center space-x-3">
-              <a href="perfil.html?user=${encodeURIComponent(author)}">
-                <img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700 hover:opacity-80 transition cursor-pointer" alt="${author}">
-              </a>
-              <div class="flex items-center space-x-2">
-                <a href="perfil.html?user=${encodeURIComponent(author)}" class="font-bold text-gray-900 dark:text-white text-sm hover:underline">
-                  ${author}
-                </a>
-                <span class="text-gray-400 text-sm">·</span>
-                <span class="text-sm text-gray-500 dark:text-gray-400">${compactTime}</span>
-              </div>
-            </div>
+            <!-- Componente de Tarjeta de Post con Barra Estilo X -->
+<div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 mb-4 text-gray-100 shadow-xl max-w-xl mx-auto">
+    <!-- Cabecera del Post -->
+    <div class="flex items-center space-x-3 mb-3">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center font-bold text-white">
+            SS
+        </div>
+        <div>
+            <h4 class="font-bold text-sm text-gray-100">Sanlley Sánchez Pérez</h4>
+            <span class="text-xs text-gray-400">@sanylley · 10m</span>
+        </div>
+    </div>
 
-            ${post.content ? `<p class="text-gray-800 dark:text-gray-200 text-sm">${post.content}</p>` : ''}
-            ${post.image_url ? `<img src="${post.image_url}" class="w-full rounded-lg max-h-96 object-cover" alt="Imagen de publicación">` : ''}
+    <!-- Cuerpo del Post -->
+    <p class="text-sm text-gray-200 mb-4 leading-relaxed">
+        Diseñando interfaces de fricción cero en WorlDigi. Velocidad y simplicidad total. 🚀
+    </p>
+
+    <!-- Barra de Acciones Estilo X -->
+    <div class="flex items-center justify-between border-t border-gray-800 pt-3 text-gray-400 max-w-md mx-auto">
+        
+        <!-- 1. Comentar -->
+        <button onclick="openCommentModal(postId)" class="flex items-center space-x-2 hover:text-blue-400 transition group p-1.5 rounded-lg hover:bg-gray-800">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+            <span class="text-xs font-medium" id="comment-count-1">24</span>
+        </button>
+
+        <!-- 2. Repostear / Citar (Menú desplegable) -->
+        <div class="relative">
+            <button onclick="toggleRepostMenu(event, postId)" class="flex items-center space-x-2 hover:text-green-400 transition group p-1.5 rounded-lg hover:bg-gray-800">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+                <span class="text-xs font-medium" id="repost-count-1">12</span>
+            </button>
             
-            <div class="flex items-center space-x-4 border-t border-gray-100 dark:border-slate-800 pt-2 text-sm text-gray-600 dark:text-gray-400">
-              <button onclick="likePost(${post.id}, ${post.likes || 0})" class="hover:text-blue-600 font-semibold transition">
-                ❤️ <span id="likes-count-${post.id}">${post.likes || 0}</span> Likes
-              </button>
-              <button onclick="sharePost('${post.content || ''}')" class="hover:text-blue-600 font-semibold">
-                🔗 Compartir
-              </button>
+            <!-- Menú flotante Repost / Citar -->
+            <div id="repost-menu-1" class="hidden absolute left-0 bottom-full mb-2 w-48 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-20 overflow-hidden">
+                <button onclick="handleDirectRepost(postId)" class="w-full text-left px-4 py-2.5 text-xs text-gray-200 hover:bg-gray-700 flex items-center space-x-2">
+                    <span>🔄</span> <span>Repostear ahora</span>
+                </button>
+                <button onclick="openQuoteModal(postId)" class="w-full text-left px-4 py-2.5 text-xs text-gray-200 hover:bg-gray-700 flex items-center space-x-2 border-t border-gray-700">
+                    <span>✏️</span> <span>Citar publicación</span>
+                </button>
             </div>
-          </div>
+        </div>
+
+        <!-- 3. Me Gusta (Corazón Rojo) -->
+        <button onclick="toggleLike(postId)" class="flex items-center space-x-2 text-red-500 transition group p-1.5 rounded-lg hover:bg-gray-800">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+            <span class="text-xs font-medium" id="like-count-1">48</span>
+        </button>
+
+        <!-- 4. Compartir / Cadenita -->
+        <button onclick="copyShareLink(postId)" class="flex items-center space-x-2 hover:text-blue-400 transition group p-1.5 rounded-lg hover:bg-gray-800" title="Copiar enlace">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+        </button>
+    </div>
+</div>
         `;
       }).join('');
     }
