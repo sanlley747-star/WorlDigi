@@ -34,10 +34,33 @@
 
   <script>
     const SUPABASE_URL = 'https://aiymadawznadvavzspxj.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_fL7vTXJ4NLhC2CJs9nPVAg_fvzWbfCY'; // Pega tu clave pub/anon aquí
+    const SUPABASE_ANON_KEY = 'sb_publishable_fL7vTXJ4NLhC2CJs9nPVAg_fvzWbfCY'; 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let currentUser = null;
+
+    // Función de tiempo comprimido (Tus 5 formatos exactos)
+    function formatCompactTime(dateString) {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInSeconds = Math.floor((now - date) / 1000);
+
+      if (diffInSeconds < 60) return `${Math.max(1, diffInSeconds)}s`;
+      
+      const diffInMinutes = Math.floor(diffInSeconds / 60);
+      if (diffInMinutes < 60) return `${diffInMinutes} min`;
+      
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      if (diffInHours < 24) return `${diffInHours}h`;
+
+      const months = ['ene.', 'feb.', 'mar.', 'abr.', 'may.', 'jun.', 'jul.', 'ago.', 'sept.', 'oct.', 'nov.', 'dic.'];
+      const day = date.getDate();
+      const month = months[date.getMonth()];
+      const year = date.getFullYear();
+
+      if (year === now.getFullYear()) return `${day} ${month}`;
+      return `${day} ${month} ${year}`;
+    }
 
     // Verificar sesión al cargar
     async function init() {
@@ -64,25 +87,44 @@
         return;
       }
 
- feed.innerHTML = posts.map(post => {
-   const author = post.user_name || 'Usuario';
+      feed.innerHTML = posts.map(post => {
+        const author = post.user_name || 'Usuario';
+        const compactTime = formatCompactTime(post.created_at);
+        // Generar un avatar por defecto usando la inicial del usuario si no tiene imagen
+        const avatarUrl = post.avatar_url || `https://ui-avatars.io/api/?name=${encodeURIComponent(author)}&background=random`;
 
-   return `
-    <div class="bg-white p-4 rounded-xl shadow space-y-3">
-      <div class="text-sm font-bold text-gray-800">${author}</div>
-      ${post.content ? `<p class="text-gray-800">${post.content}</p>` : ''}
-      ${post.image_url ? `<img src="${post.image_url}" class="w-full rounded-lg max-h-96 object-cover">` : ''}
-      <div class="flex items-center space-x-4 border-t pt-2 text-sm text-gray-600">
-        <button onclick="likePost(${post.id}, ${post.likes || 0})" class="hover:text-blue-600 font-semibold">
-          ❤️ ${post.likes || 0} Likes
-        </button>
-        <button onclick="sharePost('${post.content || ''}')" class="hover:text-blue-600 font-semibold">
-          🔗 Compartir
-        </button>
-      </div>
-    </div>
-  `;
-}).join('');
+        return `
+          <div class="bg-white p-4 rounded-xl shadow space-y-3">
+            <!-- Cabecera: Avatar circular, Nombre, Punto separador y Tiempo comprimido -->
+            <div class="flex items-center space-x-3">
+              <a href="perfil.html?user=${encodeURIComponent(author)}">
+                <img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border border-gray-300 hover:opacity-80 transition cursor-pointer">
+              </a>
+              <div class="flex items-center space-x-2">
+                <a href="perfil.html?user=${encodeURIComponent(author)}" class="font-bold text-gray-900 text-sm hover:underline">
+                  ${author}
+                </a>
+                <span class="text-gray-400 text-sm">·</span>
+                <span class="text-sm text-gray-500">${compactTime}</span>
+              </div>
+            </div>
+
+            <!-- Contenido y Multimedia -->
+            ${post.content ? `<p class="text-gray-800 text-sm">${post.content}</p>` : ''}
+            ${post.image_url ? `<img src="${post.image_url}" class="w-full rounded-lg max-h-96 object-cover">` : ''}
+            
+            <!-- Botones de Interacción -->
+            <div class="flex items-center space-x-4 border-t pt-2 text-sm text-gray-600">
+              <button onclick="likePost(${post.id}, ${post.likes || 0})" class="hover:text-blue-600 font-semibold">
+                ❤️ ${post.likes || 0} Likes
+              </button>
+              <button onclick="sharePost('${post.content || ''}')" class="hover:text-blue-600 font-semibold">
+                🔗 Compartir
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     // Publicar texto e imagen
@@ -94,7 +136,6 @@
 
       if (!content && !file) return alert('Escribe algo o selecciona una imagen.');
 
-      // Subir imagen a Supabase Storage
       if (file) {
         const filePath = `${Date.now()}_${file.name}`;
         const { error: uploadError } = await supabaseClient.storage
@@ -110,9 +151,8 @@
         imageUrl = publicUrlData.publicUrl;
       }
 
-      // Toma directamente el nombre ingresado en la casilla "Your name"
-      const authorName = currentUser.user_metadata?.full_name || 'Usuario';
-      // Guardar en la base de datos
+      const authorName = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
+      
       const { error } = await supabaseClient.from('posts').insert([
         { user_email: currentUser.email, user_name: authorName, content: content, image_url: imageUrl, likes: 0 }
       ]);
@@ -125,13 +165,11 @@
       }
     });
 
-    // Dar Like
     async function likePost(id, currentLikes) {
       await supabaseClient.from('posts').update({ likes: currentLikes + 1 }).eq('id', id);
       loadPosts();
     }
 
-    // Compartir
     function sharePost(text) {
       if (navigator.share) {
         navigator.share({ title: 'WorlDigi', text: text, url: window.location.href });
