@@ -297,6 +297,33 @@
 
   menu.classList.toggle('hidden');
    }
+    async function repostPost(postId) {
+  const authorName =
+    currentUser.user_metadata?.full_name ||
+    currentUser.email.split('@')[0];
+
+  const { error } = await supabaseClient
+    .from('posts')
+    .insert([
+      {
+        user_email: currentUser.email,
+        user_name: authorName,
+        content: null,
+        image_url: null,
+        likes: 0,
+        repost_of: postId,
+        quote_text: null
+      }
+    ]);
+
+  if (error) {
+    alert('Error al repostear: ' + error.message);
+    return;
+  }
+
+  toggleRepostMenu(postId);
+  loadPosts();
+}
 
     function sharePost(text) {
       if (navigator.share) {
