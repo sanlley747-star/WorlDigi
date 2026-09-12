@@ -23,39 +23,25 @@
     </div>
   </nav>
 
-  <!-- CONTENEDOR PRINCIPAL: Ancho original y centralizado, 3 columnas exactas -->
+  <!-- CONTENEDOR PRINCIPAL -->
   <main class="w-full mx-auto mt-6 pl-4 pr-0 grid grid-cols-1 lg:grid-cols-[220px_1fr_300px] gap-24">
 
-    <!-- COLUMNA IZQUIERDA: FUNCIONES -->
+    <!-- COLUMNA IZQUIERDA: MENÚ -->
     <aside class="hidden lg:block">
       <div class="sticky top-6">
         <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800">
-          <h2 class="font-bold text-gray-800 dark:text-white mb-4">
-            WorlDigi
-          </h2>
-
+          <h2 class="font-bold text-gray-800 dark:text-white mb-4">WorlDigi</h2>
           <nav class="space-y-2">
-            <a href="#" class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
-              🏠 Inicio
-            </a>
-
-            <a href="perfil.html" id="myProfileLink" class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
-              👤 Mi perfil
-            </a>
-
-            <a href="#" class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
-              🔔 Notificaciones
-            </a>
-
-            <a href="#" class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
-              👥 Amigos
-            </a>
+            <a href="#" class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">🏠 Inicio</a>
+            <a href="perfil.html" id="myProfileLink" class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">👤 Mi perfil</a>
+            <a href="#" class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">🔔 Notificaciones</a>
+            <a href="#" class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">👥 Amigos</a>
           </nav>
         </div>
       </div>
     </aside>
     
-    <!-- COLUMNA CENTRAL: Feed amplio y centrado -->
+    <!-- COLUMNA CENTRAL: FEED -->
     <div class="space-y-6">
       
       <!-- Formulario para publicar -->
@@ -69,18 +55,42 @@
         </div>
       </div>
 
-      <!-- Contenedor del Muro de publicaciones -->
+      <!-- Contenedor del Muro con Skeletons Iniciales (Efecto Cero Latencia Visual) -->
       <div id="feed" class="space-y-4">
-        <p class="text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-900 p-6 rounded-xl shadow border border-gray-200 dark:border-slate-800">Cargando publicaciones...</p>
+        <!-- SKELETON 1 -->
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 space-y-3 animate-pulse">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 bg-gray-300 dark:bg-slate-800 rounded-full"></div>
+            <div class="space-y-2">
+              <div class="w-28 h-3 bg-gray-300 dark:bg-slate-800 rounded"></div>
+              <div class="w-16 h-2 bg-gray-200 dark:bg-slate-800 rounded"></div>
+            </div>
+          </div>
+          <div class="space-y-2 pt-2">
+            <div class="w-full h-3 bg-gray-300 dark:bg-slate-800 rounded"></div>
+            <div class="w-3/4 h-3 bg-gray-300 dark:bg-slate-800 rounded"></div>
+          </div>
+        </div>
+        <!-- SKELETON 2 -->
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 space-y-3 animate-pulse">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 bg-gray-300 dark:bg-slate-800 rounded-full"></div>
+            <div class="space-y-2">
+              <div class="w-24 h-3 bg-gray-300 dark:bg-slate-800 rounded"></div>
+              <div class="w-12 h-2 bg-gray-200 dark:bg-slate-800 rounded"></div>
+            </div>
+          </div>
+          <div class="w-full h-32 bg-gray-300 dark:bg-slate-800 rounded-lg"></div>
+        </div>
       </div>
 
     </div>
 
-    <!-- COLUMNA DERECHA: Barra de publicidad fija de 300x600 -->
+    <!-- COLUMNA DERECHA: PUBLICIDAD -->
     <aside class="hidden lg:block">
       <div class="sticky top-6 bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 flex flex-col items-center justify-center" style="width: 300px; height: 600px;">
         <span class="text-xs text-gray-400 uppercase tracking-widest mb-2 text-gray-400">Publicidad</span>
-        <div id="ad-slot-sidebar" class="w-full h-full bg-gray-50 dark:bg-slate-950 border border-dashed border-gray-300 dark:border-slate-800 rounded-lg flex items-center justify-center text-center text-gray-400 text-sm">
+        <div class="w-full h-full bg-gray-50 dark:bg-slate-950 border border-dashed border-gray-300 dark:border-slate-800 rounded-lg flex items-center justify-center text-center text-gray-400 text-sm">
           Espacio Publicitario<br>300 x 600 px
         </div>
       </div>
@@ -95,7 +105,6 @@
 
     let currentUser = null;
 
-    // GESTIÓN DEL MODO OSCURO POR DEFECTO
     if (localStorage.getItem('theme') === 'light') {
       document.documentElement.classList.remove('dark');
     } else {
@@ -119,10 +128,8 @@
       const diffInSeconds = Math.floor((now - date) / 1000);
 
       if (diffInSeconds < 60) return `${Math.max(1, diffInSeconds)}s`;
-      
       const diffInMinutes = Math.floor(diffInSeconds / 60);
       if (diffInMinutes < 60) return `${diffInMinutes} min`;
-      
       const diffInHours = Math.floor(diffInMinutes / 60);
       if (diffInHours < 24) return `${diffInHours}h`;
 
@@ -168,7 +175,7 @@
         const avatarUrl = post.avatar_url || `https://ui-avatars.io/api/?name=${encodeURIComponent(author)}&background=random`;
 
         return `
-          <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 space-y-3">
+          <div id="post-${post.id}" class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 space-y-3">
             <div class="flex items-center space-x-3">
               <a href="perfil.html?user=${encodeURIComponent(author)}">
                 <img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700 hover:opacity-80 transition cursor-pointer" alt="${author}">
@@ -186,8 +193,8 @@
             ${post.image_url ? `<img src="${post.image_url}" class="w-full rounded-lg max-h-96 object-cover" alt="Imagen de publicación">` : ''}
             
             <div class="flex items-center space-x-4 border-t border-gray-100 dark:border-slate-800 pt-2 text-sm text-gray-600 dark:text-gray-400">
-              <button onclick="likePost(${post.id}, ${post.likes || 0})" class="hover:text-blue-600 font-semibold">
-                ❤️ ${post.likes || 0} Likes
+              <button onclick="likePost(${post.id}, ${post.likes || 0})" class="hover:text-blue-600 font-semibold transition">
+                ❤️ <span id="likes-count-${post.id}">${post.likes || 0}</span> Likes
               </button>
               <button onclick="sharePost('${post.content || ''}')" class="hover:text-blue-600 font-semibold">
                 🔗 Compartir
@@ -199,20 +206,27 @@
     }
 
     document.getElementById('btnPublish').addEventListener('click', async () => {
-      const content = document.getElementById('postContent').value;
+      const content = document.getElementById('postContent').value.trim();
       const fileInput = document.getElementById('postImage');
       const file = fileInput.files[0];
-      let imageUrl = null;
 
       if (!content && !file) return alert('Escribe algo o selecciona una imagen.');
 
+      // UI OPTIMISTA: Limpiamos campos de inmediato para dar sensación instantánea
+      document.getElementById('postContent').value = '';
+      fileInput.value = '';
+
+      let imageUrl = null;
       if (file) {
         const filePath = `${Date.now()}_${file.name}`;
         const { error: uploadError } = await supabaseClient.storage
           .from('posts-images')
           .upload(filePath, file);
 
-        if (uploadError) return alert('Error al subir imagen: ' + uploadError.message);
+        if (uploadError) {
+          alert('Error al subir imagen: ' + uploadError.message);
+          return;
+        }
 
         const { data: publicUrlData } = supabaseClient.storage
           .from('posts-images')
@@ -229,15 +243,18 @@
 
       if (error) alert('Error al publicar: ' + error.message);
       else {
-        document.getElementById('postContent').value = '';
-        fileInput.value = '';
-        loadPosts();
+        loadPosts(); // Refresca de fondo silenciosamente
       }
     });
 
+    // LIKE OPTIMISTA INSTANTÁNEO (Suma el like en pantalla al instante sin esperar latencia de red)
     async function likePost(id, currentLikes) {
-      await supabaseClient.from('posts').update({ likes: currentLikes + 1 }).eq('id', id);
-      loadPosts();
+      const newLikes = currentLikes + 1;
+      const counterElement = document.getElementById(`likes-count-${id}`);
+      if (counterElement) counterElement.textContent = newLikes;
+
+      // Actualizamos en segundo plano en Supabase
+      await supabaseClient.from('posts').update({ likes: newLikes }).eq('id', id);
     }
 
     function sharePost(text) {
