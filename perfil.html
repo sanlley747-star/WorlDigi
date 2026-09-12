@@ -67,7 +67,7 @@
       <span class="text-white text-sm font-semibold">📷 Cambiar portada</span>
     </div>
 
-    <button id="editProfileBtn" onclick="toggleEditMode()"
+    <button id="editProfileBtn" onclick="toggleEditMode()" style="display:none;"
       class="absolute top-3 right-3 bg-slate-900/70 hover:bg-slate-900 text-white text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 transition">
       Editar perfil
     </button>
@@ -160,13 +160,124 @@
       return `${day} ${month} ${year}`;
     }
 
-    async function initProfile() {
-      const params = new URLSearchParams(window.location.search);
-      const username = params.get('user');
+   let currentUsername = null;
+   let currentUserEmail = null;
+  let isOwnProfile = false;
 
-      if (!username) {
-        window.location.href = 'dashboard.html';
-        return;
+async function initProfile() {
+  const params = new URLSearchParams(window.location.search);
+  const username = params.get('user');
+
+  if (!username) {
+    window.location.href = 'dashboard.html';
+    return;
+    function toggleEditMode() {
+  document.querySelectorAll('[data-edit-overlay]').forEach(el => {
+    el.classList.toggle('hidden');
+    el.classList.toggle('flex');
+  });
+}
+
+document.getElementById('coverWrapper').addEventListener('click', () => {
+  const overlay = document.querySelector('#coverWrapper [data-edit-overlay]');
+  if (isOwnProfile && !overlay.classList.contains('hidden')) {
+    document.getElementById('coverInput').click();
+  }
+});
+
+document.getElementById('avatarWrapper').addEventListener('click', () => {
+  const overlay = document.querySelector('#avatarWrapper [data-edit-overlay]');
+  if (isOwnProfile && !overlay.classList.contains('hidden')) {
+    document.getElementById('avatarInput').click();
+  }
+});
+
+document.getElementById('coverInput').addEventListener('change', e => handleImageUpload(e, 'cover'));
+document.getElementById('avatarInput').addEventListener('change', e => handleImageUpload(e, 'avatar'));
+
+async function handleImageUpload(event, tipo) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const ext = file.name.split('.').pop();
+  const filePath = `${currentUserEmail}/${tipo}.${ext}`;
+
+  const { error: uploadError } = await supabaseClient
+    .storage
+    .from('profile-images')
+    .upload(filePath, file, { upsert: true });
+
+  if (uploadError) {
+    alert('Error al subir la imagen: ' + uploadError.message);
+    return;
+  }
+
+  const { data: urlData } = supabaseClient
+    .storage
+    .from('profile-images')
+    .getPublicUrl(filePath);
+
+  const publicUrl = urlData.publicUrl + '?t=' + Date.now();
+  const campoDb = tipo === 'avatar' ? 'avatar_url' : 'cover_url';
+
+  const { error: dbError } = await supabaseClient
+    .from('profiles')
+    .upsert({
+      user_email: currentUserEmail,
+      user_name: currentUsername,
+      [campoDb]: publicUrl
+    }, { onConflict: 'user_email' });
+
+  if (dbError) {
+    alert('Error al guardar en la base de datos: ' + dbError.message);
+    return;
+  }
+
+  if (tipo === 'avatar') {
+    document.getElementById('profileAvatar').src = publicUrl;
+  } else {
+    const coverImg = document.getElementById('profileCover');
+    coverImg.src = publicUrl;
+    coverImg.style.display = 'block';
+  }
+}
+  }
+
+  currentUsername = username;
+  document.getElementById('profileTitle').textContent = `Perfil de @${username}`;
+  document.getElementById('profileName').textContent = username;
+
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  if (user) {
+    currentUserEmail = user.email;
+    const loggedName = user.user_metadata?.full_name || '';
+    isOwnProfile = loggedName === username;
+  }
+
+  document.getElementById('editProfileBtn').style.display = isOwnProfile ? 'block' : 'none';
+
+  await loadProfileImages(username);
+  loadUserPosts(username);
+}
+
+async function loadProfileImages(username) {
+  const { data } = await supabaseClient
+    .from('profiles')
+    .select('avatar_url, cover_url')
+    .eq('user_name', username)
+    .maybeSingle();
+
+  document.getElementById('profileAvatar').src =
+    data?.avatar_url || `https://ui-avatars.io/api/?name=${encodeURIComponent(username)}&background=random`;
+
+  const coverImg = document.getElementById('profileCover');
+  if (data?.cover_url) {
+    coverImg.src = data.cover_url;
+    coverImg.style.display = 'block';
+  } else {
+    coverImg.style.display = 'none';
+  }
+}
       }
 
       document.getElementById('profileTitle').textContent = `Perfil de @${username}`;
