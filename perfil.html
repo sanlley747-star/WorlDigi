@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorlDigi - Perfil de Usuario</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 dark:bg-slate-950 text-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-200">
+
+  <nav class="bg-slate-900 text-white p-4 flex justify-between items-center shadow-md border-b border-slate-800">
+    <div class="flex items-center space-x-4">
+      <a href="dashboard.html" class="text-blue-400 hover:underline text-sm font-semibold">&larr; Volver al Muro</a>
+      <h1 class="text-xl font-bold">WorlDigi</h1>
+    </div>
+    <div class="flex items-center space-x-4">
+      <span id="profileTitle" class="text-sm text-gray-300">Cargando perfil...</span>
+      <button onclick="toggleDarkMode()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg transition">🌙 / ☀️</button>
+    </div>
+  </nav>
+
+  <!-- CONTENEDOR PRINCIPAL: Feed central y barra de anuncios derecha de 300px fija -->
+  <main class="max-w-6xl mx-auto mt-6 px-4 grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
+    
+    <!-- COLUMNA CENTRAL: Información del perfil y sus publicaciones -->
+    <div class="space-y-6">
+      <!-- Cabecera del Perfil -->
+      <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow border border-gray-200 dark:border-slate-800 text-center">
+        <img id="profileAvatar" src="" class="w-20 h-20 rounded-full object-cover mx-auto border-2 border-blue-600 mb-3 shadow-md" alt="Avatar">
+        <h2 id="profileName" class="text-xl font-bold text-gray-900 dark:text-white">Cargando...</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Miembro de la comunidad WorlDigi</p>
+      </div>
+
+      <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-2">Publicaciones de este usuario</h3>
+
+      <!-- Contenedor del Muro del Usuario -->
+      <div id="userFeed" class="space-y-4">
+        <p class="text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-900 p-6 rounded-xl shadow border border-gray-200 dark:border-slate-800">Cargando publicaciones...</p>
+      </div>
+    </div>
+
+    <!-- COLUMNA DERECHA: Barra de publicidad fija de 300x600 px -->
+    <aside class="hidden lg:block">
+      <div class="sticky top-6 bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 flex flex-col items-center justify-center" style="width: 300px; height: 600px;">
+        <span class="text-xs text-gray-400 uppercase tracking-widest mb-2">Publicidad</span>
+        <div id="ad-slot-sidebar" class="w-full h-full bg-gray-50 dark:bg-slate-950 border border-dashed border-gray-300 dark:border-slate-800 rounded-lg flex items-center justify-center text-center text-gray-400 text-sm">
+          Espacio Publicitario<br>300 x 600 px
+        </div>
+      </div>
+    </aside>
+
+  </main>
+
+  <script>
+    const SUPABASE_URL = 'https://aiymadawznadvavzspxj.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_fL7vTXJ4NLhC2CJs9nPVAg_fvzWbfCY'; 
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // MODO OSCURO POR DEFECTO (A menos que el usuario guardara explícitamente lo contrario)
+    if (localStorage.getItem('theme') === 'light') {
+      document.documentElement.classList.remove('dark');
+    } else {
+      document.documentElement.classList.add('dark');
+    }
+
+    function toggleDarkMode() {
+      const html = document.documentElement;
+      if (html.classList.contains('dark')) {
+        html.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+      } else {
+        html.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    }
+
+    function formatCompactTime(dateString) {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInSeconds = Math.floor((now - date) / 1000);
+
+      if (diffInSeconds < 60) return `${Math.max(1, diffInSeconds)}s`;
+      
+      const diffInMinutes = Math.floor(diffInSeconds / 60);
+      if (diffInMinutes < 60) return `${diffInMinutes} min`;
+      
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      if (diffInHours < 24) return `${diffInHours}h`;
+
+      const months = ['ene.', 'feb.', 'mar.', 'abr.', 'may.', 'jun.', 'jul.', 'ago.', 'sept.', 'oct.', 'nov.', 'dic.'];
+      const day = date.getDate();
+      const month = months[date.getMonth()];
+      const year = date.getFullYear();
+
+      if (year === now.getFullYear()) return `${day} ${month}`;
+      return `${day} ${month} ${year}`;
+    }
+
+    async function initProfile() {
+      const params = new URLSearchParams(window.location.search);
+      const username = params.get('user');
+
+      if (!username) {
+        window.location.href = 'dashboard.html';
+        return;
+      }
+
+      document.getElementById('profileTitle').textContent = `Perfil de @${username}`;
+      document.getElementById('profileName').textContent = username;
+      document.getElementById('profileAvatar').src = `https://ui-avatars.io/api/?name=${encodeURIComponent(username)}&background=random`;
+
+      loadUserPosts(username);
+    }
+
+    async function loadUserPosts(username) {
+      const { data: posts, error } = await supabaseClient
+        .from('posts')
+        .select('*')
+        .eq('user_name', username)
+        .order('created_at', { ascending: false });
+
+      const feed = document.getElementById('userFeed');
+      if (error || !posts.length) {
+        feed.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-900 p-6 rounded-xl shadow border border-gray-200 dark:border-slate-800">Este usuario aún no ha realizado publicaciones.</p>';
+        return;
+      }
+
+      feed.innerHTML = posts.map(post => {
+        const compactTime = formatCompactTime(post.created_at);
+        const avatarUrl = post.avatar_url || `https://ui-avatars.io/api/?name=${encodeURIComponent(username)}&background=random`;
+
+        return `
+          <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 space-y-3">
+            <div class="flex items-center space-x-3">
+              <img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700">
+              <div class="flex items-center space-x-2">
+                <span class="font-bold text-gray-900 dark:text-white text-sm">${username}</span>
+                <span class="text-gray-400 text-sm">·</span>
+                <span class="text-sm text-gray-500 dark:text-gray-400">${compactTime}</span>
+              </div>
+            </div>
+
+            ${post.content ? `<p class="text-gray-800 dark:text-gray-200 text-sm">${post.content}</p>` : ''}
+            ${post.image_url ? `<img src="${post.image_url}" class="w-full rounded-lg max-h-96 object-cover">` : ''}
+            
+            <div class="flex items-center space-x-4 border-t border-gray-100 dark:border-slate-800 pt-2 text-sm text-gray-600 dark:text-gray-400">
+              <span class="font-semibold">❤️ ${post.likes || 0} Likes</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    initProfile();
+  </script>
+</body>
+</html>
