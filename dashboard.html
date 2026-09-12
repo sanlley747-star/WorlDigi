@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WorlDigi - Feed</title>
+  <title>WorlDigi - Muro Principal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -11,25 +11,46 @@
 
   <nav class="bg-slate-900 text-white p-4 flex justify-between items-center shadow-md">
     <h1 class="text-xl font-bold">WorlDigi</h1>
-    <span id="userStatus" class="text-sm text-gray-300">Cargando usuario...</span>
+    <div class="flex items-center space-x-4">
+      <span id="userStatus" class="text-sm text-gray-300">Cargando usuario...</span>
+      <button onclick="logout()" class="text-xs bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-white transition">Cerrar Sesión</button>
+    </div>
   </nav>
 
-  <main class="max-w-2xl mx-auto mt-6 p-4">
-    <!-- Formulario para publicar -->
-    <div class="bg-white p-4 rounded-xl shadow mb-6">
-      <h2 class="text-lg font-bold mb-3">Crear Publicación</h2>
-      <textarea id="postContent" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="¿Qué estás pensando?"></textarea>
+  <!-- CONTENEDOR PRINCIPAL EN DOS COLUMNAS (FEED COMUNITARIO + ANUNCIO LATERAL FIJO) -->
+  <main class="max-w-6xl mx-auto mt-6 px-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- COLUMNA CENTRAL (Ocupa 2 espacios): Formulario de Publicación y Muro General -->
+    <div class="lg:col-span-2 space-y-6">
       
-      <div class="flex items-center justify-between mt-3">
-        <input type="file" id="postImage" accept="image/*" class="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-        <button id="btnPublish" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">Publicar</button>
+      <!-- Formulario para publicar -->
+      <div class="bg-white p-4 rounded-xl shadow">
+        <h2 class="text-lg font-bold mb-3">Crear Publicación</h2>
+        <textarea id="postContent" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="¿Qué estás pensando?"></textarea>
+        
+        <div class="flex items-center justify-between mt-3">
+          <input type="file" id="postImage" accept="image/*" class="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+          <button id="btnPublish" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">Publicar</button>
+        </div>
       </div>
+
+      <!-- Contenedor del Muro de publicaciones -->
+      <div id="feed" class="space-y-4">
+        <p class="text-center text-gray-500">Cargando publicaciones...</p>
+      </div>
+
     </div>
 
-    <!-- Contenedor del Muro de publicaciones -->
-    <div id="feed" class="space-y-4">
-      <p class="text-center text-gray-500">Cargando publicaciones...</p>
-    </div>
+    <!-- COLUMNA DERECHA: Barra Lateral Fija de 300x600 para Google Ad Manager (PRESENTE EN TODOS LADOS) -->
+    <aside class="hidden lg:block">
+      <div class="sticky top-6 bg-white p-4 rounded-xl shadow border border-gray-200 flex flex-col items-center justify-center" style="width: 300px; height: 600px;">
+        <span class="text-xs text-gray-400 uppercase tracking-widest mb-2">Publicidad</span>
+        <div id="ad-slot-sidebar" class="w-full h-full bg-gray-50 border border-dashed border-gray-300 rounded-lg flex items-center justify-center text-center text-gray-400 text-sm">
+          Espacio Publicitario<br>300 x 600 px
+        </div>
+      </div>
+    </aside>
+
   </main>
 
   <script>
@@ -39,7 +60,6 @@
 
     let currentUser = null;
 
-    // Función de tiempo comprimido (Tus 5 formatos exactos)
     function formatCompactTime(dateString) {
       const date = new Date(dateString);
       const now = new Date();
@@ -62,7 +82,6 @@
       return `${day} ${month} ${year}`;
     }
 
-    // Verificar sesión al cargar
     async function init() {
       const { data: { user } } = await supabaseClient.auth.getUser();
       if (!user) {
@@ -74,7 +93,6 @@
       loadPosts();
     }
 
-    // Cargar publicaciones
     async function loadPosts() {
       const { data: posts, error } = await supabaseClient
         .from('posts')
@@ -83,22 +101,20 @@
 
       const feed = document.getElementById('feed');
       if (error || !posts.length) {
-        feed.innerHTML = '<p class="text-center text-gray-500">No hay publicaciones aún. ¡Sé el primero!</p>';
+        feed.innerHTML = '<p class="text-center text-gray-500 bg-white p-6 rounded-xl shadow">No hay publicaciones aún. ¡Sé el primero!</p>';
         return;
       }
 
       feed.innerHTML = posts.map(post => {
         const author = post.user_name || 'Usuario';
         const compactTime = formatCompactTime(post.created_at);
-        // Generar un avatar por defecto usando la inicial del usuario si no tiene imagen
         const avatarUrl = post.avatar_url || `https://ui-avatars.io/api/?name=${encodeURIComponent(author)}&background=random`;
 
         return `
           <div class="bg-white p-4 rounded-xl shadow space-y-3">
-            <!-- Cabecera: Avatar circular, Nombre, Punto separador y Tiempo comprimido -->
             <div class="flex items-center space-x-3">
               <a href="perfil.html?user=${encodeURIComponent(author)}">
-                <img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border border-gray-300 hover:opacity-80 transition cursor-pointer">
+                <img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border border-gray-300 hover:opacity-80 transition cursor-pointer" alt="${author}">
               </a>
               <div class="flex items-center space-x-2">
                 <a href="perfil.html?user=${encodeURIComponent(author)}" class="font-bold text-gray-900 text-sm hover:underline">
@@ -109,11 +125,9 @@
               </div>
             </div>
 
-            <!-- Contenido y Multimedia -->
             ${post.content ? `<p class="text-gray-800 text-sm">${post.content}</p>` : ''}
-            ${post.image_url ? `<img src="${post.image_url}" class="w-full rounded-lg max-h-96 object-cover">` : ''}
+            ${post.image_url ? `<img src="${post.image_url}" class="w-full rounded-lg max-h-96 object-cover" alt="Imagen de publicación">` : ''}
             
-            <!-- Botones de Interacción -->
             <div class="flex items-center space-x-4 border-t pt-2 text-sm text-gray-600">
               <button onclick="likePost(${post.id}, ${post.likes || 0})" class="hover:text-blue-600 font-semibold">
                 ❤️ ${post.likes || 0} Likes
@@ -127,7 +141,6 @@
       }).join('');
     }
 
-    // Publicar texto e imagen
     document.getElementById('btnPublish').addEventListener('click', async () => {
       const content = document.getElementById('postContent').value;
       const fileInput = document.getElementById('postImage');
@@ -177,6 +190,11 @@
         navigator.clipboard.writeText(window.location.href);
         alert('Enlace copiado al portapapeles.');
       }
+    }
+
+    async function logout() {
+      await supabaseClient.auth.signOut();
+      window.location.href = 'index.html';
     }
 
     init();
