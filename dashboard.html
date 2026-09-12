@@ -17,15 +17,10 @@
     </div>
   </nav>
 
-<!-- CONTENEDOR PRINCIPAL SIMÉTRICO DE 3 COLUMNAS -->
-<main class="max-w-7xl mx-auto mt-6 px-4 grid grid-cols-1 lg:grid-cols-[300px_minmax(0,600px)_300px] gap-6 justify-center">
+<!-- CONTENEDOR PRINCIPAL: Feed central flexible + Barra publicitaria derecha a 300px -->
+<main class="max-w-4xl mx-auto mt-6 px-4 grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 justify-center">
   
-  <!-- COLUMNA IZQUIERDA: Espaciador simétrico (Equilibra el espacio visual de la derecha) -->
-  <div class="hidden lg:block">
-    <!-- Aquí puedes poner un menú de navegación lateral más adelante si lo deseas -->
-  </div>
-
-  <!-- COLUMNA CENTRAL: Feed de publicaciones estrictamente centrado (Max 600px) -->
+  <!-- COLUMNA CENTRAL: Contenido alineado con espacio izquierdo reducido -->
   <div class="space-y-6 w-full">
     
     <!-- Formulario para publicar (Solo en dashboard.html) -->
@@ -46,9 +41,9 @@
 
   </div>
 
-  <!-- COLUMNA DERECHA: Barra de publicidad de 300x600 fijada al extremo derecho -->
+  <!-- COLUMNA DERECHA: Barra de publicidad de 300x600 en el extremo derecho -->
   <aside class="hidden lg:block">
-    <div class="sticky top-6 bg-white p-4 rounded-xl shadow border border-gray-200 flex flex-col items-center justify-center mx-auto" style="width: 300px; height: 600px;">
+    <div class="sticky top-6 bg-white p-4 rounded-xl shadow border border-gray-200 flex flex-col items-center justify-center" style="width: 300px; height: 600px;">
       <span class="text-xs text-gray-400 uppercase tracking-widest mb-2">Publicidad</span>
       <div id="ad-slot-sidebar" class="w-full h-full bg-gray-50 border border-dashed border-gray-300 rounded-lg flex items-center justify-center text-center text-gray-400 text-sm">
         Espacio Publicitario<br>300 x 600 px
@@ -57,24 +52,6 @@
   </aside>
 
 </main>
-      <!-- Contenedor del Muro de publicaciones -->
-      <div id="feed" class="space-y-4">
-        <p class="text-center text-gray-500">Cargando publicaciones...</p>
-      </div>
-
-    </div>
-
-    <!-- COLUMNA DERECHA: Barra Lateral Fija de 300x600 para Google Ad Manager (PRESENTE EN TODOS LADOS) -->
-    <aside class="hidden lg:block">
-      <div class="sticky top-6 bg-white p-4 rounded-xl shadow border border-gray-200 flex flex-col items-center justify-center" style="width: 300px; height: 600px;">
-        <span class="text-xs text-gray-400 uppercase tracking-widest mb-2">Publicidad</span>
-        <div id="ad-slot-sidebar" class="w-full h-full bg-gray-50 border border-dashed border-gray-300 rounded-lg flex items-center justify-center text-center text-gray-400 text-sm">
-          Espacio Publicitario<br>300 x 600 px
-        </div>
-      </div>
-    </aside>
-
-  </main>
 
   <script>
     const SUPABASE_URL = 'https://aiymadawznadvavzspxj.supabase.co';
