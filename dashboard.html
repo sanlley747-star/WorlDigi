@@ -290,6 +290,13 @@
       // Actualizamos en segundo plano en Supabase
       await supabaseClient.from('posts').update({ likes: newLikes }).eq('id', id);
     }
+    function toggleRepostMenu(postId) {
+     const menu = document.getElementById(`repost-menu-${postId}`);
+
+      if (!menu) return;
+
+  menu.classList.toggle('hidden');
+   }
 
     function sharePost(text) {
       if (navigator.share) {
