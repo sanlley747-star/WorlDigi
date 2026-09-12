@@ -192,14 +192,48 @@
             ${post.content ? `<p class="text-gray-800 dark:text-gray-200 text-sm">${post.content}</p>` : ''}
             ${post.image_url ? `<img src="${post.image_url}" class="w-full rounded-lg max-h-96 object-cover" alt="Imagen de publicación">` : ''}
             
-            <div class="flex items-center space-x-4 border-t border-gray-100 dark:border-slate-800 pt-2 text-sm text-gray-600 dark:text-gray-400">
-              <button onclick="likePost(${post.id}, ${post.likes || 0})" class="hover:text-blue-600 font-semibold transition">
-                ❤️ <span id="likes-count-${post.id}">${post.likes || 0}</span> Likes
-              </button>
-              <button onclick="sharePost('${post.content || ''}')" class="hover:text-blue-600 font-semibold">
-                🔗 Compartir
-              </button>
-            </div>
+            <div class="flex items-center space-x-5 border-t border-gray-100 dark:border-slate-800 pt-2 text-sm text-gray-600 dark:text-gray-400">
+
+  <button onclick="likePost(${post.id}, ${post.likes || 0})"
+          class="hover:text-red-500 font-semibold transition">
+    ❤️ <span id="likes-count-${post.id}">${post.likes || 0}</span>
+  </button>
+
+  <button onclick="commentPost(${post.id})"
+          class="hover:text-blue-600 font-semibold transition">
+    💬 Comentar
+  </button>
+
+  <div class="relative">
+
+    <button onclick="toggleRepostMenu(${post.id})"
+            class="hover:text-green-600 font-semibold transition">
+      🔁 Repostear
+    </button>
+
+    <div id="repost-menu-${post.id}"
+         class="hidden absolute left-0 bottom-full mb-2 w-52 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg overflow-hidden z-40">
+
+      <button onclick="repostPost(${post.id})"
+              class="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-slate-800 transition">
+        🔁 Repostear
+      </button>
+
+      <button onclick="quotePost(${post.id})"
+              class="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-slate-800 transition">
+        ✍️ Repostear con cita
+      </button>
+
+    </div>
+
+  </div>
+
+  <button onclick="sharePost('${post.content || ''}')"
+          class="hover:text-blue-600 font-semibold transition">
+    🔗 Compartir
+  </button>
+
+</div>
           </div>
         `;
       }).join('');
