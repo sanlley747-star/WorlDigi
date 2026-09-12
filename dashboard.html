@@ -1,92 +1,117 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WorlDigi - Muro Principal</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gray-100 dark:bg-slate-950 text-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-200">
 
-  <nav class="sticky top-0 z-50 bg-slate-900 text-white p-4 flex justify-between items-center shadow-md">
+  <nav class="sticky top-0 z-50 bg-slate-900 text-white p-4 flex justify-between items-center shadow-md border-b border-slate-800">
     <h1 class="text-xl font-bold">WorlDigi</h1>
     <div class="flex items-center space-x-4">
       <span id="userStatus" class="text-sm text-gray-300">Cargando usuario...</span>
+      <button onclick="toggleDarkMode()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg transition">🌙 / ☀️</button>
       <button onclick="logout()" class="text-xs bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-white transition">Cerrar Sesión</button>
     </div>
   </nav>
 
-<!-- CONTENEDOR PRINCIPAL: Ancho original y centralizado (max-w-6xl), 2 columnas (Feed amplio a la izquierda y Anuncio de 300px a la derecha) -->
+  <!-- CONTENEDOR PRINCIPAL: Ancho original y centralizado, 3 columnas exactas -->
   <main class="w-full mx-auto mt-6 pl-4 pr-0 grid grid-cols-1 lg:grid-cols-[220px_1fr_300px] gap-24">
 
-        <!-- COLUMNA IZQUIERDA: FUNCIONES -->
+    <!-- COLUMNA IZQUIERDA: FUNCIONES -->
     <aside class="hidden lg:block">
       <div class="sticky top-6">
-        
-        <div class="bg-white p-4 rounded-xl shadow">
-            <h2 class="font-bold text-gray-800 mb-4">
-                WorlDigi
-            </h2>
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800">
+          <h2 class="font-bold text-gray-800 dark:text-white mb-4">
+            WorlDigi
+          </h2>
 
-            <nav class="space-y-2">
-                <a href="#" class="block p-2 rounded-lg hover:bg-gray-100">
-                    🏠 Inicio
-                </a>
+          <nav class="space-y-2">
+            <a href="#" class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+              🏠 Inicio
+            </a>
 
-                <a href="#" class="block p-2 rounded-lg hover:bg-gray-100">
-                    👤 Mi perfil
-                </a>
+            <a href="perfil.html" id="myProfileLink" class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+              👤 Mi perfil
+            </a>
 
-                <a href="#" class="block p-2 rounded-lg hover:bg-gray-100">
-                    🔔 Notificaciones
-                </a>
+            <a href="#" class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+              🔔 Notificaciones
+            </a>
 
-                <a href="#" class="block p-2 rounded-lg hover:bg-gray-100">
-                    👥 Amigos
-                </a>
-            </nav>
+            <a href="#" class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+              👥 Amigos
+            </a>
+          </nav>
         </div>
+      </div>
     </aside>
     
-    <!-- COLUMNA CENTRAL: Feed amplio y centrado sin desplazarse hacia el borde izquierdo -->
+    <!-- COLUMNA CENTRAL: Feed amplio y centrado -->
     <div class="space-y-6">
       
       <!-- Formulario para publicar -->
-      <div class="bg-white p-4 rounded-xl shadow">
-        <h2 class="text-lg font-bold mb-3">Crear Publicación</h2>
-        <textarea id="postContent" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="¿Qué estás pensando?"></textarea>
+      <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800">
+        <h2 class="text-lg font-bold mb-3 text-gray-900 dark:text-white">Crear Publicación</h2>
+        <textarea id="postContent" class="w-full p-3 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="¿Qué estás pensando?"></textarea>
         
         <div class="flex items-center justify-between mt-3">
-          <input type="file" id="postImage" accept="image/*" class="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+          <input type="file" id="postImage" accept="image/*" class="text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-slate-800 file:text-blue-700 dark:file:text-blue-400 hover:file:bg-blue-100">
           <button id="btnPublish" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">Publicar</button>
         </div>
       </div>
 
       <!-- Contenedor del Muro de publicaciones -->
       <div id="feed" class="space-y-4">
-        <p class="text-center text-gray-500">Cargando publicaciones...</p>
+        <p class="text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-900 p-6 rounded-xl shadow border border-gray-200 dark:border-slate-800">Cargando publicaciones...</p>
       </div>
 
     </div>
 
     <!-- COLUMNA DERECHA: Barra de publicidad fija de 300x600 -->
     <aside class="hidden lg:block">
-      <div class="sticky top-6 bg-white p-4 rounded-xl shadow border border-gray-200 flex flex-col items-center justify-center" style="width: 300px; height: 600px;">
-        <span class="text-xs text-gray-400 uppercase tracking-widest mb-2">Publicidad</span>
-        <div id="ad-slot-sidebar" class="w-full h-full bg-gray-50 border border-dashed border-gray-300 rounded-lg flex items-center justify-center text-center text-gray-400 text-sm">
+      <div class="sticky top-6 bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 flex flex-col items-center justify-center" style="width: 300px; height: 600px;">
+        <span class="text-xs text-gray-400 uppercase tracking-widest mb-2 text-gray-400">Publicidad</span>
+        <div id="ad-slot-sidebar" class="w-full h-full bg-gray-50 dark:bg-slate-950 border border-dashed border-gray-300 dark:border-slate-800 rounded-lg flex items-center justify-center text-center text-gray-400 text-sm">
           Espacio Publicitario<br>300 x 600 px
         </div>
       </div>
     </aside>
 
   </main>
+
   <script>
     const SUPABASE_URL = 'https://aiymadawznadvavzspxj.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_fL7vTXJ4NLhC2CJs9nPVAg_fvzWbfCY'; 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let currentUser = null;
+
+    // GESTIÓN DEL MODO OSCURO POR DEFECTO
+    if (localStorage.getItem('theme') === 'light') {
+      document.documentElement.classList.remove('dark');
+    } else {
+      document.documentElement.classList.add('dark');
+    }
+
+    function toggleDarkMode() {
+      const html = document.documentElement;
+      if (html.classList.contains('dark')) {
+        html.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+      } else {
+        html.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    }
 
     function formatCompactTime(dateString) {
       const date = new Date(dateString);
@@ -118,6 +143,10 @@
       }
       currentUser = user;
       document.getElementById('userStatus').textContent = user.email;
+      
+      const authorName = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
+      document.getElementById('myProfileLink').href = `perfil.html?user=${encodeURIComponent(authorName)}`;
+
       loadPosts();
     }
 
@@ -129,7 +158,7 @@
 
       const feed = document.getElementById('feed');
       if (error || !posts.length) {
-        feed.innerHTML = '<p class="text-center text-gray-500 bg-white p-6 rounded-xl shadow">No hay publicaciones aún. ¡Sé el primero!</p>';
+        feed.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-900 p-6 rounded-xl shadow border border-gray-200 dark:border-slate-800">No hay publicaciones aún. ¡Sé el primero!</p>';
         return;
       }
 
@@ -139,24 +168,24 @@
         const avatarUrl = post.avatar_url || `https://ui-avatars.io/api/?name=${encodeURIComponent(author)}&background=random`;
 
         return `
-          <div class="bg-white p-4 rounded-xl shadow space-y-3">
+          <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 space-y-3">
             <div class="flex items-center space-x-3">
               <a href="perfil.html?user=${encodeURIComponent(author)}">
-                <img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border border-gray-300 hover:opacity-80 transition cursor-pointer" alt="${author}">
+                <img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700 hover:opacity-80 transition cursor-pointer" alt="${author}">
               </a>
               <div class="flex items-center space-x-2">
-                <a href="perfil.html?user=${encodeURIComponent(author)}" class="font-bold text-gray-900 text-sm hover:underline">
+                <a href="perfil.html?user=${encodeURIComponent(author)}" class="font-bold text-gray-900 dark:text-white text-sm hover:underline">
                   ${author}
                 </a>
                 <span class="text-gray-400 text-sm">·</span>
-                <span class="text-sm text-gray-500">${compactTime}</span>
+                <span class="text-sm text-gray-500 dark:text-gray-400">${compactTime}</span>
               </div>
             </div>
 
-            ${post.content ? `<p class="text-gray-800 text-sm">${post.content}</p>` : ''}
+            ${post.content ? `<p class="text-gray-800 dark:text-gray-200 text-sm">${post.content}</p>` : ''}
             ${post.image_url ? `<img src="${post.image_url}" class="w-full rounded-lg max-h-96 object-cover" alt="Imagen de publicación">` : ''}
             
-            <div class="flex items-center space-x-4 border-t pt-2 text-sm text-gray-600">
+            <div class="flex items-center space-x-4 border-t border-gray-100 dark:border-slate-800 pt-2 text-sm text-gray-600 dark:text-gray-400">
               <button onclick="likePost(${post.id}, ${post.likes || 0})" class="hover:text-blue-600 font-semibold">
                 ❤️ ${post.likes || 0} Likes
               </button>
