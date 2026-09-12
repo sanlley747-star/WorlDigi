@@ -297,12 +297,14 @@
 
   menu.classList.toggle('hidden');
    }
-    async function repostPost(postId) {
+   async function repostPost(postId) {
+  alert('La función de repost se ejecutó. ID: ' + postId);
+
   const authorName =
     currentUser.user_metadata?.full_name ||
     currentUser.email.split('@')[0];
 
-  const { error } = await supabaseClient
+  const { data, error } = await supabaseClient
     .from('posts')
     .insert([
       {
@@ -314,12 +316,16 @@
         repost_of: postId,
         quote_text: null
       }
-    ]);
+    ])
+    .select();
 
   if (error) {
-    alert('Error al repostear: ' + error.message);
+    alert('ERROR SUPABASE: ' + error.message);
+    console.error(error);
     return;
   }
+
+  alert('REPOST GUARDADO CORRECTAMENTE');
 
   toggleRepostMenu(postId);
   loadPosts();
