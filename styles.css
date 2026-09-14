@@ -2,7 +2,7 @@
 :root{--blue:#0b4aa2;--cyan:#12cfe3;--ink:#07162d;--muted:#62708a;--line:#dfe7f2}
 body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--ink);background:#f7fbff}
 .topbar{height:78px;display:flex;align-items:center;justify-content:space-between;padding:10px 5vw;background:rgba(255,255,255,.94);border-bottom:1px solid var(--line);position:relative;z-index:5}
-.brand img{height:68px;width:auto;object-fit:contain}
+.brand img{height:80px;width:auto;object-fit:contain}
 .nav-actions{display:flex;gap:12px}
 .btn{border:0;border-radius:999px;padding:11px 22px;font-weight:700;font-size:15px;cursor:pointer;transition:.2s}
 .btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(11,74,162,.14)}
