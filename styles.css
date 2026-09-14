@@ -19,8 +19,9 @@ h1{font-size:clamp(32px,4vw,46px);line-height:1.1;margin:0 0 18px;background:lin
 .hero-text{max-width:650px;margin:0 auto;color:var(--muted);font-size:19px;line-height:1.65}
 .hero-actions{display:flex;justify-content:center;gap:14px;margin:30px 0 40px;flex-wrap:wrap}
 .features{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
-.features div{width:190px;padding:18px;background:rgba(255,255,255,.72);border:1px solid rgba(169,195,230,.55);border-radius:18px;display:grid;gap:4px;box-shadow:0 12px 35px rgba(11,74,162,.07)}
-.features span{font-size:25px}.features strong{font-size:15px}.features small{color:var(--muted)}
+.features div{width:190px;padding:18px;background:rgba(255,255,255,.72);border:1px solid rgba(169,195,230,.55);border-radius:18px;display:grid;justify-items:center;gap:4px;box-shadow:0 12px 35px rgba(11,74,162,.07)}
+.features strong{font-size:15px}.features small{color:var(--muted)}
+.feature-icon{width:30px;height:30px;color:var(--blue);margin-bottom:2px}
 .hero-glow{position:absolute;border-radius:50%;filter:blur(4px);opacity:.35}
 .glow-one{width:360px;height:360px;background:#12cfe3;right:-130px;top:10%;filter:blur(90px)}
 .glow-two{width:320px;height:320px;background:#0b4aa2;left:-130px;bottom:5%;filter:blur(100px)}
