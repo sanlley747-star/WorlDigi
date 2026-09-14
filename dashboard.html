@@ -162,6 +162,7 @@
     .from('posts')
     .select('*')
     .order('created_at', { ascending: false });
+     const { data: profiles } = await supabaseClient .from('profiles') .select('user_name, avatar_url'); const avatarByUser = {}; (profiles || []).forEach(p => { avatarByUser[p.user_name] = p.avatar_url; });
 
   const feed = document.getElementById('feed');
 
@@ -193,8 +194,7 @@
 
     const originalAuthor = displayPost.user_name || 'Usuario';
 
-    const originalAvatarUrl = displayPost.avatar_url ||
-      `https://ui-avatars.com/api/?name=${encodeURIComponent(originalAuthor)}&background=random`;
+   const originalAvatarUrl = avatarByUser[originalAuthor] || displayPost.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(originalAuthor)}&background=random`;
 
     return `
       <div id="post-${post.id}"
