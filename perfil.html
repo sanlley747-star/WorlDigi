@@ -199,7 +199,8 @@
         .maybeSingle();
 
       document.getElementById('profileAvatar').src =
-        data?.avatar_url || `https://ui-avatars.io/api/?name=${encodeURIComponent(username)}&background=random`;
+        data?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random`;
+      window.currentProfileAvatarUrl = data?.avatar_url || null; 
 
       const coverImg = document.getElementById('profileCover');
       if (data?.cover_url) {
@@ -296,7 +297,7 @@
 
       feed.innerHTML = posts.map(post => {
         const compactTime = formatCompactTime(post.created_at);
-        const avatarUrl = post.avatar_url || `https://ui-avatars.io/api/?name=${encodeURIComponent(username)}&background=random`;
+       const avatarUrl = window.currentProfileAvatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random`;
 
         return `
           <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 space-y-3">
