@@ -1,13 +1,13 @@
 *{box-sizing:border-box}
 :root{--blue:#0b4aa2;--cyan:#12cfe3;--ink:#07162d;--muted:#62708a;--line:#dfe7f2}
 body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--ink);background:#f7fbff}
-.topbar{height:78px;display:flex;align-items:center;justify-content:space-between;padding:10px 5vw;background:rgba(255,255,255,.94);border-bottom:1px solid var(--line);position:relative;z-index:5}
+.topbar{height:78px;display:flex;align-items:center;justify-content:space-between;padding:10px 5vw;background:#000000;border-bottom:1px solid rgba(255,255,255,.08);position:relative;z-index:5}
 .brand img{height:80px;width:auto;object-fit:contain}
 .nav-actions{display:flex;gap:12px}
 .btn{border:0;border-radius:999px;padding:11px 22px;font-weight:700;font-size:15px;cursor:pointer;transition:.2s}
 .btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(11,74,162,.14)}
 .btn-primary{color:white;background:linear-gradient(100deg,var(--blue),var(--cyan))}
-.btn-ghost{background:transparent;color:var(--blue)}
+.btn-ghost{background:transparent;color:#ffffff}
 .btn-outline{background:white;color:var(--blue);border:1px solid #a9c3e6}
 .btn-large{padding:14px 28px;font-size:16px}
 .hero{min-height:calc(100vh - 78px);display:grid;place-items:center;position:relative;overflow:hidden;background:#000000}
