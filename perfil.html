@@ -13,12 +13,10 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    .hide-scrollbar::-webkit-scrollbar{display:none}
-    .hide-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
-    .sidebar-scroll::-webkit-scrollbar{width:6px}
-    .sidebar-scroll::-webkit-scrollbar-track{background:transparent}
-    .sidebar-scroll::-webkit-scrollbar-thumb{background-color:#050b18;border-radius:9999px}
-    .sidebar-scroll{scrollbar-width:thin;scrollbar-color:#050b18 transparent}
+    html{scrollbar-width:thin;scrollbar-color:#050b18 transparent}
+    ::-webkit-scrollbar{width:10px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background-color:#050b18;border-radius:9999px}
   </style>
 </head>
 <body class="bg-gray-100 dark:bg-slate-950 text-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-200">
@@ -34,10 +32,11 @@
   </nav>
 
   <!-- CONTENEDOR PRINCIPAL: Estructura exacta de 3 columnas idéntica al dashboard -->
-  <main class="w-full mx-auto mt-6 pl-4 pr-0 grid grid-cols-1 lg:grid-cols-[220px_1fr_300px] gap-24 lg:h-[calc(100vh-120px)] lg:overflow-hidden">
+  <main class="w-full mx-auto mt-6 pl-4 pr-0 grid grid-cols-1 lg:grid-cols-[220px_1fr_300px] gap-24">
 
     <!-- COLUMNA IZQUIERDA: MENÚ DE NAVEGACIÓN -->
-    <aside class="hidden lg:block lg:h-full lg:overflow-y-auto sidebar-scroll">
+    <aside class="hidden lg:block">
+      <div class="sticky top-6">
         <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800">
           <nav class="space-y-2">
             <a href="dashboard.html" class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
@@ -54,10 +53,11 @@
             </a>
           </nav>
         </div>
+      </div>
     </aside>
 
     <!-- COLUMNA CENTRAL: Perfil del usuario y sus publicaciones -->
-    <div class="space-y-6 lg:h-full lg:overflow-y-auto lg:pr-2 hide-scrollbar">
+    <div class="space-y-6">
       
       <!-- Tarjeta de Cabecera del Perfil -->
       <div class="relative bg-white dark:bg-slate-900 rounded-xl shadow border border-gray-200 dark:border-slate-800 overflow-hidden">
@@ -107,8 +107,8 @@
     </div>
 
     <!-- COLUMNA DERECHA: Barra de publicidad fija de 300x600 px -->
-    <aside class="hidden lg:block lg:h-full">
-      <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 flex flex-col items-center justify-center" style="width: 300px; height: 600px;">
+    <aside class="hidden lg:block">
+      <div class="sticky top-6 bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 flex flex-col items-center justify-center" style="width: 300px; height: 600px;">
         <span class="text-xs text-gray-400 uppercase tracking-widest mb-2 text-gray-400">Publicidad</span>
         <div id="ad-slot-sidebar" class="w-full h-full bg-gray-50 dark:bg-slate-950 border border-dashed border-gray-300 dark:border-slate-800 rounded-lg flex items-center justify-center text-center text-gray-400 text-sm">
           Espacio Publicitario<br>300 x 600 px
