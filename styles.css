@@ -1,7 +1,7 @@
 *{box-sizing:border-box}
 :root{--blue:#0b4aa2;--cyan:#12cfe3;--ink:#07162d;--muted:#62708a;--line:#dfe7f2}
 body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--ink);background:#f7fbff}
-.topbar{height:78px;display:flex;align-items:center;justify-content:space-between;padding:10px 5vw;background:#000000;border-bottom:1px solid rgba(255,255,255,.08);position:relative;z-index:5}
+.topbar{height:78px;display:flex;align-items:center;justify-content:space-between;padding:10px 5vw;background:#000000;border-bottom:1px solid rgba(255,255,255,.08);position:fixed;top:0;left:0;right:0;z-index:50}
 .brand img{height:80px;width:auto;object-fit:contain}
 .nav-actions{display:flex;gap:12px}
 .btn{border:0;border-radius:999px;padding:11px 22px;font-weight:700;font-size:15px;cursor:pointer;transition:.2s}
@@ -10,7 +10,7 @@ body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--ink);backg
 .btn-ghost{background:transparent;color:#ffffff}
 .btn-outline{background:white;color:var(--blue);border:1px solid #a9c3e6}
 .btn-large{padding:14px 28px;font-size:16px}
-.hero{min-height:calc(100vh - 78px);display:grid;place-items:center;position:relative;overflow:hidden;background:#000000}
+.hero{min-height:100vh;padding-top:78px;display:grid;place-items:center;position:relative;overflow:hidden;background:#000000}
 .hero-content{position:relative;z-index:2;text-align:center;max-width:900px;padding:45px 22px}
 .logo-wrap{display:flex;justify-content:center;margin-bottom:4px}
 .hero-logo{width:min(560px,75vw);height:auto}
@@ -34,4 +34,4 @@ form{display:grid;gap:12px;margin-top:22px}
 input{width:100%;padding:14px 16px;border:1px solid #cbd8e8;border-radius:12px;font-size:15px;outline:none}
 input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(18,207,227,.12)}
 .demo-note{font-size:12px;margin-bottom:0}
-@media(max-width:600px){.topbar{height:68px;padding:8px 16px}.brand img{height:50px}.nav-actions .btn{padding:9px 13px;font-size:13px}.hero{min-height:calc(100vh - 68px)}.features div{width:100%;max-width:310px}}
+@media(max-width:600px){.topbar{height:68px;padding:8px 16px}.brand img{height:50px}.nav-actions .btn{padding:9px 13px;font-size:13px}.hero{padding-top:68px}.features div{width:100%;max-width:310px}}
