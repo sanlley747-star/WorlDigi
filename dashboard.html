@@ -40,12 +40,27 @@
       <div class="sticky top-6">
         <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800">
           <nav class="space-y-2 pt-1">
-            <a href="#" class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">🏠 Inicio</a>
-            <a href="perfil.html" id="myProfileLink" class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">👤 Mi perfil</a>
-            <a href="#" class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">🔔 Notificaciones</a>
-            <a href="#" class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">👥 Amigos</a>
-            <a href="settings.html" class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">⚙️ Ajustes</a>
-            <button onclick="openComposerModal()" class="w-full flex items-center gap-2 p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition">
+            <a href="#" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M3 9.5 12 3l9 6.5"></path><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"></path></svg>
+              <span>Inicio</span>
+            </a>
+            <a href="perfil.html" id="myProfileLink" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              <span>Mi perfil</span>
+            </a>
+            <a href="#" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+              <span>Notificaciones</span>
+            </a>
+            <a href="#" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              <span>Amigos</span>
+            </a>
+            <a href="settings.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"></path></svg>
+              <span>Ajustes</span>
+            </a>
+            <button onclick="openComposerModal()" class="w-full flex items-center gap-3 p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
               <span class="font-bold">Publicar</span>
             </button>
@@ -62,7 +77,7 @@
         <h2 class="text-lg font-bold mb-3 text-gray-900 dark:text-white">Crear Publicación</h2>
         <div class="flex items-start gap-3">
           <img id="composerAvatar" src="" class="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700 flex-shrink-0" alt="Tu avatar">
-          <textarea id="postContent" class="flex-1 w-full p-3 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="¿Qué estás pensando?"></textarea>
+          <textarea id="postContent" oninput="updatePublishState('postContent','btnPublish')" class="flex-1 w-full p-3 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="¿Qué estás pensando?"></textarea>
         </div>
 
         <div class="flex items-center justify-between mt-3">
@@ -73,7 +88,7 @@
             </label>
             <span id="postImagePreview" class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[140px]"></span>
           </div>
-          <button id="btnPublish" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">Publicar</button>
+          <button id="btnPublish" disabled class="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:hover:bg-blue-600 disabled:cursor-not-allowed text-white font-bold py-2 px-6 rounded-lg transition">Publicar</button>
         </div>
       </div>
 
@@ -336,6 +351,13 @@
   }).join('');
 }
 
+    function updatePublishState(textareaId, buttonId) {
+      const textarea = document.getElementById(textareaId);
+      const button = document.getElementById(buttonId);
+      if (!textarea || !button) return;
+      button.disabled = textarea.value.trim().length === 0;
+    }
+
     function updateFileNamePreview(inputId, previewId) {
       const input = document.getElementById(inputId);
       const preview = document.getElementById(previewId);
@@ -361,6 +383,7 @@
       document.getElementById('postImageModal').value = '';
       document.getElementById('postImagePreviewModal').textContent = '';
       document.getElementById('composerAvatarModal').src = myAvatarUrl || '';
+      document.getElementById('btnPublishModal').disabled = true;
 
       const modal = document.getElementById('composerModal');
       modal.classList.remove('hidden');
@@ -377,7 +400,7 @@
       if (e.target.id === 'composerModal') closeComposerModal();
     }
 
-    async function publishPost({ contentId, fileId, previewId, isModal }) {
+    async function publishPost({ contentId, fileId, previewId, buttonId, isModal }) {
       const contentEl = document.getElementById(contentId);
       const fileInput = document.getElementById(fileId);
       const content = contentEl.value.trim();
@@ -389,6 +412,7 @@
       contentEl.value = '';
       fileInput.value = '';
       if (previewId) document.getElementById(previewId).textContent = '';
+      if (buttonId) document.getElementById(buttonId).disabled = true;
 
       let imageUrl = null;
       if (file) {
@@ -426,11 +450,11 @@
     }
 
     document.getElementById('btnPublish').addEventListener('click', () => {
-      publishPost({ contentId: 'postContent', fileId: 'postImage', previewId: 'postImagePreview', isModal: false });
+      publishPost({ contentId: 'postContent', fileId: 'postImage', previewId: 'postImagePreview', buttonId: 'btnPublish', isModal: false });
     });
 
     document.getElementById('btnPublishModal').addEventListener('click', () => {
-      publishPost({ contentId: 'postContentModal', fileId: 'postImageModal', previewId: 'postImagePreviewModal', isModal: true });
+      publishPost({ contentId: 'postContentModal', fileId: 'postImageModal', previewId: 'postImagePreviewModal', buttonId: 'btnPublishModal', isModal: true });
     });
 
     // LIKE OPTIMISTA INSTANTÁNEO (Suma el like en pantalla al instante sin esperar latencia de red)
@@ -671,7 +695,7 @@
 
       <div class="flex items-start gap-3">
         <img id="composerAvatarModal" src="" class="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700 flex-shrink-0" alt="Tu avatar">
-        <textarea id="postContentModal" class="flex-1 w-full p-3 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="¿Qué estás pensando?"></textarea>
+        <textarea id="postContentModal" oninput="updatePublishState('postContentModal','btnPublishModal')" class="flex-1 w-full p-3 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="¿Qué estás pensando?"></textarea>
       </div>
 
       <div class="flex items-center justify-between mt-3">
@@ -682,7 +706,7 @@
           </label>
           <span id="postImagePreviewModal" class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[140px]"></span>
         </div>
-        <button id="btnPublishModal" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">Publicar</button>
+        <button id="btnPublishModal" disabled class="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:hover:bg-blue-600 disabled:cursor-not-allowed text-white font-bold py-2 px-6 rounded-lg transition">Publicar</button>
       </div>
     </div>
   </div>
