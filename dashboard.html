@@ -45,6 +45,7 @@
             <a href="#" class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">🔔 Notificaciones</a>
             <a href="#" class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">👥 Amigos</a>
             <a href="settings.html" class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">⚙️ Ajustes</a>
+            <button onclick="openComposerModal()" class="w-full text-left block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">📝 Publicar</button>
           </nav>
         </div>
       </div>
@@ -56,10 +57,19 @@
       <!-- Formulario para publicar -->
       <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800">
         <h2 class="text-lg font-bold mb-3 text-gray-900 dark:text-white">Crear Publicación</h2>
-        <textarea id="postContent" class="w-full p-3 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="¿Qué estás pensando?"></textarea>
-        
+        <div class="flex items-start gap-3">
+          <img id="composerAvatar" src="" class="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700 flex-shrink-0" alt="Tu avatar">
+          <textarea id="postContent" class="flex-1 w-full p-3 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="¿Qué estás pensando?"></textarea>
+        </div>
+
         <div class="flex items-center justify-between mt-3">
-          <input type="file" id="postImage" accept="image/*" class="text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-slate-800 file:text-blue-700 dark:file:text-blue-400 hover:file:bg-blue-100">
+          <div class="flex items-center gap-2">
+            <input type="file" id="postImage" accept="image/*" class="hidden" onchange="updateFileNamePreview('postImage','postImagePreview')">
+            <label for="postImage" class="cursor-pointer inline-flex items-center gap-2 py-2 px-4 rounded-full text-sm font-semibold bg-blue-50 dark:bg-slate-800 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-slate-700 transition">
+              📷 Foto
+            </label>
+            <span id="postImagePreview" class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[140px]"></span>
+          </div>
           <button id="btnPublish" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">Publicar</button>
         </div>
       </div>
@@ -113,6 +123,8 @@
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let currentUser = null;
+    let myAvatarUrl = null;
+    let toastTimeout = null;
 
     if (localStorage.getItem('theme') === 'light') {
       document.documentElement.classList.remove('dark');
@@ -162,6 +174,17 @@
       
       const authorName = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
       document.getElementById('myProfileLink').href = `perfil.html?user=${encodeURIComponent(authorName)}`;
+
+      const { data: myProfileRow } = await supabaseClient
+        .from('profiles')
+        .select('avatar_url')
+        .eq('user_name', authorName)
+        .maybeSingle();
+
+      myAvatarUrl = myProfileRow?.avatar_url ||
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=random`;
+
+      document.getElementById('composerAvatar').src = myAvatarUrl;
 
       loadPosts();
     }
@@ -310,16 +333,59 @@
   }).join('');
 }
 
-    document.getElementById('btnPublish').addEventListener('click', async () => {
-      const content = document.getElementById('postContent').value.trim();
-      const fileInput = document.getElementById('postImage');
+    function updateFileNamePreview(inputId, previewId) {
+      const input = document.getElementById(inputId);
+      const preview = document.getElementById(previewId);
+      if (!input || !preview) return;
+      preview.textContent = input.files[0] ? input.files[0].name : '';
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toastMessage');
+      if (!toast) return;
+      toast.textContent = msg;
+      toast.classList.remove('hidden');
+      requestAnimationFrame(() => { toast.style.opacity = '1'; });
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.classList.add('hidden'), 400);
+      }, 2500);
+    }
+
+    function openComposerModal() {
+      document.getElementById('postContentModal').value = '';
+      document.getElementById('postImageModal').value = '';
+      document.getElementById('postImagePreviewModal').textContent = '';
+      document.getElementById('composerAvatarModal').src = myAvatarUrl || '';
+
+      const modal = document.getElementById('composerModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeComposerModal() {
+      const modal = document.getElementById('composerModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function closeComposerModalBackdrop(e) {
+      if (e.target.id === 'composerModal') closeComposerModal();
+    }
+
+    async function publishPost({ contentId, fileId, previewId, isModal }) {
+      const contentEl = document.getElementById(contentId);
+      const fileInput = document.getElementById(fileId);
+      const content = contentEl.value.trim();
       const file = fileInput.files[0];
 
       if (!content && !file) return alert('Escribe algo o selecciona una imagen.');
 
       // UI OPTIMISTA: Limpiamos campos de inmediato para dar sensación instantánea
-      document.getElementById('postContent').value = '';
+      contentEl.value = '';
       fileInput.value = '';
+      if (previewId) document.getElementById(previewId).textContent = '';
 
       let imageUrl = null;
       if (file) {
@@ -341,15 +407,27 @@
       }
 
       const authorName = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
-      
+
       const { error } = await supabaseClient.from('posts').insert([
         { user_email: currentUser.email, user_name: authorName, content: content, image_url: imageUrl, likes: 0 }
       ]);
 
-      if (error) alert('Error al publicar: ' + error.message);
-      else {
-        loadPosts(); // Refresca de fondo silenciosamente
+      if (error) {
+        alert('Error al publicar: ' + error.message);
+        return;
       }
+
+      loadPosts(); // Refresca de fondo silenciosamente
+      if (isModal) closeComposerModal();
+      showToast('Tu mensaje se envió');
+    }
+
+    document.getElementById('btnPublish').addEventListener('click', () => {
+      publishPost({ contentId: 'postContent', fileId: 'postImage', previewId: 'postImagePreview', isModal: false });
+    });
+
+    document.getElementById('btnPublishModal').addEventListener('click', () => {
+      publishPost({ contentId: 'postContentModal', fileId: 'postImageModal', previewId: 'postImagePreviewModal', isModal: true });
     });
 
     // LIKE OPTIMISTA INSTANTÁNEO (Suma el like en pantalla al instante sin esperar latencia de red)
@@ -579,6 +657,36 @@
       </div>
 
     </div>
+  </div>
+
+  <!-- Modal: Publicar (columna izquierda) -->
+  <div id="composerModal" class="hidden fixed inset-0 bg-black/70 z-[110] items-center justify-center p-4" onclick="closeComposerModalBackdrop(event)">
+    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-lg w-full max-w-lg p-4 relative">
+      <button onclick="closeComposerModal()" class="absolute top-3 right-3 text-2xl text-gray-500 hover:text-gray-800 dark:hover:text-white leading-none">&times;</button>
+
+      <h2 class="text-lg font-bold mb-3 text-gray-900 dark:text-white pr-8">Crear Publicación</h2>
+
+      <div class="flex items-start gap-3">
+        <img id="composerAvatarModal" src="" class="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700 flex-shrink-0" alt="Tu avatar">
+        <textarea id="postContentModal" class="flex-1 w-full p-3 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="¿Qué estás pensando?"></textarea>
+      </div>
+
+      <div class="flex items-center justify-between mt-3">
+        <div class="flex items-center gap-2">
+          <input type="file" id="postImageModal" accept="image/*" class="hidden" onchange="updateFileNamePreview('postImageModal','postImagePreviewModal')">
+          <label for="postImageModal" class="cursor-pointer inline-flex items-center gap-2 py-2 px-4 rounded-full text-sm font-semibold bg-blue-50 dark:bg-slate-800 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-slate-700 transition">
+            📷 Foto
+          </label>
+          <span id="postImagePreviewModal" class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[140px]"></span>
+        </div>
+        <button id="btnPublishModal" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">Publicar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mensaje flotante de confirmación -->
+  <div id="toastMessage" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-green-600 text-white text-sm font-semibold px-5 py-3 rounded-lg shadow-lg z-[200] transition-opacity duration-500" style="opacity:0;">
+    Tu mensaje se envió
   </div>
 
 </body>
