@@ -29,9 +29,6 @@
     <div class="flex items-center space-x-4">
       <a href="dashboard.html" class="flex items-center"><img src="assets/logo-icon.png" alt="ByKonet" class="h-14 w-auto"></a>
     </div>
-    <div class="flex items-center space-x-4">
-      <span id="profileTitle" class="text-sm text-gray-300">Cargando perfil...</span>
-    </div>
   </nav>
 
   <!-- CONTENEDOR PRINCIPAL: Estructura exacta de 3 columnas idéntica al dashboard -->
@@ -194,7 +191,6 @@
       }
 
       currentUsername = username;
-      document.getElementById('profileTitle').textContent = `Perfil de @${username}`;
       document.getElementById('profileName').textContent = username;
 
       const { data: { user } } = await supabaseClient.auth.getUser();
