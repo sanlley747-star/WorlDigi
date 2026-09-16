@@ -129,6 +129,14 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_fL7vTXJ4NLhC2CJs9nPVAg_fvzWbfCY'; 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // Evita que el botón "atrás" muestre una versión en caché (bfcache) de
+    // esta página tras cerrar sesión; forzamos revalidar contra Supabase.
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    });
+
     // MODO OSCURO POR DEFECTO
     if (localStorage.getItem('theme') === 'light') {
       document.documentElement.classList.remove('dark');

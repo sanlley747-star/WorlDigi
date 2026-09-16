@@ -140,6 +140,16 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_fL7vTXJ4NLhC2CJs9nPVAg_fvzWbfCY'; 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // Evita que, tras cerrar sesión, el botón "atrás" del navegador muestre
+    // una versión guardada en caché (bfcache) de esta página como si el
+    // usuario siguiera logueado. Forzamos una recarga real que vuelve a
+    // verificar la sesión contra Supabase.
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    });
+
     let currentUser = null;
     let myAvatarUrl = null;
     let toastTimeout = null;
