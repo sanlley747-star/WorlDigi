@@ -453,8 +453,13 @@
       publishPost({ contentId: 'postContent', fileId: 'postImage', previewId: 'postImagePreview', buttonId: 'btnPublish', isModal: false });
     });
 
-    document.getElementById('btnPublishModal').addEventListener('click', () => {
-      publishPost({ contentId: 'postContentModal', fileId: 'postImageModal', previewId: 'postImagePreviewModal', buttonId: 'btnPublishModal', isModal: true });
+    document.addEventListener('DOMContentLoaded', () => {
+      const btnModal = document.getElementById('btnPublishModal');
+      if (btnModal) {
+        btnModal.addEventListener('click', () => {
+          publishPost({ contentId: 'postContentModal', fileId: 'postImageModal', previewId: 'postImagePreviewModal', buttonId: 'btnPublishModal', isModal: true });
+        });
+      }
     });
 
     // LIKE OPTIMISTA INSTANTÁNEO (Suma el like en pantalla al instante sin esperar latencia de red)
