@@ -54,6 +54,9 @@
             <a href="#" class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
               👥 Amigos
             </a>
+            <a href="settings.html" class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+              ⚙️ Ajustes
+            </a>
           </nav>
         </div>
       </div>
@@ -67,7 +70,7 @@
 
   <!-- Foto de portada (flyer) -->
   <div id="coverWrapper" class="group relative w-full h-48 bg-slate-800 cursor-pointer">
-    <img id="profileCover" src="" class="w-full h-full object-cover" alt="Portada">
+    <img id="profileCover" class="w-full h-full object-cover" alt="">
     <div class="hidden absolute inset-0 bg-black/40 items-center justify-center transition opacity-0 group-hover:opacity-100" data-edit-overlay>
       <span class="text-white text-sm font-semibold">📷 Cambiar portada</span>
     </div>
@@ -81,7 +84,7 @@
   <!-- Avatar circular sobrepuesto abajo a la izquierda -->
   <div class="relative px-6 pb-6">
         <div id="avatarWrapper" class="group absolute -top-10 left-6 cursor-pointer">
-      <img id="profileAvatar" src="" class="w-20 h-20 rounded-full object-cover border-4 border-white dark:border-slate-900 shadow-md" alt="Avatar">
+      <img id="profileAvatar" class="w-20 h-20 rounded-full object-cover border-4 border-white dark:border-slate-900 shadow-md bg-slate-200 dark:bg-slate-800" alt="">
             <div class="hidden absolute inset-0 rounded-full bg-black/40 items-center justify-center transition opacity-0 group-hover:opacity-100" data-edit-overlay>
         <span class="text-white text-xs">📷</span>
       </div>
@@ -111,15 +114,10 @@
 
     <!-- COLUMNA DERECHA: Ajustes + publicidad fija de 300x600 px -->
     <aside class="hidden lg:block">
-      <div class="sticky top-6 space-y-4" style="width: 300px;">
-        <a href="settings.html" class="flex items-center justify-center gap-2 w-full py-3 bg-white dark:bg-slate-900 rounded-xl shadow border border-gray-200 dark:border-slate-800 font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition">
-          ⚙️ Ajustes
-        </a>
-        <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 flex flex-col items-center justify-center" style="width: 300px; height: 600px;">
-          <span class="text-xs text-gray-400 uppercase tracking-widest mb-2 text-gray-400">Publicidad</span>
-          <div id="ad-slot-sidebar" class="w-full h-full bg-gray-50 dark:bg-slate-950 border border-dashed border-gray-300 dark:border-slate-800 rounded-lg flex items-center justify-center text-center text-gray-400 text-sm">
-            Espacio Publicitario<br>300 x 600 px
-          </div>
+      <div class="sticky top-6 bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 flex flex-col items-center justify-center" style="width: 300px; height: 600px;">
+        <span class="text-xs text-gray-400 uppercase tracking-widest mb-2 text-gray-400">Publicidad</span>
+        <div id="ad-slot-sidebar" class="w-full h-full bg-gray-50 dark:bg-slate-950 border border-dashed border-gray-300 dark:border-slate-800 rounded-lg flex items-center justify-center text-center text-gray-400 text-sm">
+          Espacio Publicitario<br>300 x 600 px
         </div>
       </div>
     </aside>
