@@ -31,7 +31,6 @@
     </div>
     <div class="flex items-center space-x-4">
       <span id="profileTitle" class="text-sm text-gray-300">Cargando perfil...</span>
-      <a href="settings.html" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg transition" title="Ajustes">⚙️ Ajustes</a>
     </div>
   </nav>
 
@@ -110,12 +109,17 @@
 
     </div>
 
-    <!-- COLUMNA DERECHA: Barra de publicidad fija de 300x600 px -->
+    <!-- COLUMNA DERECHA: Ajustes + publicidad fija de 300x600 px -->
     <aside class="hidden lg:block">
-      <div class="sticky top-6 bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 flex flex-col items-center justify-center" style="width: 300px; height: 600px;">
-        <span class="text-xs text-gray-400 uppercase tracking-widest mb-2 text-gray-400">Publicidad</span>
-        <div id="ad-slot-sidebar" class="w-full h-full bg-gray-50 dark:bg-slate-950 border border-dashed border-gray-300 dark:border-slate-800 rounded-lg flex items-center justify-center text-center text-gray-400 text-sm">
-          Espacio Publicitario<br>300 x 600 px
+      <div class="sticky top-6 space-y-4" style="width: 300px;">
+        <a href="settings.html" class="flex items-center justify-center gap-2 w-full py-3 bg-white dark:bg-slate-900 rounded-xl shadow border border-gray-200 dark:border-slate-800 font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition">
+          ⚙️ Ajustes
+        </a>
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 flex flex-col items-center justify-center" style="width: 300px; height: 600px;">
+          <span class="text-xs text-gray-400 uppercase tracking-widest mb-2 text-gray-400">Publicidad</span>
+          <div id="ad-slot-sidebar" class="w-full h-full bg-gray-50 dark:bg-slate-950 border border-dashed border-gray-300 dark:border-slate-800 rounded-lg flex items-center justify-center text-center text-gray-400 text-sm">
+            Espacio Publicitario<br>300 x 600 px
+          </div>
         </div>
       </div>
     </aside>
@@ -224,10 +228,27 @@
       });
     }
 
+    function openImageViewer(src) {
+      if (!src) return;
+      document.getElementById('imageViewerImg').src = src;
+      const viewer = document.getElementById('imageViewer');
+      viewer.classList.remove('hidden');
+      viewer.classList.add('flex');
+    }
+
+    function closeImageViewer() {
+      const viewer = document.getElementById('imageViewer');
+      viewer.classList.add('hidden');
+      viewer.classList.remove('flex');
+    }
+
     document.getElementById('coverWrapper').addEventListener('click', () => {
       const overlay = document.querySelector('#coverWrapper [data-edit-overlay]');
       if (isOwnProfile && !overlay.classList.contains('hidden')) {
         document.getElementById('coverInput').click();
+      } else {
+        const coverImg = document.getElementById('profileCover');
+        if (coverImg.style.display !== 'none') openImageViewer(coverImg.src);
       }
     });
 
@@ -235,6 +256,8 @@
       const overlay = document.querySelector('#avatarWrapper [data-edit-overlay]');
       if (isOwnProfile && !overlay.classList.contains('hidden')) {
         document.getElementById('avatarInput').click();
+      } else {
+        openImageViewer(document.getElementById('profileAvatar').src);
       }
     });
 
@@ -329,5 +352,11 @@
 
     initProfile();
   </script>
+  <!-- Visor de imagen (avatar/portada) -->
+  <div id="imageViewer" class="hidden fixed inset-0 bg-black/90 z-[100] items-center justify-center p-4" onclick="closeImageViewer()">
+    <img id="imageViewerImg" src="" class="max-w-full max-h-full rounded-lg object-contain" alt="Vista ampliada">
+    <button onclick="closeImageViewer()" class="absolute top-4 right-4 text-white text-3xl leading-none hover:opacity-70">&times;</button>
+  </div>
+
 </body>
 </html>
