@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="es" class="dark">
 <head>
+  <script>
+    const savedScale = localStorage.getItem('fontScale');
+    if (savedScale) document.documentElement.style.fontSize = savedScale + '%';
+  </script>
   <link rel="icon" type="image/png" href="assets/logo-icon.png">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -25,8 +29,7 @@
     <a href="dashboard.html" class="flex items-center"><img src="assets/logo-icon.png" alt="ByKonet" class="h-14 w-auto"></a>
     <div class="flex items-center space-x-4">
       <span id="userStatus" class="text-sm text-gray-300">Cargando usuario...</span>
-      <button onclick="toggleDarkMode()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg transition">🌙 / ☀️</button>
-      <button onclick="logout()" class="text-xs bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-white transition">Cerrar Sesión</button>
+      <a href="settings.html" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg transition" title="Ajustes">⚙️ Ajustes</a>
     </div>
   </nav>
 
