@@ -8,6 +8,9 @@
   <link rel="icon" type="image/png" href="assets/logo-icon.png">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>ByKonet - Muro Principal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -142,11 +145,13 @@
 
     // Evita que, tras cerrar sesión, el botón "atrás" del navegador muestre
     // una versión guardada en caché (bfcache) de esta página como si el
-    // usuario siguiera logueado. Forzamos una recarga real que vuelve a
-    // verificar la sesión contra Supabase.
-    window.addEventListener('pageshow', (event) => {
-      if (event.persisted) {
-        window.location.reload();
+    // usuario siguiera logueado. Verificamos la sesión real cada vez que la
+    // página se muestra (incluida su restauración desde el caché) y, si no
+    // hay sesión, redirigimos de inmediato al login.
+    window.addEventListener('pageshow', async () => {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) {
+        window.location.replace('index.html');
       }
     });
 
@@ -194,7 +199,7 @@
     async function init() {
       const { data: { user } } = await supabaseClient.auth.getUser();
       if (!user) {
-        window.location.href = 'index.html';
+        window.location.replace('index.html');
         return;
       }
       currentUser = user;
@@ -533,7 +538,7 @@
 
     async function logout() {
       await supabaseClient.auth.signOut();
-      window.location.href = 'index.html';
+      window.location.replace('index.html');
     }
 
     // ===== VISOR DE POST + COMENTARIOS =====

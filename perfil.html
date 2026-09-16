@@ -130,7 +130,9 @@
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // Evita que el botón "atrás" muestre una versión en caché (bfcache) de
-    // esta página tras cerrar sesión; forzamos revalidar contra Supabase.
+    // esta página con datos desactualizados de sesión. Esta página también
+    // se usa para ver perfiles públicos sin iniciar sesión, así que aquí
+    // solo forzamos una recarga (no redirigimos), para refrescar el estado.
     window.addEventListener('pageshow', (event) => {
       if (event.persisted) {
         window.location.reload();

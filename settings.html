@@ -69,7 +69,9 @@
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // Evita que el botón "atrás" muestre una versión en caché (bfcache) de
-    // esta página tras cerrar sesión; forzamos revalidar contra Supabase.
+    // esta página con datos desactualizados de sesión. Esta página muestra
+    // ajustes generales aunque no haya sesión, así que aquí solo forzamos
+    // una recarga (no redirigimos), para refrescar el estado mostrado.
     window.addEventListener('pageshow', (event) => {
       if (event.persisted) {
         window.location.reload();
@@ -128,7 +130,7 @@
 
     async function logout() {
       await supabaseClient.auth.signOut();
-      window.location.href = 'index.html';
+      window.location.replace('index.html');
     }
 
     async function init() {
