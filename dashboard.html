@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" class="dark">
+<html lang="es" class="dark auth-pending">
 <head>
   <script>
     const savedScale = localStorage.getItem('fontScale');
@@ -20,6 +20,11 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
+    /* Mientras la sesión no se haya verificado, el contenido queda oculto.
+       Esto es clave para que, si el navegador restaura esta página desde su
+       caché de retroceso (bfcache) tras cerrar sesión, no se alcance a ver
+       ni un instante el muro antes de redirigir al login. */
+    html.auth-pending body { display: none; }
     html{scrollbar-width:thin;scrollbar-color:#050b18 transparent}
     ::-webkit-scrollbar{width:10px}
     ::-webkit-scrollbar-track{background:transparent}
@@ -143,16 +148,31 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_fL7vTXJ4NLhC2CJs9nPVAg_fvzWbfCY'; 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Evita que, tras cerrar sesión, el botón "atrás" del navegador muestre
-    // una versión guardada en caché (bfcache) de esta página como si el
-    // usuario siguiera logueado. Verificamos la sesión real cada vez que la
-    // página se muestra (incluida su restauración desde el caché) y, si no
-    // hay sesión, redirigimos de inmediato al login.
+    // ===== BLOQUEO DE CONTENIDO POR SESIÓN (evita el "destello" del muro) =====
+    // El body arranca oculto (ver <style> en el <head>, clase auth-pending).
+    // Solo se revela una vez confirmada una sesión real.
+    function hideForAuth() {
+      document.documentElement.classList.add('auth-pending');
+    }
+    function revealApp() {
+      document.documentElement.classList.remove('auth-pending');
+    }
+
+    // Justo antes de que esta página se congele en el caché de retroceso
+    // del navegador (bfcache) -por cualquier motivo, incluido cerrar sesión-
+    // la volvemos a ocultar. Así, si más tarde se restaura con "atrás", la
+    // "foto" guardada ya está oculta y nunca llega a pintarse el muro.
+    window.addEventListener('pagehide', hideForAuth);
+
+    // Cada vez que la página se muestra (carga normal o restaurada desde
+    // bfcache) verificamos la sesión real antes de revelar el contenido.
     window.addEventListener('pageshow', async () => {
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (!session) {
         window.location.replace('index.html');
+        return;
       }
+      revealApp();
     });
 
     let currentUser = null;
@@ -537,6 +557,7 @@
     }
 
     async function logout() {
+      hideForAuth();
       await supabaseClient.auth.signOut();
       window.location.replace('index.html');
     }
