@@ -16,6 +16,7 @@
     }
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="notifications.js"></script>
   <style>
     html{scrollbar-width:thin;scrollbar-color:#050b18 transparent}
     ::-webkit-scrollbar{width:10px}
@@ -47,10 +48,21 @@
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
               <span>Mi perfil</span>
             </a>
-            <a href="#" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
-              <span>Notificaciones</span>
-            </a>
+            <div class="relative">
+              <button type="button" id="notifBellBtn" onclick="toggleNotifPanel()" class="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+                <span class="relative inline-flex flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+                  <span id="notifBadge" class="hidden absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-green-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">0</span>
+                </span>
+                <span>Notificaciones</span>
+              </button>
+              <div id="notifPanel" class="hidden absolute left-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-gray-200 dark:border-slate-800 z-50">
+                <div class="p-3 border-b border-gray-200 dark:border-slate-800 font-bold text-sm text-gray-900 dark:text-white">Notificaciones</div>
+                <div id="notifList">
+                  <p class="p-4 text-sm text-gray-400 dark:text-gray-500 text-center">Cargando...</p>
+                </div>
+              </div>
+            </div>
             <a href="#" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
               <span>Amigos</span>
@@ -207,6 +219,7 @@
 
       document.getElementById('editProfileBtn').style.display = isOwnProfile ? 'block' : 'none';
 
+      initNotifications(currentUserEmail);
       await loadProfileImages(username);
       loadUserPosts(username);
     }
@@ -455,6 +468,9 @@
       const counterElement = document.getElementById(`likes-count-${id}`);
       if (counterElement) counterElement.textContent = newLikes;
       await supabaseClient.from('posts').update({ likes: newLikes }).eq('id', id);
+
+      // Registramos quién dio el like (para poder notificar al dueño de la publicación)
+      await supabaseClient.from('post_likes').insert({ post_id: id, user_email: currentUserEmail, user_name: loggedUserName });
     }
 
     function toggleRepostMenu(postId) {
