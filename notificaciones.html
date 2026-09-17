@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="es" class="dark auth-pending">
+<head>
+  <script>
+    const savedScale = localStorage.getItem('fontScale');
+    if (savedScale) document.documentElement.style.fontSize = savedScale + '%';
+  </script>
+  <link rel="icon" type="image/png" href="assets/logo-icon.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>ByKonet - Notificaciones</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="notifications.js"></script>
+  <style>
+    html.auth-pending body { display: none; }
+    html{scrollbar-width:thin;scrollbar-color:#050b18 transparent}
+    ::-webkit-scrollbar{width:10px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background-color:#050b18;border-radius:9999px}
+  </style>
+</head>
+<body class="bg-gray-100 dark:bg-slate-950 text-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-200">
+
+  <nav class="sticky top-0 z-50 bg-black text-white p-4 flex justify-between items-center shadow-md border-b border-slate-800">
+    <a href="dashboard.html" class="flex items-center"><img src="assets/logo-icon.png" alt="ByKonet" class="h-14 w-auto"></a>
+  </nav>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <main class="w-full mx-auto mt-6 pl-4 pr-4 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8 max-w-5xl">
+
+    <!-- COLUMNA IZQUIERDA: MENÚ -->
+    <aside class="hidden lg:block">
+      <div class="sticky top-6">
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800">
+          <nav class="space-y-2 pt-1">
+            <a href="dashboard.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M3 9.5 12 3l9 6.5"></path><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"></path></svg>
+              <span>Inicio</span>
+            </a>
+            <a href="perfil.html" id="myProfileLink" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              <span>Mi perfil</span>
+            </a>
+            <a href="notificaciones.html" class="flex items-center gap-3 p-2 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white font-semibold">
+              <span class="relative inline-flex flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+                <span id="notifBadge" class="hidden absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-green-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">0</span>
+              </span>
+              <span>Notificaciones</span>
+            </a>
+            <a href="#" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              <span>Amigos</span>
+            </a>
+            <a href="settings.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"></path></svg>
+              <span>Ajustes</span>
+            </a>
+          </nav>
+        </div>
+      </div>
+    </aside>
+
+    <!-- COLUMNA DERECHA: MURAL DE NOTIFICACIONES (propio de esta cuenta) -->
+    <div>
+      <div class="bg-white dark:bg-slate-900 rounded-xl shadow border border-gray-200 dark:border-slate-800">
+        <div class="p-4 border-b border-gray-200 dark:border-slate-800">
+          <h1 class="text-lg font-bold text-gray-900 dark:text-white">Notificaciones</h1>
+        </div>
+        <div id="notifWall" class="divide-y divide-gray-100 dark:divide-slate-800">
+          <p class="p-6 text-sm text-gray-400 dark:text-gray-500 text-center">Cargando notificaciones...</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    const SUPABASE_URL = 'https://aiymadawznadvavzspxj.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_fL7vTXJ4NLhC2CJs9nPVAg_fvzWbfCY';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    function hideForAuth() {
+      document.documentElement.classList.add('auth-pending');
+    }
+    function revealApp() {
+      document.documentElement.classList.remove('auth-pending');
+    }
+
+    window.addEventListener('pagehide', hideForAuth);
+
+    window.addEventListener('pageshow', async () => {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) {
+        window.location.replace('index.html');
+        return;
+      }
+      revealApp();
+    });
+
+    let currentUser = null;
+
+    if (localStorage.getItem('theme') === 'light') {
+      document.documentElement.classList.remove('dark');
+    } else {
+      document.documentElement.classList.add('dark');
+    }
+
+    function formatCompactTime(dateString) {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInSeconds = Math.floor((now - date) / 1000);
+
+      if (diffInSeconds < 60) return `${Math.max(1, diffInSeconds)}s`;
+      const diffInMinutes = Math.floor(diffInSeconds / 60);
+      if (diffInMinutes < 60) return `${diffInMinutes} min`;
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      if (diffInHours < 24) return `${diffInHours}h`;
+
+      const months = ['ene.', 'feb.', 'mar.', 'abr.', 'may.', 'jun.', 'jul.', 'ago.', 'sept.', 'oct.', 'nov.', 'dic.'];
+      const day = date.getDate();
+      const month = months[date.getMonth()];
+      const year = date.getFullYear();
+
+      if (year === now.getFullYear()) return `${day} ${month}`;
+      return `${day} ${month} ${year}`;
+    }
+
+    function linkifyContent(text) { if (!text) return ''; const urlRegex = /(https?:\/\/[^\s]+)/g; return text.replace(urlRegex, (url) => { let domain; try { domain = new URL(url).hostname.replace('www.', ''); } catch (e) { domain = url; } return `<a href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 text-green-600 dark:text-green-400 font-semibold hover:underline align-middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 inline-block"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>${domain}</a>`; }); }
+
+    function notifTypeText(actorName) {
+      return {
+        comment: `<strong>${actorName}</strong> comentó tu publicación`,
+        like: `<strong>${actorName}</strong> le dio me gusta a tu publicación`,
+        quote: `<strong>${actorName}</strong> citó tu publicación`,
+        share: `<strong>${actorName}</strong> compartió tu publicación`
+      };
+    }
+
+    async function init() {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (!user) {
+        window.location.replace('index.html');
+        return;
+      }
+      currentUser = user;
+
+      const authorName = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
+      document.getElementById('myProfileLink').href = `perfil.html?user=${encodeURIComponent(authorName)}`;
+
+      initNotifications(currentUser.email);
+      await loadNotifWall();
+    }
+
+    async function loadNotifWall() {
+      const wall = document.getElementById('notifWall');
+
+      // Este mural es privado: las políticas de la base de datos ya garantizan
+      // que solo el dueño de la cuenta (recipient_email = su propio correo) puede
+      // ver sus notificaciones, sin importar quién intente entrar a esta página.
+      const { data: notifs, error } = await supabaseClient
+        .from('notifications')
+        .select('*')
+        .eq('recipient_email', currentUser.email)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error || !notifs || !notifs.length) {
+        wall.innerHTML = '<p class="p-6 text-sm text-gray-400 dark:text-gray-500 text-center">Aún no tienes notificaciones.</p>';
+        return;
+      }
+
+      // Buscamos el avatar de cada persona que interactuó, usando su correo
+      const actorEmails = [...new Set(notifs.map(n => n.actor_email))];
+      const { data: profiles } = await supabaseClient
+        .from('profiles')
+        .select('user_email, avatar_url')
+        .in('user_email', actorEmails);
+
+      const avatarByEmail = {};
+      (profiles || []).forEach(p => { avatarByEmail[p.user_email] = p.avatar_url; });
+
+      const typeText = {};
+      wall.innerHTML = notifs.map(n => {
+        const actorName = n.actor_name || n.actor_email.split('@')[0];
+        const avatarUrl = avatarByEmail[n.actor_email] ||
+          `https://ui-avatars.com/api/?name=${encodeURIComponent(actorName)}&background=random`;
+        const texts = notifTypeText(actorName);
+        const message = texts[n.type] || `<strong>${actorName}</strong> interactuó con tu publicación`;
+
+        return `
+          <button onclick="handleNotifClick(${n.post_id}, ${n.id})" class="w-full text-left p-4 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition ${n.is_read ? '' : 'bg-blue-50 dark:bg-slate-800/70'}">
+            <img src="${avatarUrl}" class="w-11 h-11 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-slate-700" alt="${actorName}">
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-gray-800 dark:text-gray-100">${message}</p>
+              <p class="text-xs text-gray-400 mt-1">${formatCompactTime(n.created_at)}</p>
+            </div>
+          </button>
+        `;
+      }).join('');
+
+      // Al entrar a su mural, el usuario ya las está viendo: se marcan como leídas
+      await supabaseClient
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('recipient_email', currentUser.email)
+        .eq('is_read', false);
+      refreshNotifCount();
+    }
+
+    function handleNotifClick(postId, notifId) {
+      if (postId) openPostViewer(postId);
+    }
+
+    // ===== VISOR DE POST + COMENTARIOS (igual al del muro principal) =====
+    let currentViewerPostId = null;
+
+    async function openPostViewer(postId) {
+      currentViewerPostId = postId;
+
+      const { data: post, error } = await supabaseClient
+        .from('posts')
+        .select('*')
+        .eq('id', postId)
+        .single();
+
+      if (error || !post) return;
+
+      const { data: profileRow } = await supabaseClient
+        .from('profiles')
+        .select('avatar_url')
+        .eq('user_name', post.user_name)
+        .maybeSingle();
+
+      const avatarUrl = profileRow?.avatar_url || post.avatar_url ||
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user_name || 'Usuario')}&background=random`;
+
+      document.getElementById('postViewerAvatar').src = avatarUrl;
+      document.getElementById('postViewerAuthor').textContent = post.user_name || 'Usuario';
+      document.getElementById('postViewerTime').textContent = formatCompactTime(post.created_at);
+      document.getElementById('postViewerContent').innerHTML = post.content ? linkifyContent(post.content) : '';
+
+      const imageWrap = document.getElementById('postViewerImageWrap');
+      if (post.image_url) {
+        document.getElementById('postViewerImage').src = post.image_url;
+        imageWrap.classList.remove('hidden');
+      } else {
+        imageWrap.classList.add('hidden');
+      }
+
+      const input = document.getElementById('postViewerCommentInput');
+      input.value = '';
+      updateCharCount();
+
+      await loadComments(postId);
+
+      const viewer = document.getElementById('postViewer');
+      viewer.classList.remove('hidden');
+      viewer.classList.add('flex');
+    }
+
+    function closePostViewer() {
+      const viewer = document.getElementById('postViewer');
+      viewer.classList.add('hidden');
+      viewer.classList.remove('flex');
+      currentViewerPostId = null;
+    }
+
+    function closePostViewerBackdrop(e) {
+      if (e.target.id === 'postViewer') closePostViewer();
+    }
+
+    async function loadComments(postId) {
+      const container = document.getElementById('postViewerComments');
+      container.innerHTML = '<p class="text-sm text-gray-400 text-center">Cargando comentarios...</p>';
+
+      const { data: comments, error } = await supabaseClient
+        .from('comments')
+        .select('*')
+        .eq('post_id', postId)
+        .order('created_at', { ascending: true });
+
+      if (error || !comments || !comments.length) {
+        container.innerHTML = '<p class="text-sm text-gray-400 text-center">Aún no hay comentarios. ¡Sé el primero!</p>';
+        return;
+      }
+
+      container.innerHTML = comments.map(c => `
+        <div class="flex items-start gap-2">
+          <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(c.user_name)}&background=random" class="w-8 h-8 rounded-full object-cover flex-shrink-0">
+          <div class="bg-gray-100 dark:bg-slate-800 rounded-xl px-3 py-2 flex-1">
+            <div class="text-xs font-bold text-gray-900 dark:text-white">${c.user_name}</div>
+            <div class="text-sm text-gray-700 dark:text-gray-200 break-words">${c.content}</div>
+          </div>
+        </div>
+      `).join('');
+
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function updateCharCount() {
+      const input = document.getElementById('postViewerCommentInput');
+      const counter = document.getElementById('postViewerCharCount');
+      const remaining = 280 - input.value.length;
+      counter.textContent = remaining;
+      counter.classList.toggle('text-red-500', remaining < 0);
+      document.getElementById('postViewerSubmitBtn').disabled = remaining < 0 || input.value.trim().length === 0;
+    }
+
+    async function submitComment() {
+      const input = document.getElementById('postViewerCommentInput');
+      const content = input.value.trim();
+      if (!content || content.length > 280 || !currentViewerPostId) return;
+
+      const authorName = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
+
+      const { error } = await supabaseClient.from('comments').insert({
+        post_id: currentViewerPostId,
+        user_email: currentUser.email,
+        user_name: authorName,
+        content: content
+      });
+
+      if (error) {
+        alert('Error al comentar: ' + error.message);
+        return;
+      }
+
+      input.value = '';
+      updateCharCount();
+      await loadComments(currentViewerPostId);
+    }
+
+    init();
+  </script>
+
+  <!-- Visor de post + comentarios -->
+  <div id="postViewer" class="hidden fixed inset-0 bg-black/80 z-[100] items-center justify-center p-4" onclick="closePostViewerBackdrop(event)">
+    <div class="bg-white dark:bg-slate-900 rounded-xl overflow-hidden max-w-4xl w-full max-h-[90vh] flex flex-col md:flex-row">
+
+      <div id="postViewerImageWrap" class="hidden md:w-1/2 bg-black flex items-center justify-center">
+        <img id="postViewerImage" src="" class="max-h-[90vh] w-full object-contain" alt="Imagen del post">
+      </div>
+
+      <div class="md:w-1/2 w-full flex flex-col max-h-[90vh]">
+        <div class="p-4 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <img id="postViewerAvatar" src="" class="w-10 h-10 rounded-full object-cover">
+            <div>
+              <div id="postViewerAuthor" class="font-bold text-gray-900 dark:text-white text-sm"></div>
+              <div id="postViewerTime" class="text-xs text-gray-500 dark:text-gray-400"></div>
+            </div>
+          </div>
+          <button onclick="closePostViewer()" class="text-2xl text-gray-500 hover:text-gray-800 dark:hover:text-white leading-none">&times;</button>
+        </div>
+
+        <div class="p-4 border-b border-gray-100 dark:border-slate-800">
+          <p id="postViewerContent" class="text-gray-800 dark:text-gray-200 text-sm break-words"></p>
+        </div>
+
+        <div id="postViewerComments" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+
+        <div class="p-3 border-t border-gray-200 dark:border-slate-800">
+          <textarea id="postViewerCommentInput" maxlength="280" rows="2" placeholder="Escribe un comentario..." oninput="updateCharCount()" class="w-full p-2 text-sm border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+          <div class="flex items-center justify-between mt-2">
+            <span id="postViewerCharCount" class="text-xs text-gray-400">280</span>
+            <button id="postViewerSubmitBtn" onclick="submitComment()" disabled class="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold py-1.5 px-4 rounded-full transition">Comentar</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>
