@@ -258,6 +258,13 @@
     postsById[post.id] = post;
   });
 
+  // Publicaciones que el usuario actual ya reposteó (sin cita), para pintar el botón en verde
+  const myPlainReposts = new Set(
+    posts
+      .filter(p => p.repost_of && p.user_email === currentUser.email && !p.quote_text)
+      .map(p => p.repost_of)
+  );
+
   feed.innerHTML = posts.map(post => {
 
     const author = post.user_name || 'Usuario';
@@ -348,8 +355,9 @@
 
             <button
               onclick="toggleRepostMenu(${post.id})"
+              data-repost-toggle
               title="Repostear"
-              class="hover:text-green-600 font-semibold transition">
+              class="hover:text-green-600 font-semibold transition ${myPlainReposts.has(post.id) ? 'text-green-600' : ''}">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
             </button>
 
@@ -357,19 +365,35 @@
               id="repost-menu-${post.id}"
               class="hidden absolute left-0 bottom-full mb-2 w-52 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg overflow-hidden z-40">
 
-              <button
-                onclick="repostPost(${post.id})"
-                class="w-full flex items-center gap-2 text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-slate-800 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
-                Repostear
-              </button>
+              ${myPlainReposts.has(post.id) ? `
+                <button
+                  onclick="undoRepost(${post.id})"
+                  class="w-full flex items-center gap-2 text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-slate-800 transition">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
+                  Deshacer
+                </button>
 
-              <button
-                onclick="quotePost(${post.id})"
-                class="w-full flex items-center gap-2 text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-slate-800 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
-                Repostear con cita
-              </button>
+                <button
+                  onclick="quotePost(${post.id})"
+                  class="w-full flex items-center gap-2 text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-slate-800 transition">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+                  Citar
+                </button>
+              ` : `
+                <button
+                  onclick="repostPost(${post.id})"
+                  class="w-full flex items-center gap-2 text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-slate-800 transition">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
+                  Repostear
+                </button>
+
+                <button
+                  onclick="quotePost(${post.id})"
+                  class="w-full flex items-center gap-2 text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-slate-800 transition">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+                  Repostear con cita
+                </button>
+              `}
 
             </div>
 
@@ -514,16 +538,33 @@
 
       if (!menu) return;
 
+      // Cierra cualquier otro menú de repost que haya quedado abierto
+      document.querySelectorAll('[id^="repost-menu-"]').forEach(m => {
+        if (m !== menu) m.classList.add('hidden');
+      });
+
   menu.classList.toggle('hidden');
    }
-   async function repostPost(postId) {
-  alert('La función de repost se ejecutó. ID: ' + postId);
 
+    // Cierra el menú de repost si el usuario hace clic en cualquier otro lugar
+    document.addEventListener('click', (e) => {
+      const isToggleButton = e.target.closest('[data-repost-toggle]');
+      const isInsideMenu = e.target.closest('[id^="repost-menu-"]');
+      if (!isToggleButton && !isInsideMenu) {
+        document.querySelectorAll('[id^="repost-menu-"]').forEach(menu => menu.classList.add('hidden'));
+      }
+    });
+
+    function commentPost(postId) {
+      openPostViewer(postId);
+    }
+
+   async function repostPost(postId) {
   const authorName =
     currentUser.user_metadata?.full_name ||
     currentUser.email.split('@')[0];
 
-  const { data, error } = await supabaseClient
+  const { error } = await supabaseClient
     .from('posts')
     .insert([
       {
@@ -535,20 +576,64 @@
         repost_of: postId,
         quote_text: null
       }
-    ])
-    .select();
+    ]);
 
   if (error) {
-    alert('ERROR SUPABASE: ' + error.message);
     console.error(error);
     return;
   }
 
-  alert('REPOST GUARDADO CORRECTAMENTE');
-
   toggleRepostMenu(postId);
   loadPosts();
 }
+
+    async function undoRepost(postId) {
+      const { error } = await supabaseClient
+        .from('posts')
+        .delete()
+        .eq('repost_of', postId)
+        .eq('user_email', currentUser.email)
+        .is('quote_text', null);
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      toggleRepostMenu(postId);
+      loadPosts();
+    }
+
+    async function quotePost(postId) {
+      const quoteText = prompt('Escribe tu cita para este repost:');
+      if (quoteText === null) return;
+
+      const authorName =
+        currentUser.user_metadata?.full_name ||
+        currentUser.email.split('@')[0];
+
+      const { error } = await supabaseClient
+        .from('posts')
+        .insert([
+          {
+            user_email: currentUser.email,
+            user_name: authorName,
+            content: null,
+            image_url: null,
+            likes: 0,
+            repost_of: postId,
+            quote_text: quoteText.trim() || null
+          }
+        ]);
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      toggleRepostMenu(postId);
+      loadPosts();
+    }
 
     function sharePost(text) {
       if (navigator.share) {
