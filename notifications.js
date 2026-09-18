@@ -1,4 +1,4 @@
-// ===== SISTEMA DE NOTIFICACIONES DE BYKONET (badge de la campanita) =====
+// ===== SISTEMA DE NOTIFICACIONES DE BYGETHER (badge de la campanita) =====
 // El listado detallado vive en notificaciones.html (mural propio del usuario).
 // Este archivo solo mantiene actualizada la burbujita de la campanita.
 // Requiere que la página ya haya definido `supabaseClient` antes de cargar este archivo.
