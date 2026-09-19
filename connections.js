@@ -21,6 +21,11 @@
     '.conn-btn > span{grid-area:1/1}',
     '.conn-btn .conn-off{visibility:hidden}',
     '.conn-btn.conn-sm{min-width:0;padding:.35rem .8rem;font-size:.8125rem}',
+    /* Etiqueta discreta "Canal" (cuentas canal) */
+    '.conn-channel-chip{display:inline-block;margin-left:.4rem;padding:.05rem .4rem;border-radius:.35rem;font-size:.625rem;font-weight:600;',
+    '  letter-spacing:.04em;text-transform:uppercase;vertical-align:middle;line-height:1.1rem;background:#e2e8f0;color:#475569}',
+    '.conn-channel-chip.conn-nomargin{margin-left:0}',
+    'html.dark .conn-channel-chip{background:#334155;color:#cbd5e1}',
     '.conn-btn[disabled]{opacity:.6;cursor:default}',
     /* Ya conectado: botón con contorno */
     '.conn-btn.conn-on{background:transparent;color:#2563eb;border-color:#2563eb}',
@@ -133,6 +138,33 @@ async function connFetchPeople(emails, hints) {
     });
   }
   return people;
+}
+
+// ---------- Cuentas Canal ----------
+// Cuentas de canal (automáticas o de clientes): solo tienen seguidores. Lo que ellas siguen es
+// silencioso y solo lo ve la propia cuenta (esto lo garantiza la base de datos, no la pantalla).
+// La lista vive en la tabla `cuentas_canal`, que solo se administra desde Supabase.
+let connChannelCache = null;
+
+async function connFetchChannelSet() {
+  if (connChannelCache) return connChannelCache;
+  const { data, error } = await supabaseClient.from('cuentas_canal').select('user_email');
+  const set = new Set((data || []).map(r => String(r.user_email).toLowerCase()));
+  if (!error) connChannelCache = set; // si falla, no se guarda un resultado vacío falso
+  return set;
+}
+
+function connIsChannelEmail(channelSet, email) {
+  return !!email && channelSet.has(String(email).toLowerCase());
+}
+
+async function connIsChannel(email) {
+  return connIsChannelEmail(await connFetchChannelSet(), email);
+}
+
+// Etiqueta discreta junto al nombre. noMargin=true cuando el contenedor ya separa sus elementos.
+function connChannelChip(noMargin) {
+  return '<span class="conn-channel-chip' + (noMargin ? ' conn-nomargin' : '') + '" title="Cuenta canal">Canal</span>';
 }
 
 // ---------- Botón Conectar / Conectado / Conectados / Desconectar ----------

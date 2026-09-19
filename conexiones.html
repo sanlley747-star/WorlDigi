@@ -165,6 +165,12 @@
         owner.innerHTML = 'Conexiones de <a class="font-semibold hover:underline" href="' + connProfileUrl(targetName) + '">' + connEscape(targetName) + '</a>';
       }
 
+      // Cuenta canal ajena: solo se ve la pestaña Seguidores (lo que ella sigue es privado)
+      if (targetEmail !== currentUser.email && await connIsChannel(targetEmail)) {
+        document.getElementById('tabSiguiendo').style.display = 'none';
+        activeTab = 'seguidores';
+      }
+
       await refreshCounts();
       setTab(activeTab);
     }

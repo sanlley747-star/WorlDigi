@@ -248,6 +248,16 @@
           document.getElementById('connFollowersCount').textContent = '0';
           return;
         }
+
+        // Cuenta canal: etiqueta "Canal" y solo se muestran seguidores. Lo que ella sigue es
+        // privado: únicamente la propia cuenta puede ver su "Siguiendo".
+        if (await connIsChannel(profileEmail)) {
+          document.getElementById('profileName').insertAdjacentHTML('beforeend', connChannelChip());
+          if (profileEmail !== currentUserEmail) {
+            document.getElementById('connFollowingLink').style.display = 'none';
+          }
+        }
+
         await refreshConnCounts();
 
         // En tu propio perfil no hay botón de conectar

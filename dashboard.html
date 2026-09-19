@@ -21,6 +21,7 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="notifications.js"></script>
+  <script src="connections.js"></script>
   <style>
     /* Mientras la sesión no se haya verificado, el contenido queda oculto.
        Esto es clave para que, si el navegador restaura esta página desde su
@@ -250,6 +251,7 @@
     .select('*')
     .order('created_at', { ascending: false });
      const { data: profiles } = await supabaseClient .from('profiles') .select('user_name, avatar_url'); const avatarByUser = {}; (profiles || []).forEach(p => { avatarByUser[p.user_name] = p.avatar_url; });
+     const channelSet = await connFetchChannelSet();
 
   const feed = document.getElementById('feed');
 
@@ -316,6 +318,7 @@
               class="font-bold text-gray-900 dark:text-white text-sm hover:underline">
               ${originalAuthor}
             </a>
+            ${connIsChannelEmail(channelSet, displayPost.user_email) ? connChannelChip(true) : ''}
 
             <span class="text-gray-400 text-sm">·</span>
 
