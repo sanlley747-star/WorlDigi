@@ -20,6 +20,7 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="notifications.js"></script>
+  <script src="connections.js"></script>
   <style>
     html.auth-pending body { display: none; }
     html{scrollbar-width:thin;scrollbar-color:#050b18 transparent}
@@ -57,9 +58,9 @@
               </span>
               <span>Notificaciones</span>
             </a>
-            <a href="#" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+            <a href="conexiones.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-              <span>Amigos</span>
+              <span>Conexiones</span>
             </a>
             <a href="settings.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"></path></svg>
@@ -142,7 +143,8 @@
         comment: `<strong>${actorName}</strong> comentó tu publicación`,
         like: `<strong>${actorName}</strong> le dio me gusta a tu publicación`,
         quote: `<strong>${actorName}</strong> citó tu publicación`,
-        share: `<strong>${actorName}</strong> compartió tu publicación`
+        share: `<strong>${actorName}</strong> compartió tu publicación`,
+        connection: `<strong>${actorName}</strong> estableció conexión`
       };
     }
 
@@ -189,6 +191,12 @@
       const avatarByEmail = {};
       (profiles || []).forEach(p => { avatarByEmail[p.user_email] = p.avatar_url; });
 
+      // Para las notificaciones de conexión: ¿ya sigo yo a esa persona? ¿me sigue ella a mí?
+      const connActorEmails = notifs.filter(n => n.type === 'connection').map(n => n.actor_email);
+      const connStates = connActorEmails.length
+        ? await connFetchStates(currentUser.email, connActorEmails)
+        : {};
+
       const typeText = {};
       wall.innerHTML = notifs.map(n => {
         const actorName = n.actor_name || n.actor_email.split('@')[0];
@@ -196,6 +204,21 @@
           `https://ui-avatars.com/api/?name=${encodeURIComponent(actorName)}&background=random`;
         const texts = notifTypeText(actorName);
         const message = texts[n.type] || `<strong>${actorName}</strong> interactuó con tu publicación`;
+
+        if (n.type === 'connection') {
+          return `
+            <div class="w-full p-4 flex items-center gap-3 transition ${n.is_read ? '' : 'bg-blue-50 dark:bg-slate-800/70'}">
+              <a href="${connProfileUrl(actorName)}" class="flex items-start gap-3 flex-1 min-w-0">
+                <img src="${connEscape(avatarUrl)}" class="w-11 h-11 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-slate-700" alt="${connEscape(actorName)}">
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm text-gray-800 dark:text-gray-100"><strong>${connEscape(actorName)}</strong> estableció conexión</p>
+                  <p class="text-xs text-gray-400 mt-1">${formatCompactTime(n.created_at)}</p>
+                </div>
+              </a>
+              <div class="flex-shrink-0" data-conn-slot data-email="${connEscape(n.actor_email)}" data-name="${connEscape(actorName)}"></div>
+            </div>
+          `;
+        }
 
         return `
           <button onclick="handleNotifClick(${n.post_id}, ${n.id})" class="w-full text-left p-4 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition ${n.is_read ? '' : 'bg-blue-50 dark:bg-slate-800/70'}">
@@ -207,6 +230,21 @@
           </button>
         `;
       }).join('');
+
+      wall.querySelectorAll('[data-conn-slot]').forEach(slot => {
+        const email = slot.dataset.email;
+        const st = connStates[email] || { iFollow: false, followsMe: false };
+        slot.appendChild(connCreateButton({
+          myEmail: currentUser.email,
+          myName: currentUser.user_metadata?.full_name || currentUser.email.split('@')[0],
+          otherEmail: email,
+          otherName: slot.dataset.name,
+          iFollow: st.iFollow,
+          followsMe: st.followsMe,
+          variant: 'notif',
+          compact: true
+        }));
+      });
 
       // Al entrar a su mural, el usuario ya las está viendo: se marcan como leídas
       await supabaseClient

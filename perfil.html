@@ -17,6 +17,7 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="notifications.js"></script>
+  <script src="connections.js"></script>
   <style>
     html{scrollbar-width:thin;scrollbar-color:#050b18 transparent}
     ::-webkit-scrollbar{width:10px}
@@ -55,9 +56,9 @@
               </span>
               <span>Notificaciones</span>
             </a>
-            <a href="#" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+            <a href="conexiones.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-              <span>Amigos</span>
+              <span>Conexiones</span>
             </a>
             <a href="settings.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"></path></svg>
@@ -96,8 +97,15 @@
       </div>
     </div>
 
-    <div class="pt-12 text-center sm:text-left sm:pl-24">
-      <h2 id="profileName" class="text-xl font-bold text-gray-900 dark:text-white">Cargando...</h2>
+    <div class="pt-12 sm:pl-24 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div class="text-center sm:text-left">
+        <h2 id="profileName" class="text-xl font-bold text-gray-900 dark:text-white">Cargando...</h2>
+        <div class="mt-1 flex items-center justify-center sm:justify-start gap-5 text-sm text-gray-600 dark:text-gray-400">
+          <a id="connFollowingLink" href="#" class="hover:underline"><strong id="connFollowingCount" class="text-gray-900 dark:text-white">–</strong> Siguiendo</a>
+          <a id="connFollowersLink" href="#" class="hover:underline"><strong id="connFollowersCount" class="text-gray-900 dark:text-white">–</strong> Seguidores</a>
+        </div>
+      </div>
+      <div id="connBtnWrap" class="flex justify-center sm:justify-end"></div>
     </div>
   </div>
 
@@ -212,8 +220,58 @@
       document.getElementById('editProfileBtn').style.display = isOwnProfile ? 'block' : 'none';
 
       initNotifications(currentUserEmail);
+      initConnections(username);
       await loadProfileImages(username);
       loadUserPosts(username);
+    }
+
+    // ===== CONEXIONES: contadores Siguiendo / Seguidores y botón Conectar =====
+    let profileEmail = null;
+
+    async function refreshConnCounts() {
+      if (!profileEmail) return;
+      const counts = await connCounts(profileEmail);
+      document.getElementById('connFollowingCount').textContent = counts.following;
+      document.getElementById('connFollowersCount').textContent = counts.followers;
+    }
+
+    async function initConnections(username) {
+      // Las etiquetas Siguiendo / Seguidores abren la lista en su propio espacio
+      document.getElementById('connFollowingLink').href = connListUrl(username, 'siguiendo');
+      document.getElementById('connFollowersLink').href = connListUrl(username, 'seguidores');
+
+      try {
+        profileEmail = await connResolveEmail(username);
+        if (!profileEmail) {
+          document.getElementById('connFollowingCount').textContent = '0';
+          document.getElementById('connFollowersCount').textContent = '0';
+          return;
+        }
+        await refreshConnCounts();
+
+        // En tu propio perfil no hay botón de conectar
+        if (isOwnProfile || profileEmail === currentUserEmail) return;
+
+        let state = { iFollow: false, followsMe: false };
+        if (currentUserEmail) {
+          const states = await connFetchStates(currentUserEmail, [profileEmail]);
+          state = states[profileEmail] || state;
+        }
+
+        const wrap = document.getElementById('connBtnWrap');
+        wrap.innerHTML = '';
+        wrap.appendChild(connCreateButton({
+          myEmail: currentUserEmail,
+          myName: loggedUserName,
+          otherEmail: profileEmail,
+          otherName: username,
+          iFollow: state.iFollow,
+          followsMe: state.followsMe,
+          onChange: refreshConnCounts
+        }));
+      } catch (err) {
+        console.error('Conexiones:', err);
+      }
     }
 
     async function loadProfileImages(username) {

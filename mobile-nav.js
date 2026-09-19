@@ -2,7 +2,7 @@
 // En pantallas menores a 1024 px (donde el menú lateral está oculto):
 //  1) Al presionar el logo de ByGether del header se expande, desde la derecha,
 //     un panel a pantalla completa con el avatar y el nombre del usuario y todas
-//     las herramientas (Inicio, Mi perfil, Notificaciones, Amigos, Ajustes, Publicar).
+//     las herramientas (Inicio, Mi perfil, Notificaciones, Conexiones, Ajustes, Publicar).
 //     Se cierra con la X (arriba a la derecha) o con Escape, y colapsa hacia la derecha.
 //  2) Botón flotante azul de "Publicar": se vuelve semitransparente al bajar el
 //     scroll y totalmente visible al subirlo. Funciona en ambos estados.
@@ -82,7 +82,7 @@
         '<a class="gm-item" data-gm="home" href="dashboard.html">' + ICON.home + '<span>Inicio</span></a>' +
         '<a class="gm-item" data-gm="profile" href="perfil.html">' + ICON.user + '<span>Mi perfil</span></a>' +
         '<a class="gm-item" href="notificaciones.html"><span class="gm-icon">' + ICON.bell + '<span class="gm-badge gm-hidden" data-gm-badge>0</span></span><span>Notificaciones</span></a>' +
-        '<a class="gm-item" data-gm="friends" href="#">' + ICON.friends + '<span>Amigos</span></a>' +
+        '<a class="gm-item" data-gm="friends" href="conexiones.html">' + ICON.friends + '<span>Conexiones</span></a>' +
         '<a class="gm-item" href="settings.html">' + ICON.settings + '<span>Ajustes</span></a>' +
         '<button type="button" class="gm-item gm-publish" data-gm="publish">' + ICON.pen + '<span>Publicar</span></button>' +
       '</nav>' +
@@ -102,7 +102,6 @@
   var nameEl = panel.querySelector('.gm-name');
   var profileLink = panel.querySelector('[data-gm="profile"]');
   var homeLink = panel.querySelector('[data-gm="home"]');
-  var friendsLink = panel.querySelector('[data-gm="friends"]');
   var publishBtn = panel.querySelector('[data-gm="publish"]');
   var badgeEl = panel.querySelector('[data-gm-badge]');
   var logoLink = document.querySelector('nav.sticky a[href="dashboard.html"]');
@@ -155,10 +154,6 @@
       closeMenu();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  });
-  friendsLink.addEventListener('click', function (e) {
-    e.preventDefault();
-    closeMenu();
   });
   publishBtn.addEventListener('click', function () {
     closeMenu();

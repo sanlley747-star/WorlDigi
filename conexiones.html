@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es" class="dark auth-pending">
+<head>
+  <script>
+    const savedScale = localStorage.getItem('fontScale');
+    if (savedScale) document.documentElement.style.fontSize = savedScale + '%';
+  </script>
+  <link rel="icon" type="image/png" href="assets/logo-icon.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>ByGether - Conexiones</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="notifications.js"></script>
+  <script src="connections.js"></script>
+  <style>
+    html.auth-pending body { display: none; }
+    html{scrollbar-width:thin;scrollbar-color:#050b18 transparent}
+    ::-webkit-scrollbar{width:10px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background-color:#050b18;border-radius:9999px}
+  </style>
+</head>
+<body class="bg-gray-100 dark:bg-slate-950 text-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-200">
+
+  <nav class="sticky top-0 z-50 bg-black text-white p-4 flex justify-between items-center shadow-md border-b border-slate-800">
+    <a href="dashboard.html" class="flex items-center"><img src="assets/logo-circle.png" alt="ByGether" class="h-14 w-auto"></a>
+  </nav>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <main class="w-full mx-auto mt-6 pl-4 pr-4 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8 max-w-5xl">
+
+    <!-- COLUMNA IZQUIERDA: MENÚ -->
+    <aside class="hidden lg:block">
+      <div class="sticky top-6">
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800">
+          <nav class="space-y-2 pt-1">
+            <a href="dashboard.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M3 9.5 12 3l9 6.5"></path><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"></path></svg>
+              <span>Inicio</span>
+            </a>
+            <a href="perfil.html" id="myProfileLink" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              <span>Mi perfil</span>
+            </a>
+            <a href="notificaciones.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+              <span class="relative inline-flex flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+                <span id="notifBadge" class="hidden absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-green-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">0</span>
+              </span>
+              <span>Notificaciones</span>
+            </a>
+            <a href="conexiones.html" class="flex items-center gap-3 p-2 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white font-semibold">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              <span>Conexiones</span>
+            </a>
+            <a href="settings.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"></path></svg>
+              <span>Ajustes</span>
+            </a>
+          </nav>
+        </div>
+      </div>
+    </aside>
+
+    <!-- COLUMNA DERECHA: LISTAS DE CONEXIONES (espacio independiente) -->
+    <div>
+      <div class="bg-white dark:bg-slate-900 rounded-xl shadow border border-gray-200 dark:border-slate-800">
+        <div class="p-4 border-b border-gray-200 dark:border-slate-800">
+          <h1 class="text-lg font-bold text-gray-900 dark:text-white">Conexiones</h1>
+          <p id="connOwner" class="text-sm text-gray-500 dark:text-gray-400 mt-0.5"></p>
+        </div>
+
+        <div class="flex border-b border-gray-200 dark:border-slate-800" role="tablist">
+          <button id="tabSiguiendo" role="tab" onclick="setTab('siguiendo')" class="flex-1 py-3 text-sm font-semibold text-gray-500 dark:text-gray-400 border-b-2 border-transparent transition">
+            Siguiendo <span id="countSiguiendo" class="ml-1">–</span>
+          </button>
+          <button id="tabSeguidores" role="tab" onclick="setTab('seguidores')" class="flex-1 py-3 text-sm font-semibold text-gray-500 dark:text-gray-400 border-b-2 border-transparent transition">
+            Seguidores <span id="countSeguidores" class="ml-1">–</span>
+          </button>
+        </div>
+
+        <div id="connList" class="divide-y divide-gray-100 dark:divide-slate-800">
+          <p class="p-6 text-sm text-gray-400 dark:text-gray-500 text-center">Cargando...</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    const SUPABASE_URL = 'https://aiymadawznadvavzspxj.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_fL7vTXJ4NLhC2CJs9nPVAg_fvzWbfCY';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    function hideForAuth() {
+      document.documentElement.classList.add('auth-pending');
+    }
+    function revealApp() {
+      document.documentElement.classList.remove('auth-pending');
+    }
+
+    window.addEventListener('pagehide', hideForAuth);
+
+    window.addEventListener('pageshow', async () => {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) {
+        window.location.replace('index.html');
+        return;
+      }
+      revealApp();
+    });
+
+    if (localStorage.getItem('theme') === 'light') {
+      document.documentElement.classList.remove('dark');
+    } else {
+      document.documentElement.classList.add('dark');
+    }
+
+    let currentUser = null;
+    let myName = null;
+    let targetEmail = null;   // de quién estamos viendo las listas (por defecto, yo)
+    let targetName = null;
+    let activeTab = 'siguiendo';
+    let listRequestId = 0;
+
+    async function init() {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (!user) {
+        window.location.replace('index.html');
+        return;
+      }
+      currentUser = user;
+      myName = user.user_metadata?.full_name || user.email.split('@')[0];
+      document.getElementById('myProfileLink').href = connProfileUrl(myName);
+
+      initNotifications(currentUser.email);
+
+      const params = new URLSearchParams(window.location.search);
+      targetName = params.get('user') || myName;
+      activeTab = params.get('tab') === 'seguidores' ? 'seguidores' : 'siguiendo';
+
+      targetEmail = targetName === myName ? currentUser.email : await connResolveEmail(targetName);
+
+      const owner = document.getElementById('connOwner');
+      if (!targetEmail) {
+        owner.textContent = '';
+        document.getElementById('connList').innerHTML =
+          '<p class="p-6 text-sm text-gray-400 dark:text-gray-500 text-center">No encontramos a este usuario.</p>';
+        return;
+      }
+
+      if (targetEmail === currentUser.email) {
+        owner.textContent = 'Tus conexiones';
+      } else {
+        owner.innerHTML = 'Conexiones de <a class="font-semibold hover:underline" href="' + connProfileUrl(targetName) + '">' + connEscape(targetName) + '</a>';
+      }
+
+      await refreshCounts();
+      setTab(activeTab);
+    }
+
+    async function refreshCounts() {
+      const counts = await connCounts(targetEmail);
+      document.getElementById('countSiguiendo').textContent = counts.following;
+      document.getElementById('countSeguidores').textContent = counts.followers;
+    }
+
+    function setTab(tab) {
+      activeTab = tab;
+      const on = ['text-blue-600', 'dark:text-blue-400', 'border-blue-600', 'dark:border-blue-400'];
+      const off = ['text-gray-500', 'dark:text-gray-400', 'border-transparent'];
+      [['siguiendo', 'tabSiguiendo'], ['seguidores', 'tabSeguidores']].forEach(([name, id]) => {
+        const el = document.getElementById(id);
+        const selected = name === tab;
+        on.forEach(c => el.classList.toggle(c, selected));
+        off.forEach(c => el.classList.toggle(c, !selected));
+        el.setAttribute('aria-selected', selected ? 'true' : 'false');
+      });
+
+      // La URL refleja la pestaña activa (sin recargar la página)
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', tab);
+        if (!url.searchParams.get('user')) url.searchParams.set('user', targetName);
+        window.history.replaceState(null, '', url.toString());
+      } catch (e) { /* nada */ }
+
+      loadList();
+    }
+
+    function emptyMessage(tab, isMine) {
+      if (tab === 'siguiendo') {
+        return isMine
+          ? 'Aún no sigues a nadie. Entra al perfil de alguien que te interese y presiona Conectar.'
+          : 'Este usuario aún no sigue a nadie.';
+      }
+      return isMine
+        ? 'Aún no tienes seguidores.'
+        : 'Este usuario aún no tiene seguidores.';
+    }
+
+    async function loadList() {
+      const requestId = ++listRequestId;
+      const list = document.getElementById('connList');
+      const isMine = targetEmail === currentUser.email;
+      list.innerHTML = '<p class="p-6 text-sm text-gray-400 dark:text-gray-500 text-center">Cargando...</p>';
+
+      // Siguiendo: a quién conectó este usuario. Seguidores: quién conectó con este usuario.
+      const siguiendo = activeTab === 'siguiendo';
+      const ownCol = siguiendo ? 'follower_email' : 'following_email';
+      const otherCol = siguiendo ? 'following_email' : 'follower_email';
+      const nameCol = siguiendo ? 'following_name' : 'follower_name';
+
+      const { data, error } = await supabaseClient
+        .from('connections')
+        .select(otherCol + ', ' + nameCol + ', created_at')
+        .eq(ownCol, targetEmail)
+        .order('created_at', { ascending: false })
+        .limit(200);
+
+      if (requestId !== listRequestId) return; // el usuario cambió de pestaña mientras cargaba
+
+      if (error) {
+        list.innerHTML = '<p class="p-6 text-sm text-gray-400 dark:text-gray-500 text-center">No se pudo cargar la lista. Intenta de nuevo.</p>';
+        return;
+      }
+      if (!data || !data.length) {
+        list.innerHTML = '<p class="p-6 text-sm text-gray-400 dark:text-gray-500 text-center">' + emptyMessage(activeTab, isMine) + '</p>';
+        return;
+      }
+
+      const emails = data.map(r => r[otherCol]);
+      const hints = {};
+      data.forEach(r => { if (r[nameCol]) hints[r[otherCol]] = r[nameCol]; });
+
+      const [people, states] = await Promise.all([
+        connFetchPeople(emails, hints),
+        connFetchStates(currentUser.email, emails)
+      ]);
+      if (requestId !== listRequestId) return;
+
+      list.innerHTML = data.map(r => {
+        const email = r[otherCol];
+        const p = people[email];
+        const avatar = p.avatar || connAvatarFallback(p.name);
+        const isMe = email === currentUser.email;
+        return `
+          <div class="p-4 flex items-center gap-3">
+            <a href="${connProfileUrl(p.name)}" class="flex items-center gap-3 flex-1 min-w-0">
+              <img src="${connEscape(avatar)}" class="w-11 h-11 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-slate-700" alt="${connEscape(p.name)}">
+              <span class="font-semibold text-sm text-gray-900 dark:text-white truncate">${connEscape(p.name)}</span>
+            </a>
+            ${isMe
+              ? '<span class="text-xs text-gray-400 flex-shrink-0">Tú</span>'
+              : '<div class="flex-shrink-0" data-conn-slot data-email="' + connEscape(email) + '" data-name="' + connEscape(p.name) + '"></div>'}
+          </div>
+        `;
+      }).join('');
+
+      list.querySelectorAll('[data-conn-slot]').forEach(slot => {
+        const email = slot.dataset.email;
+        const st = states[email] || { iFollow: false, followsMe: false };
+        slot.appendChild(connCreateButton({
+          myEmail: currentUser.email,
+          myName: myName,
+          otherEmail: email,
+          otherName: slot.dataset.name,
+          iFollow: st.iFollow,
+          followsMe: st.followsMe,
+          compact: true,
+          // Si estás viendo tus propias listas, tus contadores cambian al conectar o desconectar
+          onChange: () => { if (isMine) refreshCounts(); }
+        }));
+      });
+    }
+
+    init();
+  </script>
+
+  <script src="mobile-nav.js"></script>
+</body>
+</html>
