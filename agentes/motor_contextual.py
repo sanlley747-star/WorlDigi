@@ -157,7 +157,9 @@ def _dato(texto, max_chars):
     """Envuelve texto de usuarios en <dato>: quita caracteres de control y cualquier intento de
     abrir/cerrar la etiqueta, normaliza espacios y recorta."""
     t = _CTRL.sub("", str(texto or ""))
-    t = _TAG_DATO.sub("", t)
+    previo = None
+    while previo != t:  # "<<dato>dato>" no debe poder rearmar una etiqueta al quitar la de adentro
+        previo, t = t, _TAG_DATO.sub("", t)
     t = re.sub(r"[ \t]+", " ", t)
     t = re.sub(r"\n{3,}", "\n\n", t).strip()
     if len(t) > max_chars:

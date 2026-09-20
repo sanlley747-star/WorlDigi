@@ -1,13 +1,14 @@
 # Cuentas automaticas de ByGether
 
 Herramientas para crear y operar cuentas automaticas de prueba (marcadas `is_cuenta_automatica = true`).
+La operacion corre 100 % en Supabase (Edge Function + pg_cron); los scripts de esta carpeta son de apoyo (sembrar, purgar, inspeccionar prompts).
 Nunca se guardan claves en este repositorio: van en variables de entorno.
 
 ## Estado
 - [x] Paso 1 - Base de datos: columnas en `profiles`, tabla `agent_queue`, `claim_agent_tasks()`, `purgar_cuentas_automaticas()` (ya aplicado en Supabase)
 - [x] Paso 2 - `seed_cuentas.py`: crea cuentas con foto, portada y bio
 - [x] Paso 3 - `motor_contextual.py` + `personalidades.json`: 12 personalidades, contexto del hilo (`contexto_hilo()` en SQL) y constructor de prompts
-- [ ] Paso 4 - Orquestador con gobernador de cuota
+- [x] Paso 4 - Orquestador en la nube: Edge Function `agent-worker` + `pg_cron` (sin depender de ninguna computadora)
 - [ ] Paso 5 - Interacciones ligeras (likes / follows / reposts)
 - [ ] Paso 6 - Centinela anti-bucle
 - [ ] Paso 7 - Lanzamiento
@@ -42,3 +43,37 @@ python agentes/tests/test_motor_contextual.py                                   
 - La descripcion de imagenes se pide una sola vez por post y se guarda en `post_image_desc`
   (`construir_prompt_descripcion_imagen()` + `guardar_descripcion_imagen()`); la llamada de vision la hace el worker.
 - El `meta` de cada prompt trae `cadena_automatica`, `comentarios_previos_del_agente` y `max_caracteres`, que usara el centinela del Paso 6.
+
+## Paso 4 - Orquestador (worker) en Supabase
+Codigo: `supabase/functions/agent-worker/` (`index.ts` ciclo y gobernador, `gemini.ts` cliente, `prompts.ts` puerto a TypeScript del Paso 3).
+El job `agent-worker` de `pg_cron` lo invoca **cada minuto**; toda la logica de cupo, pausa y cierre de tareas esta en funciones SQL (`worker_*`), asi que es atomica.
+
+Cada ejecucion: candado -> cupo (`worker_cupo`) -> toma tareas `COMMENT`/`POST` de `agent_queue` -> contexto del hilo -> prompt -> Gemini -> validacion minima -> publica y cierra la tarea en una sola transaccion.
+
+- **Limite**: 10 llamadas/minuto (`rpm_max`), espaciadas 6 s con jitter, y presupuesto de 1100/dia repartido segun `curva_horaria` en la ventana 7:00-23:30 (hora de Santo Domingo). Las tareas de prioridad 1 (respuesta a un usuario real) ignoran la curva.
+- **Errores 429/503/sobrecarga**: se pausa todo (30 s, 60 s, 120 s, 240 s, 300 s + 0-5 s de jitter; respeta `Retry-After`/`retryDelay`). Las tareas vuelven a `pending` sin gastar intentos y nunca se marcan `failed` por culpa de la API. Al vencer la pausa, la siguiente ejecucion hace UNA llamada de prueba; si sale bien, retoma el ritmo normal sin rafagas compensatorias.
+- **Descripcion de imagenes**: una llamada de vision por post, guardada en `post_image_desc`.
+- **Publicaciones propias (`POST`)**: por ahora solo texto; la generacion de imagenes se agrega despues.
+- **Autenticacion**: encabezado `x-worker-token` = secreto `AGENT_WORKER_TOKEN` del Vault. La clave de Gemini es el secreto `GEMINI_API_KEY` de la funcion.
+
+Formato de las tareas en `agent_queue` (las crea el Paso 5 / 7):
+| action_type | target_id | payload |
+|---|---|---|
+| `COMMENT` | id del post | `{"responder_a": <id de comentario>}` (opcional: responde a ese comentario) |
+| `POST` | (vacio; se llena con el id publicado) | `{"tema": "moda"}` (opcional; por defecto el tema de la cuenta) |
+
+Configuracion (tabla `agent_config`, se cambia con un `update`, sin redesplegar): `worker_activo` (interruptor general), `rpm_max`, `presupuesto_diario`, `curva_horaria`, `ventana_horaria`, `pausas_segundos`, `max_intentos`, `modelo`.
+
+Herramientas de diagnostico (desde SQL, con el token del Vault):
+```sql
+select net.http_post(
+  url := 'https://aiymadawznadvavzspxj.supabase.co/functions/v1/agent-worker',
+  headers := jsonb_build_object('Content-Type','application/json',
+    'x-worker-token', (select decrypted_secret from vault.decrypted_secrets where name='AGENT_WORKER_TOKEN')),
+  body := '{"modo":"diagnostico"}'::jsonb);            -- estado, cupo, modelos disponibles
+-- body '{"dry_run":"comentario","post_id":62,"agent_email":"<email>"}' genera un texto de prueba SIN publicar
+-- luego: select status_code, content from net._http_response order by id desc limit 1;
+```
+Apagar el worker: `update agent_config set valor='false' where clave='worker_activo';`
+Ver actividad: `select * from agent_worker_state;` y `select * from agent_llm_calls order by id desc limit 20;`
+Pruebas del constructor de prompts (Node/Deno): `supabase/functions/agent-worker/prompts.test.ts`.
