@@ -22,6 +22,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="notifications.js"></script>
   <script src="connections.js"></script>
+  <script src="user-card.js"></script>
   <style>
     html.auth-pending body { display: none; }
     html{scrollbar-width:thin;scrollbar-color:#050b18 transparent}
@@ -264,7 +265,7 @@
           <div class="p-4 flex items-center gap-3">
             <a href="${connProfileUrl(p.name)}" class="flex items-center gap-3 flex-1 min-w-0">
               <img src="${connEscape(avatar)}" class="w-11 h-11 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-slate-700" alt="${connEscape(p.name)}">
-              <span class="font-semibold text-sm text-gray-900 dark:text-white truncate">${connEscape(p.name)}</span>
+              <span class="font-semibold text-sm text-gray-900 dark:text-white truncate" data-user-card="${connEscape(p.name)}">${connEscape(p.name)}</span>
             </a>
             ${isMe
               ? '<span class="text-xs text-gray-400 flex-shrink-0">Tú</span>'

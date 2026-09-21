@@ -7,7 +7,7 @@
 //   - Sobre Conectado / Conectados aparece "Desconectar" en rojo (con hover, o con un
 //     primer toque en pantallas táctiles) y al confirmarlo se elimina la conexión.
 // Requiere que la página ya haya definido `supabaseClient` antes de USAR estas funciones.
-// Se usa en: perfil.html, notificaciones.html y conexiones.html.
+// Se usa en: perfil.html, notificaciones.html y conexiones.html (y en la tarjeta de user-card.js).
 
 // ---------- Estilos del botón (se inyectan una sola vez) ----------
 (function () {
@@ -263,10 +263,28 @@ function connCreateButton(opts) {
     const ok = iFollow ? await unfollow() : await follow();
     busy = false;
     render();
-    if (ok && typeof opts.onChange === 'function') {
-      opts.onChange({ iFollow: iFollow, followsMe: followsMe, mutual: iFollow && followsMe });
+    if (ok) {
+      // Avisa a los demás botones de esta misma persona (por ejemplo el del perfil y el de la tarjeta
+      // que aparece al pasar el cursor sobre un nombre) para que todos muestren el mismo estado.
+      window.dispatchEvent(new CustomEvent('conn:changed', {
+        detail: { email: opts.otherEmail, iFollow: iFollow, source: btn }
+      }));
+      if (typeof opts.onChange === 'function') {
+        opts.onChange({ iFollow: iFollow, followsMe: followsMe, mutual: iFollow && followsMe });
+      }
     }
   });
+
+  // Sincroniza este botón cuando otro botón de la misma persona cambia la conexión
+  function onConnChanged(ev) {
+    if (!btn.isConnected) { window.removeEventListener('conn:changed', onConnChanged); return; }
+    const d = (ev && ev.detail) || {};
+    if (d.source === btn || d.email !== opts.otherEmail) return;
+    iFollow = !!d.iFollow;
+    disarm();
+    render();
+  }
+  window.addEventListener('conn:changed', onConnChanged);
 
   render();
   return btn;

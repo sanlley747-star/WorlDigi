@@ -23,6 +23,7 @@
   <script src="notifications.js"></script>
   <script src="connections.js"></script>
   <script src="comment-counts.js"></script>
+  <script src="user-card.js"></script>
   <style>
     /* Mientras la sesión no se haya verificado, el contenido queda oculto.
        Esto es clave para que, si el navegador restaura esta página desde su
@@ -301,8 +302,9 @@
            class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 space-y-3">
 
         ${post.repost_of ? `
-          <div class="text-sm text-gray-500 dark:text-gray-400 font-semibold">
-            🔁 ${author} repostó
+          <div class="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 font-semibold">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0 text-green-600"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
+            <span data-user-card="${connEscape(author)}" class="hover:underline">${connEscape(author)}</span> repostó
           </div>
         ` : ''}
 
@@ -693,6 +695,7 @@
 
       document.getElementById('postViewerAvatar').src = avatarUrl;
       document.getElementById('postViewerAuthor').textContent = post.user_name || 'Usuario';
+      document.getElementById('postViewerAuthor').setAttribute('data-user-card', post.user_name || '');
       document.getElementById('postViewerTime').textContent = formatCompactTime(post.created_at);
       document.getElementById('postViewerContent').innerHTML = post.content ? linkifyContent(post.content) : '';
 
@@ -748,7 +751,7 @@
         <div class="flex items-start gap-2">
           <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(c.user_name)}&background=random" class="w-8 h-8 rounded-full object-cover flex-shrink-0">
           <div class="bg-gray-100 dark:bg-slate-800 rounded-xl px-3 py-2 flex-1">
-            <div class="text-xs font-bold text-gray-900 dark:text-white">${c.user_name}</div>
+            <div class="text-xs font-bold text-gray-900 dark:text-white" data-user-card="${connEscape(c.user_name)}">${connEscape(c.user_name)}</div>
             <div class="text-sm text-gray-700 dark:text-gray-200 break-words">${c.content}</div>
           </div>
         </div>

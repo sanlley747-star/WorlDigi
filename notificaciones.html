@@ -22,6 +22,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="notifications.js"></script>
   <script src="connections.js"></script>
+  <script src="user-card.js"></script>
   <style>
     html.auth-pending body { display: none; }
     html{scrollbar-width:thin;scrollbar-color:#050b18 transparent}
@@ -141,11 +142,11 @@
 
     function notifTypeText(actorName) {
       return {
-        comment: `<strong>${actorName}</strong> comentó tu publicación`,
-        like: `<strong>${actorName}</strong> le dio me gusta a tu publicación`,
-        quote: `<strong>${actorName}</strong> citó tu publicación`,
-        share: `<strong>${actorName}</strong> compartió tu publicación`,
-        connection: `<strong>${actorName}</strong> estableció conexión`
+        comment: `<strong data-user-card="${connEscape(actorName)}">${connEscape(actorName)}</strong> comentó tu publicación`,
+        like: `<strong data-user-card="${connEscape(actorName)}">${connEscape(actorName)}</strong> le dio me gusta a tu publicación`,
+        quote: `<strong data-user-card="${connEscape(actorName)}">${connEscape(actorName)}</strong> citó tu publicación`,
+        share: `<strong data-user-card="${connEscape(actorName)}">${connEscape(actorName)}</strong> compartió tu publicación`,
+        connection: `<strong data-user-card="${connEscape(actorName)}">${connEscape(actorName)}</strong> estableció conexión`
       };
     }
 
@@ -204,7 +205,7 @@
         const avatarUrl = avatarByEmail[n.actor_email] ||
           `https://ui-avatars.com/api/?name=${encodeURIComponent(actorName)}&background=random`;
         const texts = notifTypeText(actorName);
-        const message = texts[n.type] || `<strong>${actorName}</strong> interactuó con tu publicación`;
+        const message = texts[n.type] || `<strong data-user-card="${connEscape(actorName)}">${connEscape(actorName)}</strong> interactuó con tu publicación`;
 
         if (n.type === 'connection') {
           return `
@@ -212,7 +213,7 @@
               <a href="${connProfileUrl(actorName)}" class="flex items-start gap-3 flex-1 min-w-0">
                 <img src="${connEscape(avatarUrl)}" class="w-11 h-11 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-slate-700" alt="${connEscape(actorName)}">
                 <div class="flex-1 min-w-0">
-                  <p class="text-sm text-gray-800 dark:text-gray-100"><strong>${connEscape(actorName)}</strong> estableció conexión</p>
+                  <p class="text-sm text-gray-800 dark:text-gray-100"><strong data-user-card="${connEscape(actorName)}">${connEscape(actorName)}</strong> estableció conexión</p>
                   <p class="text-xs text-gray-400 mt-1">${formatCompactTime(n.created_at)}</p>
                 </div>
               </a>
@@ -285,6 +286,7 @@
 
       document.getElementById('postViewerAvatar').src = avatarUrl;
       document.getElementById('postViewerAuthor').textContent = post.user_name || 'Usuario';
+      document.getElementById('postViewerAuthor').setAttribute('data-user-card', post.user_name || '');
       document.getElementById('postViewerTime').textContent = formatCompactTime(post.created_at);
       document.getElementById('postViewerContent').innerHTML = post.content ? linkifyContent(post.content) : '';
 
@@ -337,7 +339,7 @@
         <div class="flex items-start gap-2">
           <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(c.user_name)}&background=random" class="w-8 h-8 rounded-full object-cover flex-shrink-0">
           <div class="bg-gray-100 dark:bg-slate-800 rounded-xl px-3 py-2 flex-1">
-            <div class="text-xs font-bold text-gray-900 dark:text-white">${c.user_name}</div>
+            <div class="text-xs font-bold text-gray-900 dark:text-white" data-user-card="${connEscape(c.user_name)}">${connEscape(c.user_name)}</div>
             <div class="text-sm text-gray-700 dark:text-gray-200 break-words">${c.content}</div>
           </div>
         </div>
