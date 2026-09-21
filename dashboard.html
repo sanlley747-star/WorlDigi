@@ -758,9 +758,20 @@
 
       ccSetCount(postId, comments.length);
 
+      // Fotos de perfil de quienes comentaron (por su correo); quien no tiene foto conserva su avatar de iniciales
+      const commenterEmails = [...new Set(comments.map(c => c.user_email).filter(Boolean))];
+      const commentAvatarByEmail = {};
+      if (commenterEmails.length) {
+        const { data: commenterProfiles } = await supabaseClient
+          .from('profiles')
+          .select('user_email, avatar_url')
+          .in('user_email', commenterEmails);
+        (commenterProfiles || []).forEach(p => { if (p.avatar_url) commentAvatarByEmail[p.user_email] = p.avatar_url; });
+      }
+
       container.innerHTML = comments.map(c => `
         <div class="flex items-start gap-2">
-          <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(c.user_name)}&background=random" class="w-8 h-8 rounded-full object-cover flex-shrink-0">
+          <img src="${connEscape(commentAvatarByEmail[c.user_email] || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(c.user_name) + '&background=random'))}" class="w-8 h-8 rounded-full object-cover flex-shrink-0">
           <div class="bg-gray-100 dark:bg-slate-800 rounded-xl px-3 py-2 flex-1">
             <div class="text-xs font-bold text-gray-900 dark:text-white" data-user-card="${connEscape(c.user_name)}">${connEscape(c.user_name)}</div>
             <div class="text-sm text-gray-700 dark:text-gray-200 break-words">${c.content}</div>
