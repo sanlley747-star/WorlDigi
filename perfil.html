@@ -175,6 +175,8 @@
       }
     }
 
+    function linkifyContent(text) { if (!text) return ''; const urlRegex = /(https?:\/\/[^\s]+)/g; return text.replace(urlRegex, (url) => { let domain; try { domain = new URL(url).hostname.replace('www.', ''); } catch (e) { domain = url; } return `<a href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 text-green-600 dark:text-green-400 font-semibold hover:underline align-middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 inline-block"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>${domain}</a>`; }); }
+
     function formatCompactTime(dateString) {
       const date = new Date(dateString);
       const now = new Date();
@@ -448,7 +450,7 @@
               </div>
             </div>
 
-            ${post.content ? `<p class="text-gray-800 dark:text-gray-200 text-sm cursor-pointer" onclick="openPostPage(${post.id})">${post.content}</p>` : ''}
+            ${post.content ? `<p class="text-gray-800 dark:text-gray-200 text-sm cursor-pointer whitespace-pre-line break-words" onclick="openPostPage(${post.id})">${linkifyContent(post.content)}</p>` : ''}
             ${post.image_url ? `<img src="${post.image_url}" class="w-full rounded-lg max-h-96 object-cover cursor-pointer" onclick="openPostViewer(${post.id})">` : ''}
             
             <div class="flex items-center space-x-5 border-t border-gray-100 dark:border-slate-800 pt-2 text-sm text-gray-600 dark:text-gray-400">
@@ -675,7 +677,7 @@
       document.getElementById('postViewerAuthor').textContent = post.user_name || 'Usuario';
       document.getElementById('postViewerAuthor').setAttribute('data-user-card', post.user_name || '');
       document.getElementById('postViewerTime').textContent = formatCompactTime(post.created_at);
-      document.getElementById('postViewerContent').textContent = post.content || '';
+      document.getElementById('postViewerContent').innerHTML = post.content ? linkifyContent(post.content) : '';
 
       const imageWrap = document.getElementById('postViewerImageWrap');
       if (post.image_url) {
