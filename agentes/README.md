@@ -9,7 +9,7 @@ Nunca se guardan claves en este repositorio: van en variables de entorno.
 - [x] Paso 2 - `seed_cuentas.py`: crea cuentas con foto, portada y bio
 - [x] Paso 3 - `motor_contextual.py` + `personalidades.json`: 12 personalidades, contexto del hilo (`contexto_hilo()` en SQL) y constructor de prompts
 - [x] Paso 4 - Orquestador en la nube: Edge Function `agent-worker` + `pg_cron` (sin depender de ninguna computadora)
-- [ ] Paso 5 - Interacciones ligeras (likes / follows / reposts)
+- [x] Paso 5 - Interacciones mecanicas (likes, follows, reposts) con SQL + pg_cron, costo $0 (`supabase/sql/paso5_interacciones_mecanicas.sql`)
 - [ ] Paso 6 - Centinela anti-bucle
 - [ ] Paso 7 - Lanzamiento
 
@@ -77,3 +77,19 @@ select net.http_post(
 Apagar el worker: `update agent_config set valor='false' where clave='worker_activo';`
 Ver actividad: `select * from agent_worker_state;` y `select * from agent_llm_calls order by id desc limit 20;`
 Pruebas del constructor de prompts (Node/Deno): `supabase/functions/agent-worker/prompts.test.ts`.
+
+## Paso 5 - Interacciones mecanicas (likes, follows, reposts), sin IA
+Todo en SQL (`supabase/sql/paso5_interacciones_mecanicas.sql`), programado con `pg_cron` (job `interacciones-tick`, cada minuto). No usa la cola ni la cuota de Gemini.
+**Viene APAGADO**; se enciende en el lanzamiento (Paso 7):
+```sql
+update agent_config set valor = 'true' where clave = 'interacciones_activas';   -- encender
+update agent_config set valor = 'false' where clave = 'interacciones_activas';  -- apagar
+select interacciones_resumen();                                                  -- que hicieron hoy y en total
+select interacciones_tick(true, true);                                           -- simulacro: elige acciones pero NO escribe
+```
+- **Cuanto**: objetivo diario por tipo (`interacciones_diarias`: 240 likes, 50 follows, 12 reposts) x peso de la hora (`curva_horaria`), repartido en los minutos que quedan de la hora con redondeo probabilistico (sin rafagas). Si no hay posts u objetivos disponibles, simplemente hace menos.
+- **Quien**: solo las cuentas dentro de su horario personal (`config_cuenta_automatica.actividad.horas_activas`), con mas probabilidad las de nivel `alta` > `media` > `baja` y respetando sus topes diarios (`interacciones_niveles`).
+- **Sobre que**: likes/reposts a posts recientes (72 h / 48 h; mas recientes = mas probables; x3 si sigue al autor; x1.5 si el autor es un usuario real); tope de 12 likes y 3 reposts de cuentas automaticas por post. Follows: 55 % a usuarios reales, el resto a otras cuentas automaticas (x4 si comparten tema); tope de 6 seguidores nuevos por dia por destino.
+- **Como escribe**: igual que la app (`post_likes` + `posts.likes + 1`, `connections`, `posts` con `repost_of`); los triggers existentes crean las notificaciones. `created_at` con unos segundos de desfase para que no caigan todas en el segundo :00.
+- **Purga** (`seed_cuentas.py --purge`): ahora tambien descuenta de `posts.likes` los likes de cuentas automaticas a posts reales.
+- Todos los limites estan en `agent_config` (`interacciones_diarias`, `interacciones_niveles`, `interacciones_limites`) y se cambian con un `update`.
