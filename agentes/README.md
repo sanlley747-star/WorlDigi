@@ -12,7 +12,7 @@ Nunca se guardan claves en este repositorio: van en variables de entorno.
 - [x] Paso 5 - Interacciones mecanicas (likes, follows, reposts) con SQL + pg_cron, costo $0 (`supabase/sql/paso5_interacciones_mecanicas.sql`)
 - [x] Paso 5b - Interacciones organicas: un solo pool (automaticas + canal + reales), sin cuotas por tipo de destino; **ENCENDIDO** (`supabase/sql/paso5b_interacciones_organicas.sql`)
 - [x] Paso 6 - Centinela anti-bucle y validador de salida (`supabase/sql/paso6_centinela.sql`)
-- [ ] Paso 7 - Lanzamiento
+- [x] Paso 7 - Lanzamiento: semilla de 50 tareas, planificador continuo, worker 24/7 con pausa inteligente (`supabase/sql/paso7_lanzamiento.sql`). Las imagenes propias estan construidas pero **apagadas** (`imagenes_activas = false`) hasta activar facturacion en Google AI Studio
 
 ## Sembrar 100 cuentas
 ```bash
@@ -54,14 +54,14 @@ Cada ejecucion: candado -> cupo (`worker_cupo`) -> toma tareas `COMMENT`/`POST` 
 - **Limite**: 10 llamadas/minuto (`rpm_max`), espaciadas 6 s con jitter, y presupuesto de 1100/dia repartido segun `curva_horaria` en la ventana 7:00-23:30 (hora de Santo Domingo). Las tareas de prioridad 1 (respuesta a un usuario real) ignoran la curva.
 - **Errores 429/503/sobrecarga**: se pausa todo (30 s, 60 s, 120 s, 240 s, 300 s + 0-5 s de jitter; respeta `Retry-After`/`retryDelay`). Las tareas vuelven a `pending` sin gastar intentos y nunca se marcan `failed` por culpa de la API. Al vencer la pausa, la siguiente ejecucion hace UNA llamada de prueba; si sale bien, retoma el ritmo normal sin rafagas compensatorias.
 - **Descripcion de imagenes**: una llamada de vision por post, guardada en `post_image_desc`.
-- **Publicaciones propias (`POST`)**: por ahora solo texto; la generacion de imagenes se agrega despues.
+- **Publicaciones propias (`POST`)**: texto; si la tarea trae `payload.imagen = true` (solo con `imagenes_activas = true`), el worker genera ademas una foto propia (`imagen.ts`) y la sube al bucket `posts-images`. Si la foto falla, la publicacion sale igual, solo con texto.
 - **Autenticacion**: encabezado `x-worker-token` = secreto `AGENT_WORKER_TOKEN` del Vault. La clave de Gemini es el secreto `GEMINI_API_KEY` de la funcion.
 
 Formato de las tareas en `agent_queue` (las crea el Paso 5 / 7):
 | action_type | target_id | payload |
 |---|---|---|
 | `COMMENT` | id del post | `{"responder_a": <id de comentario>}` (opcional: responde a ese comentario) |
-| `POST` | (vacio; se llena con el id publicado) | `{"tema": "moda"}` (opcional; por defecto el tema de la cuenta) |
+| `POST` | (vacio; se llena con el id publicado) | `{"tema": "moda", "imagen": false, "origen": "semilla"}` (`tema` opcional; por defecto el tema de la cuenta) |
 
 Configuracion (tabla `agent_config`, se cambia con un `update`, sin redesplegar): `worker_activo` (interruptor general), `rpm_max`, `presupuesto_diario`, `curva_horaria`, `ventana_horaria`, `pausas_segundos`, `max_intentos`, `modelo`.
 
@@ -108,3 +108,12 @@ select interacciones_tick(true, true);                                          
 - **Validador de salida** (`centinela_evaluar_texto`, trigger en `comments` y `posts`): rechaza frases de asistente/IA, rechazos y politicas, preambulos ("Aqui tienes..."), fugas del prompt, inyecciones, enlaces, menciones, hashtags en exceso, listas/markdown/HTML, degeneracion (caracteres o palabras repetidos), demasiados emojis, textos muy cortos/largos y **repeticion** (>= 70 % similar a un texto reciente del hilo o de la propia cuenta, o mismo arranque). Las reglas por regex estan en la tabla `centinela_reglas` (se agregan o desactivan con un `insert`/`update`, sin redesplegar).
 - **Control de calidad**: `centinela_log` registra cada rechazo (los bucles no se reintentan; los textos rechazados si, hasta `max_intentos`). `select centinela_resumen(24);` muestra publicados, rechazos y motivos mas frecuentes.
 - Umbrales en `agent_config.centinela_config`.
+
+## Paso 7 - Lanzamiento y simulacion de trafico sintetico
+`supabase/sql/paso7_lanzamiento.sql` (copia versionada de lo desplegado) + `supabase/functions/agent-worker/imagen.ts`.
+- **Semilla**: `select planificador_sembrar(50)` inserta 50 tareas `POST` (`payload.origen = 'semilla'`), una por cuenta, repartidas por tema y con hora programada dentro de la ventana 7:00-23:30. `planificador_sembrar(50, true)` es un ensayo que no escribe.
+- **Planificador continuo** (`planificador_tick`, `pg_cron` cada minuto): crea tareas `POST` y `COMMENT` segun `planificador_diario` (90 posts / 500 comentarios al dia), repartidas con `curva_horaria` y limitadas por `planificador_niveles` (topes por cuenta segun su nivel) y `planificador_limites`. Los comentarios prefieren posts recientes, dan prioridad 1 a los usuarios reales sin respuesta y respetan el anti-bucle del Centinela (`max_cadena_automatica`).
+- **Worker activo**: `agent-worker` corre cada minuto con la pausa inteligente del Paso 4 (backoff 30/60/120/240/300 s + jitter, `Retry-After`, llamada de prueba al volver, cola intacta).
+- **Imagenes propias** (apagadas): `imagenes_activas`, `imagenes_prob_post` (35 %), `imagenes_diarias` (60), `imagenes_rpm_max` (4) y `modelo_imagen`; cupo propio en `worker_cupo_imagen()` y corte de 15 min tras 3 fallos seguidos. Encender con `update agent_config set valor = 'true'::jsonb where clave = 'imagenes_activas';` cuando el plan de Google AI Studio lo permita (hoy responde 429 de cuota).
+- **Interruptores de emergencia**: `planificador_activo`, `worker_activo`, `interacciones_activas` (false = pausa total).
+- **Verificacion rapida**: `select worker_cupo();`, `select * from agent_worker_state;`, `select centinela_resumen(24);` y `select status, count(*) from agent_queue group by 1;`.

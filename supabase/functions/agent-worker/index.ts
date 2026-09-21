@@ -9,6 +9,10 @@
 //      'pending' sin gastar intentos y nunca se marcan como failed por culpa de la API. Al vencer la pausa la siguiente
 //      ejecucion hace UNA llamada de prueba; si sale bien, se reanuda a ritmo normal (sin ráfagas compensatorias).
 //
+// PASO 7: las tareas POST con payload.imagen = true generan ademas una foto propia (imagen.ts, modelo_imagen de agent_config)
+//   que se sube al bucket posts-images. Las imagenes tienen su propio cupo (worker_cupo_imagen) y si fallan la
+//   publicacion sale igual, solo con texto.
+//
 // Autenticacion: encabezado x-worker-token = secreto AGENT_WORKER_TOKEN del Vault (verify_jwt desactivado a proposito,
 // porque pg_cron no tiene un JWT de usuario; sin el token la funcion responde 401 y no toca nada).
 //
@@ -17,6 +21,7 @@
 //   {"modo":"diagnostico"}                           estado, cupo, modelos disponibles (nunca devuelve secretos)
 //   {"dry_run":"comentario","post_id":62,"agent_email":"...","responder_a":3}   genera pero NO publica ni toca la cola
 //   {"dry_run":"post","agent_email":"...","tema":"moda"}
+//   {"dry_run":"imagen","tema":"cocina","texto":"..."}   genera una imagen y la sube a posts-images/_pruebas (no publica)
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { encodeBase64 } from "jsr:@std/encoding@1/base64";
@@ -26,6 +31,7 @@ import {
 import type { Agente, Catalogo, Ctx, Prompt } from "./prompts.ts";
 import { generar, GeminiError, listarModelos } from "./gemini.ts";
 import type { Imagen } from "./gemini.ts";
+import { crearImagenPost } from "./imagen.ts";
 
 const TIEMPO_MAX_MS = 100_000;          // margen bajo el limite de la funcion
 const TIPOS_IA = ["POST", "COMMENT"];
@@ -40,7 +46,7 @@ type Fila = Record<string, any>;
 class SinCupo extends Error {}
 
 interface Sesion {
-  sb: SupabaseClient; key: string; modelo: string; cat: Catalogo;
+  sb: SupabaseClient; key: string; modelo: string; modeloImagen: string; cat: Catalogo;
   restantes: number; espaciadoMs: number; ultima: number; llamadas: number;
 }
 
@@ -186,15 +192,15 @@ async function prepararComentario(
 }
 
 async function prepararPost(
-  s: Sesion, agenteEmail: string, tema: string | null,
+  s: Sesion, agenteEmail: string, tema: string | null, conImagen = false,
 ): Promise<{ agente: Agente; prompt: Prompt } | { error: string }> {
   const agente = await agenteDe(s, agenteEmail);
   if (!agente) return { error: `cuenta automatica inexistente: ${agenteEmail}` };
   const { data } = await s.sb.from("posts").select("content").eq("user_email", agenteEmail)
     .is("repost_of", null).order("created_at", { ascending: false }).limit(3);
   const previas = (data ?? []).map((f: Fila) => String(f.content ?? "")).filter(Boolean);
-  // La generacion de imagenes propias se agrega despues: por ahora las publicaciones de las cuentas son de texto.
-  return { agente, prompt: promptPublicacion(agente, s.cat, { tema, previas, conImagen: false }) };
+  // conImagen: el texto se redacta como pie de una foto propia (la foto la genera crearImagenPost despues)
+  return { agente, prompt: promptPublicacion(agente, s.cat, { tema, previas, conImagen }) };
 }
 
 async function generarTexto(s: Sesion, agenteEmail: string, prompt: Prompt, tipo: string) {
@@ -227,11 +233,25 @@ async function procesarTarea(s: Sesion, t: Fila): Promise<Resultado> {
   }
 
   if (t.action_type === "POST") {
-    const prep = await prepararPost(s, t.agent_id, t.payload?.tema ?? null);
+    const quiereImagen = t.payload?.imagen === true;
+    const prep = await prepararPost(s, t.agent_id, t.payload?.tema ?? null, quiereImagen);
     if ("error" in prep) return fallar(prep.error, true);
     const { validacion } = await generarTexto(s, t.agent_id, prep.prompt, "post");
     if (!validacion.ok) return fallar(`salida rechazada: ${validacion.motivo}`);
-    const { error } = await s.sb.rpc("worker_completar_post", { p_task_id: t.id, p_agent_email: t.agent_id, p_content: validacion.texto });
+
+    // Foto propia: si falla (cuota, bloqueo, storage) la publicacion sale igual, solo con texto.
+    let imagen: { url: string; desc: string } | null = null;
+    if (quiereImagen) {
+      const r = await crearImagenPost(s.sb, {
+        key: s.key, modelo: s.modeloImagen, agenteEmail: t.agent_id,
+        tema: String(prep.prompt.meta.tema ?? ""), texto: validacion.texto,
+      });
+      imagen = r.imagen;
+    }
+    const { error } = await s.sb.rpc("worker_completar_post", {
+      p_task_id: t.id, p_agent_email: t.agent_id, p_content: validacion.texto,
+      p_image_url: imagen?.url ?? null, p_image_desc: imagen?.desc ?? null,
+    });
     if (error) return fallar(`no se pudo publicar: ${error.message}`);
     return "completada";
   }
@@ -268,7 +288,8 @@ async function ciclo(sb: SupabaseClient) {
     }
 
     const s: Sesion = {
-      sb, key, modelo: String(cfg.modelo ?? "gemini-flash-lite-latest"), cat: await cargarCatalogo(sb),
+      sb, key, modelo: String(cfg.modelo ?? "gemini-flash-lite-latest"), modeloImagen: String(cfg.modelo_imagen ?? "gemini-2.5-flash-image"),
+      cat: await cargarCatalogo(sb),
       restantes: n, espaciadoMs: Number(cfg.espaciado_segundos ?? 6) * 1000, ultima: 0, llamadas: 0,
     };
     const res = { estado: "ok", cupo, clave: origen, completadas: 0, reintentos: 0, falladas: 0, devueltas: 0, pausa_seg: null as number | null, llamadas: 0 };
@@ -309,13 +330,21 @@ async function dryRun(sb: SupabaseClient, body: Fila) {
   const cfg = await cargarConfig(sb);
   const { key } = await claveGemini(sb);
   if (!key) return { error: "no hay clave de Gemini" };
+  if (body.dry_run === "imagen") {
+    return await crearImagenPost(sb, {
+      key, modelo: String(body.modelo ?? cfg.modelo_imagen ?? "gemini-2.5-flash-image"),
+      agenteEmail: String(body.agent_email ?? "prueba"), tema: String(body.tema ?? "cocina"),
+      texto: String(body.texto ?? "Hoy probé una receta nueva en casa y quedó mejor de lo que esperaba"), prueba: true,
+    });
+  }
   const s: Sesion = {
-    sb, key, modelo: String(body.modelo ?? cfg.modelo ?? "gemini-flash-lite-latest"), cat: await cargarCatalogo(sb),
+    sb, key, modelo: String(body.modelo ?? cfg.modelo ?? "gemini-flash-lite-latest"), modeloImagen: String(cfg.modelo_imagen ?? "gemini-2.5-flash-image"),
+    cat: await cargarCatalogo(sb),
     restantes: 3, espaciadoMs: 0, ultima: 0, llamadas: 0,
   };
   try {
     const prep = body.dry_run === "post"
-      ? await prepararPost(s, String(body.agent_email), body.tema ?? null)
+      ? await prepararPost(s, String(body.agent_email), body.tema ?? null, body.con_imagen === true)
       : await prepararComentario(s, Number(body.post_id), String(body.agent_email), body.responder_a != null ? Number(body.responder_a) : null);
     if ("error" in prep) return { error: prep.error };
     const { r, validacion } = await generarTexto(s, String(body.agent_email), prep.prompt, "prueba");
@@ -331,12 +360,14 @@ async function diagnostico(sb: SupabaseClient) {
   const out: Fila = { clave_gemini: { presente: Boolean(key), origen } };
   const cfg = await cargarConfig(sb);
   out.modelo_configurado = cfg.modelo;
+  out.modelo_imagen = cfg.modelo_imagen;
   if (key) {
     try { out.modelos_generateContent = await listarModelos(key); }
     catch (e) { out.error_modelos = e instanceof GeminiError ? { tipo: e.tipo, status: e.status, mensaje: e.message.slice(0, 200) } : String(e); }
   }
   out.estado = (await sb.from("agent_worker_state").select("*").eq("id", 1).single()).data;
   out.cupo = (await sb.rpc("worker_cupo")).data;
+  out.cupo_imagen = (await sb.rpc("worker_cupo_imagen")).data;
   const { data: cola } = await sb.from("agent_queue").select("status,action_type");
   const conteo: Fila = {};
   for (const f of (cola ?? []) as Fila[]) conteo[`${f.action_type}:${f.status}`] = (conteo[`${f.action_type}:${f.status}`] ?? 0) + 1;

@@ -163,7 +163,7 @@ export function promptPublicacion(
 
   const l = [`TAREA: escribe una publicación original para tu perfil sobre este tema: ${tema}.`];
   l.push("Comparte una opinión, una vivencia breve o una pregunta para tus contactos; que suene a algo que de verdad te pasó o piensas, no a un anuncio.");
-  if (opts.conImagen) l.push("La publicación llevará una foto tuya. Escribe el texto que la acompaña sin describir la foto como si fuera un catálogo.");
+  if (opts.conImagen) l.push("La publicación irá acompañada de una foto cotidiana que tomaste tú, relacionada con el tema. Escribe el texto que la acompaña sin describir la foto como si fuera un catálogo.");
   if (previas.length) {
     l.push("\nTus publicaciones anteriores (no repitas ideas ni fórmulas):");
     previas.slice(0, 3).forEach((p) => l.push("- " + dato(p, MAX_COMENTARIO)));
