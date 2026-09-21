@@ -24,6 +24,7 @@
   <script src="connections.js"></script>
   <script src="comment-counts.js"></script>
   <script src="user-card.js"></script>
+  <script src="comment-modal.js"></script>
   <style>
     /* Mientras la sesión no se haya verificado, el contenido queda oculto.
        Esto es clave para que, si el navegador restaura esta página desde su
@@ -587,7 +588,7 @@
     });
 
     function commentPost(postId) {
-      openPostViewer(postId);
+      openCommentModal(postId);
     }
 
     // Al hacer clic en el texto de una publicación se abre su propia página (publicación + comentarios).
