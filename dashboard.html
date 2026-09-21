@@ -346,7 +346,7 @@
         </div>
 
         ${displayPost.content ? `
-          <p class="text-gray-800 dark:text-gray-200 text-sm break-words cursor-pointer" onclick="openPostViewer(${displayPost.id})">
+          <p class="text-gray-800 dark:text-gray-200 text-sm break-words cursor-pointer" onclick="openPostPage(${displayPost.id})">
             ${linkifyContent(displayPost.content)}
           </p>
         ` : ''}
@@ -588,6 +588,13 @@
 
     function commentPost(postId) {
       openPostViewer(postId);
+    }
+
+    // Al hacer clic en el texto de una publicación se abre su propia página (publicación + comentarios).
+    // Si el usuario estaba seleccionando texto, no se abre.
+    function openPostPage(postId) {
+      if (window.getSelection && String(window.getSelection()).length) return;
+      window.location.href = 'publicacion.html?id=' + encodeURIComponent(postId);
     }
 
    async function repostPost(postId) {

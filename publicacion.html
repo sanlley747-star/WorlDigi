@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="es" class="dark auth-pending">
+<head>
+  <script>
+    const savedScale = localStorage.getItem('fontScale');
+    if (savedScale) document.documentElement.style.fontSize = savedScale + '%';
+  </script>
+  <link rel="icon" type="image/png" sizes="256x256" href="assets/favicon.png?v=2">
+  <link rel="icon" type="image/x-icon" href="favicon.ico?v=2">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>ByGether - Publicación</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="notifications.js"></script>
+  <script src="connections.js"></script>
+  <script src="comment-counts.js"></script>
+  <script src="user-card.js"></script>
+  <style>
+    html.auth-pending body { display: none; }
+    html{scrollbar-width:thin;scrollbar-color:#050b18 transparent}
+    ::-webkit-scrollbar{width:10px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background-color:#050b18;border-radius:9999px}
+  </style>
+</head>
+<body class="bg-gray-100 dark:bg-slate-950 text-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-200">
+
+  <nav class="sticky top-0 z-50 bg-black text-white px-4 py-3 flex justify-between items-center shadow-md border-b border-slate-800">
+    <a href="dashboard.html" class="flex items-center"><img src="assets/logo-circle.png" alt="ByGether" class="h-12 w-auto"></a>
+  </nav>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <main class="w-full mx-auto mt-6 pl-4 pr-4 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8 max-w-5xl">
+
+    <!-- COLUMNA IZQUIERDA: MENÚ -->
+    <aside class="hidden lg:block">
+      <div class="sticky top-6">
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800">
+          <nav class="space-y-2 pt-1">
+            <a href="dashboard.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M3 9.5 12 3l9 6.5"></path><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"></path></svg>
+              <span>Inicio</span>
+            </a>
+            <a href="perfil.html" id="myProfileLink" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              <span>Mi perfil</span>
+            </a>
+            <a href="notificaciones.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+              <span class="relative inline-flex flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+                <span id="notifBadge" class="hidden absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-green-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">0</span>
+              </span>
+              <span>Notificaciones</span>
+            </a>
+            <a href="conexiones.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              <span>Conexiones</span>
+            </a>
+            <a href="settings.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"></path></svg>
+              <span>Ajustes</span>
+            </a>
+          </nav>
+        </div>
+      </div>
+    </aside>
+
+    <!-- COLUMNA CENTRAL: PUBLICACIÓN + COMENTARIOS -->
+    <div class="space-y-4 min-w-0">
+
+      <!-- Publicación -->
+      <div class="bg-white dark:bg-slate-900 rounded-xl shadow border border-gray-200 dark:border-slate-800">
+        <div class="p-4 border-b border-gray-200 dark:border-slate-800 flex items-center gap-3">
+          <a href="dashboard.html" onclick="goBack(event)" title="Volver" class="flex items-center justify-center w-9 h-9 -ml-1 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg>
+          </a>
+          <h1 class="text-lg font-bold text-gray-900 dark:text-white">Publicación</h1>
+        </div>
+        <div id="postCard" class="p-4">
+          <p class="text-sm text-gray-400 dark:text-gray-500 text-center py-6">Cargando publicación...</p>
+        </div>
+      </div>
+
+      <!-- Comentarios -->
+      <div id="commentsSection" class="hidden bg-white dark:bg-slate-900 rounded-xl shadow border border-gray-200 dark:border-slate-800">
+        <div class="p-4 border-b border-gray-200 dark:border-slate-800">
+          <h2 class="text-base font-bold text-gray-900 dark:text-white">Comentarios</h2>
+        </div>
+
+        <!-- Escribir un comentario -->
+        <div class="p-4 border-b border-gray-100 dark:border-slate-800">
+          <div class="flex items-start gap-3">
+            <img id="myCommentAvatar" src="" class="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700 flex-shrink-0" alt="Tu avatar">
+            <textarea id="commentInput" maxlength="280" rows="2" placeholder="Escribe un comentario..." oninput="onCommentInput()" class="flex-1 w-full p-2 text-sm border-0 resize-none bg-transparent text-gray-900 dark:text-gray-100 focus:outline-none"></textarea>
+          </div>
+          <div class="flex justify-end mt-2">
+            <button id="commentSubmitBtn" onclick="submitComment()" disabled class="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:hover:bg-blue-600 disabled:cursor-not-allowed text-white text-sm font-bold py-1.5 px-5 rounded-lg transition">Comentar</button>
+          </div>
+        </div>
+
+        <!-- Lista de comentarios -->
+        <div id="commentsList" class="divide-y divide-gray-100 dark:divide-slate-800">
+          <p class="p-6 text-sm text-gray-400 dark:text-gray-500 text-center">Cargando comentarios...</p>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    const SUPABASE_URL = 'https://aiymadawznadvavzspxj.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_fL7vTXJ4NLhC2CJs9nPVAg_fvzWbfCY';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ===== BLOQUEO DE CONTENIDO POR SESIÓN (igual que el resto de la plataforma) =====
+    function hideForAuth() {
+      document.documentElement.classList.add('auth-pending');
+    }
+    function revealApp() {
+      document.documentElement.classList.remove('auth-pending');
+    }
+
+    window.addEventListener('pagehide', hideForAuth);
+
+    window.addEventListener('pageshow', async () => {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) {
+        window.location.replace('index.html');
+        return;
+      }
+      revealApp();
+    });
+
+    if (localStorage.getItem('theme') === 'light') {
+      document.documentElement.classList.remove('dark');
+    } else {
+      document.documentElement.classList.add('dark');
+    }
+
+    let currentUser = null;
+    let currentName = null;
+    let postId = null;
+    let displayedPost = null;
+
+    // ---------- Utilidades ----------
+    function formatCompactTime(dateString) {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInSeconds = Math.floor((now - date) / 1000);
+
+      if (diffInSeconds < 60) return `${Math.max(1, diffInSeconds)}s`;
+      const diffInMinutes = Math.floor(diffInSeconds / 60);
+      if (diffInMinutes < 60) return `${diffInMinutes} min`;
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      if (diffInHours < 24) return `${diffInHours}h`;
+
+      const months = ['ene.', 'feb.', 'mar.', 'abr.', 'may.', 'jun.', 'jul.', 'ago.', 'sept.', 'oct.', 'nov.', 'dic.'];
+      const day = date.getDate();
+      const month = months[date.getMonth()];
+      const year = date.getFullYear();
+
+      if (year === now.getFullYear()) return `${day} ${month}`;
+      return `${day} ${month} ${year}`;
+    }
+
+    // El texto se escapa primero (para que nadie pueda meter HTML) y luego se convierten los enlaces
+    function linkifyContent(text) {
+      if (!text) return '';
+      const safe = connEscape(text);
+      return safe.replace(/(https?:\/\/[^\s]+)/g, (url) => {
+        let domain;
+        try { domain = new URL(url).hostname.replace('www.', ''); } catch (e) { domain = url; }
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-green-600 dark:text-green-400 font-semibold hover:underline align-middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 inline-block"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>${domain}</a>`;
+      });
+    }
+
+    // "Volver": regresa a donde estaba el usuario (con su posición en el muro); si entró directo, va al inicio
+    function goBack(e) {
+      let sameSite = false;
+      try { sameSite = document.referrer && new URL(document.referrer).origin === window.location.origin; } catch (err) { /* nada */ }
+      if (sameSite && window.history.length > 1) {
+        e.preventDefault();
+        window.history.back();
+      }
+    }
+
+    // ---------- Inicio ----------
+    async function init() {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (!user) {
+        window.location.replace('index.html');
+        return;
+      }
+      currentUser = user;
+      currentName = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
+      document.getElementById('myProfileLink').href = `perfil.html?user=${encodeURIComponent(currentName)}`;
+
+      initNotifications(currentUser.email);
+
+      const params = new URLSearchParams(window.location.search);
+      postId = Number(params.get('id'));
+      if (!postId) { showNotFound(); return; }
+
+      // Mi foto (para el cuadro de comentar)
+      supabaseClient.from('profiles').select('avatar_url').eq('user_email', currentUser.email).maybeSingle()
+        .then(({ data }) => {
+          document.getElementById('myCommentAvatar').src = (data && data.avatar_url) || connAvatarFallback(currentName);
+        });
+
+      await loadPost();
+    }
+
+    function showNotFound() {
+      document.getElementById('postCard').innerHTML =
+        '<p class="text-sm text-gray-500 dark:text-gray-400 text-center py-6">Esta publicación no existe o fue eliminada.</p>' +
+        '<div class="text-center"><a href="dashboard.html" class="text-blue-600 dark:text-blue-400 text-sm font-semibold hover:underline">Volver al inicio</a></div>';
+      document.getElementById('commentsSection').classList.add('hidden');
+    }
+
+    // ---------- Publicación ----------
+    async function loadPost() {
+      const { data: post, error } = await supabaseClient.from('posts').select('*').eq('id', postId).maybeSingle();
+      if (error || !post) { showNotFound(); return; }
+
+      // Si alguien abre un repost, se muestra la publicación original
+      if (post.repost_of) {
+        window.location.replace('publicacion.html?id=' + post.repost_of);
+        return;
+      }
+      displayedPost = post;
+
+      const [profRes, channelSet, commentCounts, repostCounts, myRepostRes] = await Promise.all([
+        supabaseClient.from('profiles').select('avatar_url').eq('user_email', post.user_email).maybeSingle(),
+        connFetchChannelSet(),
+        ccFetchCounts([post.id]),
+        ccFetchRepostCounts([post.id]),
+        supabaseClient.from('posts').select('id').eq('repost_of', post.id).eq('user_email', currentUser.email).is('quote_text', null).limit(1)
+      ]);
+
+      const author = post.user_name || 'Usuario';
+      const avatarUrl = (profRes.data && profRes.data.avatar_url) || post.avatar_url || connAvatarFallback(author);
+      const isReposted = !!(myRepostRes.data && myRepostRes.data.length);
+      const isChannel = connIsChannelEmail(channelSet, post.user_email);
+
+      document.title = 'ByGether - Publicación de ' + author;
+      renderPost(post, { author, avatarUrl, isReposted, isChannel, commentCount: commentCounts[post.id] || 0, repostCount: repostCounts[post.id] || 0 });
+
+      document.getElementById('commentsSection').classList.remove('hidden');
+      await loadComments();
+    }
+
+    function renderPost(post, v) {
+      const id = post.id;
+      const menuBtnCls = 'w-full flex items-center gap-2 text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-slate-800 transition';
+      const repostIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>';
+      const quoteIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>';
+
+      document.getElementById('postCard').innerHTML = `
+        <div class="space-y-3">
+
+          <div class="flex items-center space-x-3">
+            <a href="perfil.html?user=${encodeURIComponent(v.author)}">
+              <img src="${connEscape(v.avatarUrl)}" class="w-12 h-12 rounded-full object-cover border border-gray-300 dark:border-slate-700 hover:opacity-80 transition" alt="${connEscape(v.author)}">
+            </a>
+            <div>
+              <div class="flex items-center space-x-2">
+                <a href="perfil.html?user=${encodeURIComponent(v.author)}" class="font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(v.author)}</a>
+                ${v.isChannel ? connChannelChip(true) : ''}
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">${formatCompactTime(post.created_at)}</div>
+            </div>
+          </div>
+
+          ${post.content ? `<p class="text-gray-800 dark:text-gray-200 text-base break-words whitespace-pre-line">${linkifyContent(post.content)}</p>` : ''}
+
+          ${post.image_url ? `<img src="${connEscape(post.image_url)}" class="w-full rounded-lg max-h-[32rem] object-cover" alt="Imagen de publicación">` : ''}
+
+          <div class="flex items-center space-x-5 border-t border-gray-100 dark:border-slate-800 pt-2 text-sm text-gray-600 dark:text-gray-400">
+
+            <button onclick="likePost(${id})" title="Me gusta" class="flex items-center gap-1.5 hover:text-red-500 font-semibold transition">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"></path></svg>
+              <span id="likes-count-${id}">${post.likes || 0}</span>
+            </button>
+
+            <button onclick="focusCommentBox()" title="Comentar" class="flex items-center gap-1.5 hover:text-blue-600 font-semibold transition">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"></path></svg>
+              <span id="comments-count-${id}">${v.commentCount}</span>
+            </button>
+
+            <div class="relative">
+              <button onclick="toggleRepostMenu()" data-repost-toggle title="Repostear" class="flex items-center gap-1.5 hover:text-green-600 font-semibold transition ${v.isReposted ? 'text-green-600' : ''}">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
+                <span id="reposts-count-${id}">${v.repostCount}</span>
+              </button>
+
+              <div id="repost-menu" class="hidden absolute left-0 bottom-full mb-2 w-52 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg overflow-hidden z-40">
+                ${v.isReposted ? `
+                  <button onclick="undoRepost()" class="${menuBtnCls}">${repostIcon} Deshacer</button>
+                  <button onclick="quotePost()" class="${menuBtnCls}">${quoteIcon} Citar</button>
+                ` : `
+                  <button onclick="repostPost()" class="${menuBtnCls}">${repostIcon} Repostear</button>
+                  <button onclick="quotePost()" class="${menuBtnCls}">${quoteIcon} Citar</button>
+                `}
+              </div>
+            </div>
+
+            <button onclick="sharePost()" title="Compartir" class="hover:text-blue-600 font-semibold transition">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+            </button>
+
+          </div>
+        </div>
+      `;
+    }
+
+    // ---------- Botones de la publicación (mismas funciones que el muro) ----------
+    async function likePost(id) {
+      const counterElement = document.getElementById(`likes-count-${id}`);
+      const newLikes = (parseInt(counterElement ? counterElement.textContent : '0', 10) || 0) + 1;
+      if (counterElement) counterElement.textContent = newLikes;
+
+      await supabaseClient.from('posts').update({ likes: newLikes }).eq('id', id);
+      await supabaseClient.from('post_likes').insert({ post_id: id, user_email: currentUser.email, user_name: currentName });
+    }
+
+    function focusCommentBox() {
+      const box = document.getElementById('commentInput');
+      box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      box.focus({ preventScroll: true });
+    }
+
+    function toggleRepostMenu() {
+      document.getElementById('repost-menu').classList.toggle('hidden');
+    }
+
+    document.addEventListener('click', (e) => {
+      const isToggleButton = e.target.closest('[data-repost-toggle]');
+      const isInsideMenu = e.target.closest('#repost-menu');
+      const menu = document.getElementById('repost-menu');
+      if (menu && !isToggleButton && !isInsideMenu) menu.classList.add('hidden');
+    });
+
+    async function repostPost() {
+      const { error } = await supabaseClient.from('posts').insert([{
+        user_email: currentUser.email,
+        user_name: currentName,
+        content: null,
+        image_url: null,
+        likes: 0,
+        repost_of: postId,
+        quote_text: null
+      }]);
+      if (error) { console.error(error); return; }
+      await loadPost();
+    }
+
+    async function undoRepost() {
+      const { error } = await supabaseClient.from('posts').delete()
+        .eq('repost_of', postId)
+        .eq('user_email', currentUser.email)
+        .is('quote_text', null);
+      if (error) { console.error(error); return; }
+      await loadPost();
+    }
+
+    async function quotePost() {
+      const quoteText = prompt('Escribe tu cita para este repost:');
+      if (quoteText === null) return;
+
+      const { error } = await supabaseClient.from('posts').insert([{
+        user_email: currentUser.email,
+        user_name: currentName,
+        content: null,
+        image_url: null,
+        likes: 0,
+        repost_of: postId,
+        quote_text: quoteText.trim() || null
+      }]);
+      if (error) { console.error(error); return; }
+      await loadPost();
+    }
+
+    function sharePost() {
+      const text = (displayedPost && displayedPost.content) || '';
+      if (navigator.share) {
+        navigator.share({ title: 'ByGether', text: text, url: window.location.href });
+      } else {
+        navigator.clipboard.writeText(window.location.href);
+        alert('Enlace copiado al portapapeles.');
+      }
+    }
+
+    // ---------- Comentarios ----------
+    async function loadComments() {
+      const list = document.getElementById('commentsList');
+
+      const { data: comments, error } = await supabaseClient
+        .from('comments')
+        .select('*')
+        .eq('post_id', postId)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        list.innerHTML = '<p class="p-6 text-sm text-gray-400 dark:text-gray-500 text-center">No se pudieron cargar los comentarios. Intenta de nuevo.</p>';
+        return;
+      }
+
+      ccSetCount(postId, (comments || []).length);
+
+      if (!comments || !comments.length) {
+        list.innerHTML = '<p class="p-6 text-sm text-gray-400 dark:text-gray-500 text-center">Aún no hay comentarios. ¡Sé el primero!</p>';
+        return;
+      }
+
+      // Fotos de perfil de quienes comentaron (por su correo)
+      const emails = [...new Set(comments.map(c => c.user_email).filter(Boolean))];
+      const avatarByEmail = {};
+      if (emails.length) {
+        const { data: profs } = await supabaseClient.from('profiles').select('user_email, avatar_url').in('user_email', emails);
+        (profs || []).forEach(p => { if (p.avatar_url) avatarByEmail[p.user_email] = p.avatar_url; });
+      }
+      const channelSet = await connFetchChannelSet();
+
+      list.innerHTML = comments.map(c => {
+        const name = c.user_name || 'Usuario';
+        const avatar = avatarByEmail[c.user_email] || connAvatarFallback(name);
+        return `
+          <div class="p-4 flex items-start gap-3">
+            <a href="perfil.html?user=${encodeURIComponent(name)}" class="flex-shrink-0">
+              <img src="${connEscape(avatar)}" class="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-slate-700 hover:opacity-80 transition" alt="${connEscape(name)}">
+            </a>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <a href="perfil.html?user=${encodeURIComponent(name)}" data-user-card="${connEscape(name)}" class="font-bold text-sm text-gray-900 dark:text-white hover:underline">${connEscape(name)}</a>
+                ${connIsChannelEmail(channelSet, c.user_email) ? connChannelChip(true) : ''}
+                <span class="text-gray-400 text-sm">·</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">${formatCompactTime(c.created_at)}</span>
+              </div>
+              <p class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line mt-0.5">${linkifyContent(c.content)}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function onCommentInput() {
+      const input = document.getElementById('commentInput');
+      document.getElementById('commentSubmitBtn').disabled = input.value.trim().length === 0;
+    }
+
+    async function submitComment() {
+      const input = document.getElementById('commentInput');
+      const btn = document.getElementById('commentSubmitBtn');
+      const content = input.value.trim();
+      if (!content || content.length > 280 || !postId) return;
+
+      btn.disabled = true;
+      const { error } = await supabaseClient.from('comments').insert({
+        post_id: postId,
+        user_email: currentUser.email,
+        user_name: currentName,
+        content: content
+      });
+
+      if (error) {
+        alert('Error al comentar: ' + error.message);
+        onCommentInput();
+        return;
+      }
+
+      input.value = '';
+      onCommentInput();
+      await loadComments();
+      const last = document.getElementById('commentsList').lastElementChild;
+      if (last) last.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    init();
+  </script>
+
+  <script src="mobile-nav.js"></script>
+</body>
+</html>

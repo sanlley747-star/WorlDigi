@@ -447,7 +447,7 @@
               </div>
             </div>
 
-            ${post.content ? `<p class="text-gray-800 dark:text-gray-200 text-sm cursor-pointer" onclick="openPostViewer(${post.id})">${post.content}</p>` : ''}
+            ${post.content ? `<p class="text-gray-800 dark:text-gray-200 text-sm cursor-pointer" onclick="openPostPage(${post.id})">${post.content}</p>` : ''}
             ${post.image_url ? `<img src="${post.image_url}" class="w-full rounded-lg max-h-96 object-cover cursor-pointer" onclick="openPostViewer(${post.id})">` : ''}
             
             <div class="flex items-center space-x-5 border-t border-gray-100 dark:border-slate-800 pt-2 text-sm text-gray-600 dark:text-gray-400">
@@ -531,6 +531,13 @@
     }
 
     // ===== BOTONES DE PUBLICACIÓN: like, comentar, repostear, compartir =====
+    // Al hacer clic en el texto de una publicación se abre su propia página (publicación + comentarios).
+    // Si el usuario estaba seleccionando texto, no se abre.
+    function openPostPage(postId) {
+      if (window.getSelection && String(window.getSelection()).length) return;
+      window.location.href = 'publicacion.html?id=' + encodeURIComponent(postId);
+    }
+
     function commentPost(postId) {
       openPostViewer(postId);
     }
