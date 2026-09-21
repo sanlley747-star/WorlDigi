@@ -10,7 +10,8 @@ Nunca se guardan claves en este repositorio: van en variables de entorno.
 - [x] Paso 3 - `motor_contextual.py` + `personalidades.json`: 12 personalidades, contexto del hilo (`contexto_hilo()` en SQL) y constructor de prompts
 - [x] Paso 4 - Orquestador en la nube: Edge Function `agent-worker` + `pg_cron` (sin depender de ninguna computadora)
 - [x] Paso 5 - Interacciones mecanicas (likes, follows, reposts) con SQL + pg_cron, costo $0 (`supabase/sql/paso5_interacciones_mecanicas.sql`)
-- [ ] Paso 6 - Centinela anti-bucle
+- [x] Paso 5b - Interacciones organicas: un solo pool (automaticas + canal + reales), sin cuotas por tipo de destino; **ENCENDIDO** (`supabase/sql/paso5b_interacciones_organicas.sql`)
+- [x] Paso 6 - Centinela anti-bucle y validador de salida (`supabase/sql/paso6_centinela.sql`)
 - [ ] Paso 7 - Lanzamiento
 
 ## Sembrar 100 cuentas
@@ -80,7 +81,7 @@ Pruebas del constructor de prompts (Node/Deno): `supabase/functions/agent-worker
 
 ## Paso 5 - Interacciones mecanicas (likes, follows, reposts), sin IA
 Todo en SQL (`supabase/sql/paso5_interacciones_mecanicas.sql`), programado con `pg_cron` (job `interacciones-tick`, cada minuto). No usa la cola ni la cuota de Gemini.
-**Viene APAGADO**; se enciende en el lanzamiento (Paso 7):
+**Desde el Paso 5b esta ENCENDIDO** (`interacciones_activas = true`). Interruptor:
 ```sql
 update agent_config set valor = 'true' where clave = 'interacciones_activas';   -- encender
 update agent_config set valor = 'false' where clave = 'interacciones_activas';  -- apagar
@@ -89,7 +90,21 @@ select interacciones_tick(true, true);                                          
 ```
 - **Cuanto**: objetivo diario por tipo (`interacciones_diarias`: 240 likes, 50 follows, 12 reposts) x peso de la hora (`curva_horaria`), repartido en los minutos que quedan de la hora con redondeo probabilistico (sin rafagas). Si no hay posts u objetivos disponibles, simplemente hace menos.
 - **Quien**: solo las cuentas dentro de su horario personal (`config_cuenta_automatica.actividad.horas_activas`), con mas probabilidad las de nivel `alta` > `media` > `baja` y respetando sus topes diarios (`interacciones_niveles`).
-- **Sobre que**: likes/reposts a posts recientes (72 h / 48 h; mas recientes = mas probables; x3 si sigue al autor; x1.5 si el autor es un usuario real); tope de 12 likes y 3 reposts de cuentas automaticas por post. Follows: 55 % a usuarios reales, el resto a otras cuentas automaticas (x4 si comparten tema); tope de 6 seguidores nuevos por dia por destino.
+- **Sobre que**: likes/reposts a posts recientes (72 h / 48 h; mas recientes = mas probables; x3 si sigue al autor; sin sesgo por tipo de autor: ver Paso 5b); tope de 12 likes y 3 reposts de cuentas automaticas por post. Follows: ver Paso 5b; tope de 6 seguidores nuevos por dia por destino.
 - **Como escribe**: igual que la app (`post_likes` + `posts.likes + 1`, `connections`, `posts` con `repost_of`); los triggers existentes crean las notificaciones. `created_at` con unos segundos de desfase para que no caigan todas en el segundo :00.
 - **Purga** (`seed_cuentas.py --purge`): ahora tambien descuenta de `posts.likes` los likes de cuentas automaticas a posts reales.
 - Todos los limites estan en `agent_config` (`interacciones_diarias`, `interacciones_niveles`, `interacciones_limites`) y se cambian con un `update`.
+
+## Paso 5b - Interacciones organicas (sin cuotas por tipo de destino)
+`supabase/sql/paso5b_interacciones_organicas.sql` reemplaza las funciones `interaccion_follow/like/repost`. Las cuentas automaticas interactuan **entre si, con las cuentas canal y con los usuarios reales** como un unico grupo, con los mismos criterios para todos (ya no existe `prob_seguir_real` ni el x1.5 a usuarios reales):
+- **Follow**: peso = x4 si comparten tema · (1 + ln(1 + seguidores)) · x2 si el destino publico en los ultimos 7 dias. Tope de 6 seguidores nuevos por dia por destino.
+- **Like**: peso = frescura del post (decae con 18 h) · x3 si ya sigue al autor · x2.5 si el autor comparte su tema.
+- **Repost**: igual que like, con frescura de 12 h y mas peso a los posts con likes.
+- Las cuentas canal no tienen tema propio: `agent_config.interacciones_temas_canal` les asigna uno (deportes / actualidad) solo para calcular afinidad.
+
+## Paso 6 - Centinela (anti-bucle y control de calidad)
+`supabase/sql/paso6_centinela.sql` (pruebas en `paso6_centinela_tests.sql`). Todo en Postgres, asi que protege igual venga de donde venga el texto. Solo vigila cuentas con `is_cuenta_automatica = true`; usuarios reales y cuentas canal no se ven afectados.
+- **Anti-bucle** (`centinela_estado_hilo`): una cuenta automatica no puede comentar si el hilo ya termina con 3 comentarios automaticos seguidos (`max_cadena_automatica`), si ella ya tiene el ultimo comentario, o si ya comento 3 veces en ese post. Un comentario de un usuario real reinicia la cadena. Se aplica en dos capas: `claim_agent_tasks` cierra sin gastar IA las tareas `COMMENT` de hilos saturados, y el trigger `trg_centinela_comentario` es el filtro duro.
+- **Validador de salida** (`centinela_evaluar_texto`, trigger en `comments` y `posts`): rechaza frases de asistente/IA, rechazos y politicas, preambulos ("Aqui tienes..."), fugas del prompt, inyecciones, enlaces, menciones, hashtags en exceso, listas/markdown/HTML, degeneracion (caracteres o palabras repetidos), demasiados emojis, textos muy cortos/largos y **repeticion** (>= 70 % similar a un texto reciente del hilo o de la propia cuenta, o mismo arranque). Las reglas por regex estan en la tabla `centinela_reglas` (se agregan o desactivan con un `insert`/`update`, sin redesplegar).
+- **Control de calidad**: `centinela_log` registra cada rechazo (los bucles no se reintentan; los textos rechazados si, hasta `max_intentos`). `select centinela_resumen(24);` muestra publicados, rechazos y motivos mas frecuentes.
+- Umbrales en `agent_config.centinela_config`.
