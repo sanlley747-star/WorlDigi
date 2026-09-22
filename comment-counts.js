@@ -329,19 +329,42 @@ async function ccToggleCommentLike(btn, id, currentLikes, isLiked, userEmail, us
   const newLiked = !isLiked;
   const newLikes = Math.max(0, currentLikes + (isLiked ? -1 : 1));
 
-  if (counterElement) counterElement.textContent = newLikes;
-  btn.setAttribute('data-liked', newLiked.toString());
-  btn.classList.toggle('text-red-500', newLiked);
-  btn.classList.toggle('hover:text-red-500', !newLiked);
-  if (heartPath) heartPath.setAttribute('fill', newLiked ? 'currentColor' : 'none');
-  btn.setAttribute('onclick', `ccToggleCommentLike(this, ${id}, ${newLikes}, ${newLiked}, ${JSON.stringify(userEmail)}, ${JSON.stringify(userName)})`);
-  const wrapper = btn.closest('[data-like-wrapper]');
-  if (wrapper) ccLikeHover(wrapper, false);
+  const updateUI = (likesCount, likedState) => {
+    if (counterElement) counterElement.textContent = likesCount;
+    btn.setAttribute('data-liked', likedState.toString());
+    btn.classList.toggle('text-red-500', likedState);
+    btn.classList.toggle('hover:text-red-500', !likedState);
+    if (heartPath) heartPath.setAttribute('fill', likedState ? 'currentColor' : 'none');
+    btn.setAttribute('onclick', `ccToggleCommentLike(this, ${id}, ${likesCount}, ${likedState}, ${JSON.stringify(userEmail)}, ${JSON.stringify(userName)})`);
+    const wrapper = btn.closest('[data-like-wrapper]');
+    if (wrapper) ccLikeHover(wrapper, false);
+  };
 
-  if (isLiked) {
-    await supabaseClient.from('comment_likes').delete().eq('comment_id', id).eq('user_email', userEmail);
-  } else {
-    await supabaseClient.from('comment_likes').insert({ comment_id: id, user_email: userEmail, user_name: userName });
+  // 1. Pintado optimista
+  updateUI(newLikes, newLiked);
+
+  try {
+    let response;
+    if (isLiked) {
+      response = await supabaseClient
+        .from('comment_likes')
+        .delete()
+        .eq('comment_id', id)
+        .eq('user_email', userEmail);
+    } else {
+      response = await supabaseClient
+        .from('comment_likes')
+        .insert({ comment_id: id, user_email: userEmail, user_name: userName });
+    }
+
+    // 2. Si Supabase devuelve error, revertir UI
+    if (response.error) {
+      console.error('Error en comment_likes Supabase:', response.error.message);
+      updateUI(currentLikes, isLiked);
+    }
+  } catch (err) {
+    console.error('Error inesperado en comentario:', err);
+    updateUI(currentLikes, isLiked);
   }
 }
 
