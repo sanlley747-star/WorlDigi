@@ -450,6 +450,27 @@
         return;
       }
 
+      // Si hay reposts, buscamos la publicación original y el avatar de su autor
+      const repostIds = [...new Set(posts.filter(p => p.repost_of).map(p => p.repost_of))];
+      const postsById = {};
+      if (repostIds.length) {
+        const { data: originals } = await supabaseClient
+          .from('posts')
+          .select('*')
+          .in('id', repostIds);
+        (originals || []).forEach(p => { postsById[p.id] = p; });
+      }
+
+      const originalAuthors = [...new Set(Object.values(postsById).map(p => p.user_name).filter(Boolean))];
+      const avatarByUser = {};
+      if (originalAuthors.length) {
+        const { data: profiles } = await supabaseClient
+          .from('profiles')
+          .select('user_name, avatar_url')
+          .in('user_name', originalAuthors);
+        (profiles || []).forEach(p => { avatarByUser[p.user_name] = p.avatar_url; });
+      }
+
       // Publicaciones que el usuario que ve el perfil ya reposteó (sin cita), para pintar el botón en verde
       let myPlainReposts = new Set();
       if (currentUserEmail) {
@@ -472,6 +493,14 @@
        const avatarUrl = window.currentProfileAvatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random`;
         const isReposted = myPlainReposts.has(post.id);
 
+        // Si es un repost, mostramos la publicación original completa (autor, avatar, contenido, imagen y hora)
+        const originalPost = post.repost_of ? postsById[post.repost_of] : null;
+        const displayPost = originalPost || post;
+        const originalAuthor = displayPost.user_name || username;
+        const originalAvatarUrl = post.repost_of
+          ? (avatarByUser[originalAuthor] || `https://ui-avatars.com/api/?name=${encodeURIComponent(originalAuthor)}&background=random`)
+          : avatarUrl;
+
         return `
           <div class="relative bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 space-y-3">
             ${isOwnProfile ? `
@@ -490,17 +519,27 @@
                 </div>
               </div>
             ` : ''}
+
+            ${post.repost_of ? `
+              <div class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 font-semibold">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0 text-green-600"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
+                Hiciste repost
+              </div>
+            ` : ''}
+
             <div class="flex items-center space-x-3">
-              <img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700">
+              <a href="perfil.html?user=${encodeURIComponent(originalAuthor)}">
+                <img src="${originalAvatarUrl}" class="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700 hover:opacity-80 transition cursor-pointer">
+              </a>
               <div class="flex items-center space-x-2">
-                <span class="font-bold text-gray-900 dark:text-white text-sm">${username}</span>
+                <a href="perfil.html?user=${encodeURIComponent(originalAuthor)}" class="font-bold text-gray-900 dark:text-white text-sm hover:underline">${originalAuthor}</a>
                 <span class="text-gray-400 text-sm">·</span>
-                <span class="text-sm text-gray-500 dark:text-gray-400">${compactTime}</span>
+                <span class="text-sm text-gray-500 dark:text-gray-400">${post.repost_of ? formatCompactTime(displayPost.created_at) : compactTime}</span>
               </div>
             </div>
 
-            ${post.content ? `<p class="text-gray-800 dark:text-gray-200 text-sm cursor-pointer whitespace-pre-line break-words" onclick="openPostPage(${post.id})">${linkifyContent(post.content)}</p>` : ''}
-            ${post.image_url ? `<img src="${post.image_url}" class="w-full rounded-lg max-h-96 object-cover cursor-pointer" onclick="openPostViewer(${post.id})">` : ''}
+            ${displayPost.content ? `<p class="text-gray-800 dark:text-gray-200 text-sm cursor-pointer whitespace-pre-line break-words" onclick="openPostPage(${displayPost.id})">${linkifyContent(displayPost.content)}</p>` : ''}
+            ${displayPost.image_url ? `<img src="${displayPost.image_url}" class="w-full rounded-lg max-h-96 object-cover cursor-pointer" onclick="openPostViewer(${displayPost.id})">` : ''}
             
             <div class="flex items-center space-x-5 border-t border-gray-100 dark:border-slate-800 pt-2 text-sm text-gray-600 dark:text-gray-400">
 
