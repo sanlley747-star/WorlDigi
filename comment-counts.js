@@ -113,22 +113,47 @@ async function ccToggleLike(btn, id, currentLikes, isLiked, userEmail, userName)
   const newLiked = !isLiked;
   const newLikes = Math.max(0, currentLikes + (isLiked ? -1 : 1));
 
-  // Actualización optimista en pantalla
-  if (counterElement) counterElement.textContent = newLikes;
-  btn.setAttribute('data-liked', newLiked.toString());
-  btn.classList.toggle('text-red-500', newLiked);
-  btn.classList.toggle('hover:text-red-500', !newLiked);
-  if (heartPath) heartPath.setAttribute('fill', newLiked ? 'currentColor' : 'none');
-  btn.setAttribute('onclick', `ccToggleLike(this, ${id}, ${newLikes}, ${newLiked}, ${JSON.stringify(userEmail)}, ${JSON.stringify(userName)})`);
-  const wrapper = btn.closest('[data-like-wrapper]');
-  if (wrapper) ccLikeHover(wrapper, false);
+  const updateUI = (likesCount, likedState) => {
+    if (counterElement) counterElement.textContent = likesCount;
+    btn.setAttribute('data-liked', likedState.toString());
+    btn.classList.toggle('text-red-500', likedState);
+    btn.classList.toggle('hover:text-red-500', !likedState);
+    if (heartPath) heartPath.setAttribute('fill', likedState ? 'currentColor' : 'none');
+    btn.setAttribute('onclick', `ccToggleLike(this, ${id}, ${likesCount}, ${likedState}, ${JSON.stringify(userEmail)}, ${JSON.stringify(userName)})`);
+    const wrapper = btn.closest('[data-like-wrapper]');
+    if (wrapper) ccLikeHover(wrapper, false);
+  };
 
-  await supabaseClient.from('posts').update({ likes: newLikes }).eq('id', id);
+  // 1. Pintado optimista
+  updateUI(newLikes, newLiked);
 
-  if (isLiked) {
-    await supabaseClient.from('post_likes').delete().eq('post_id', id).eq('user_email', userEmail);
-  } else {
-    await supabaseClient.from('post_likes').insert({ post_id: id, user_email: userEmail, user_name: userName });
+  try {
+    let response;
+    if (isLiked) {
+      response = await supabaseClient
+        .from('post_likes')
+        .delete()
+        .eq('post_id', id)
+        .eq('user_email', userEmail);
+    } else {
+      response = await supabaseClient
+        .from('post_likes')
+        .insert({ post_id: id, user_email: userEmail, user_name: userName });
+    }
+
+    // 2. Si Supabase devuelve error (RLS o duplicado), revertir UI
+    if (response.error) {
+      console.error('Error en post_likes Supabase:', response.error.message);
+      updateUI(currentLikes, isLiked);
+      return;
+    }
+
+    // 3. Si todo salió bien, actualizar el total en la tabla posts
+    await supabaseClient.from('posts').update({ likes: newLikes }).eq('id', id);
+
+  } catch (err) {
+    console.error('Error inesperado de red:', err);
+    updateUI(currentLikes, isLiked);
   }
 }
 
