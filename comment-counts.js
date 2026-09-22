@@ -69,15 +69,17 @@ async function ccFetchMyLikes(postIds, userEmail) {
 // aparece la leyenda, y desaparece al quitar el cursor. userEmail/userName son quien da el like.
 function ccLikeButtonHtml(id, likes, isLiked, userEmail, userName) {
   const count = likes || 0;
-  const ue = JSON.stringify(userEmail || '');
-  const un = JSON.stringify(userName || '');
   return `
     <div class="relative" data-like-wrapper onmouseenter="ccLikeHover(this, true)" onmouseleave="ccLikeHover(this, false)">
       <button
         type="button"
         data-like-btn
+        data-post-id="${id}"
+        data-likes="${count}"
         data-liked="${isLiked ? 'true' : 'false'}"
-        onclick="ccToggleLike(this, ${id}, ${count}, ${isLiked ? 'true' : 'false'}, ${ue}, ${un})"
+        data-user-email="${userEmail || ''}"
+        data-user-name="${userName || ''}"
+        onclick="ccToggleLike(this)"
         title="Me gusta"
         class="flex items-center gap-1.5 font-semibold transition ${isLiked ? 'text-red-500' : 'hover:text-red-500'}">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0">
@@ -105,7 +107,13 @@ function ccLikeHover(wrapper, show) {
 // puede tener un "me gusta" activo por publicación. Actualiza pantalla de forma optimista.
 // btn: el <button> pulsado. id: id del post. currentLikes: contador actual mostrado. isLiked: si ya tenía like.
 // userEmail/userName: identidad de quien da el like.
-async function ccToggleLike(btn, id, currentLikes, isLiked, userEmail, userName) {
+async function ccToggleLike(btn) {
+  const id = btn.getAttribute('data-post-id');
+  const currentLikes = parseInt(btn.getAttribute('data-likes') || '0', 10);
+  const isLiked = btn.getAttribute('data-liked') === 'true';
+  const userEmail = btn.getAttribute('data-user-email');
+  const userName = btn.getAttribute('data-user-name');
+
   if (!userEmail) return;
 
   const counterElement = document.getElementById(`likes-count-${id}`);
@@ -113,29 +121,32 @@ async function ccToggleLike(btn, id, currentLikes, isLiked, userEmail, userName)
   const newLiked = !isLiked;
   const newLikes = Math.max(0, currentLikes + (isLiked ? -1 : 1));
 
+  // Función interna para actualizar interfaz y atributos data-*
   const updateUI = (likesCount, likedState) => {
     if (counterElement) counterElement.textContent = likesCount;
+    btn.setAttribute('data-likes', likesCount.toString());
     btn.setAttribute('data-liked', likedState.toString());
     btn.classList.toggle('text-red-500', likedState);
     btn.classList.toggle('hover:text-red-500', !likedState);
     if (heartPath) heartPath.setAttribute('fill', likedState ? 'currentColor' : 'none');
-    btn.setAttribute('onclick', `ccToggleLike(this, ${id}, ${likesCount}, ${likedState}, ${JSON.stringify(userEmail)}, ${JSON.stringify(userName)})`);
     const wrapper = btn.closest('[data-like-wrapper]');
     if (wrapper) ccLikeHover(wrapper, false);
   };
 
-  // 1. Pintado optimista
+  // 1. Actualización optimista de UI
   updateUI(newLikes, newLiked);
 
   try {
     let response;
     if (isLiked) {
+      // Quitar me gusta
       response = await supabaseClient
         .from('post_likes')
         .delete()
         .eq('post_id', id)
         .eq('user_email', userEmail);
     } else {
+      // Dar me gusta
       response = await supabaseClient
         .from('post_likes')
         .insert({ post_id: id, user_email: userEmail, user_name: userName });
@@ -143,16 +154,16 @@ async function ccToggleLike(btn, id, currentLikes, isLiked, userEmail, userName)
 
     // 2. Si Supabase devuelve error (RLS o duplicado), revertir UI
     if (response.error) {
-      console.error('Error en post_likes Supabase:', response.error.message);
+      console.error('Error en Supabase post_likes:', response.error.message);
       updateUI(currentLikes, isLiked);
       return;
     }
 
-    // 3. Si todo salió bien, actualizar el total en la tabla posts
+    // 3. Sincronizar conteo en la tabla posts
     await supabaseClient.from('posts').update({ likes: newLikes }).eq('id', id);
 
   } catch (err) {
-    console.error('Error inesperado de red:', err);
+    console.error('Error inesperado de ejecución:', err);
     updateUI(currentLikes, isLiked);
   }
 }
