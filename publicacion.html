@@ -127,6 +127,7 @@
 
   </main>
 
+
   <script>
     const SUPABASE_URL = 'https://aiymadawznadvavzspxj.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_fL7vTXJ4NLhC2CJs9nPVAg_fvzWbfCY';
@@ -431,11 +432,48 @@
       }
       const channelSet = await connFetchChannelSet();
 
-      list.innerHTML = comments.map(c => {
+      // Datos para los botones de cada comentario (me gusta, respuestas y reposts)
+      const commentIds = comments.map(c => c.id);
+      const [likeCounts, replyCounts, repostCounts, myLikes, myReposts] = await Promise.all([
+        ccFetchCommentLikeCounts(commentIds),
+        ccFetchCommentReplyCounts(commentIds),
+        ccFetchCommentRepostCounts(commentIds),
+        ccFetchMyCommentLikes(commentIds, currentUser.email),
+        ccFetchMyCommentReposts(commentIds, currentUser.email)
+      ]);
+
+      // Armamos el hilo: cada comentario que responde a otro se agrupa (y se indenta) bajo su comentario raíz.
+      const byId = {};
+      comments.forEach(c => { byId[c.id] = c; });
+      function rootOf(c) {
+        let cur = c;
+        while (cur.reply_to && byId[cur.reply_to]) cur = byId[cur.reply_to];
+        return cur.id;
+      }
+      const topLevel = comments.filter(c => !c.reply_to || !byId[c.reply_to]);
+      const childrenByRoot = {};
+      comments.forEach(c => {
+        if (c.reply_to && byId[c.reply_to]) {
+          const r = rootOf(c);
+          (childrenByRoot[r] = childrenByRoot[r] || []).push(c);
+        }
+      });
+
+      function renderComment(c, isReply) {
         const name = c.user_name || 'Usuario';
         const avatar = avatarByEmail[c.user_email] || connAvatarFallback(name);
+        const actions = ccCommentActionsHtml(c, {
+          likes: likeCounts[c.id] || 0,
+          replies: replyCounts[c.id] || 0,
+          reposts: repostCounts[c.id] || 0,
+          isLiked: myLikes.has(c.id),
+          isReposted: myReposts.has(c.id),
+          userEmail: currentUser.email,
+          userName: currentName,
+          postId: postId
+        });
         return `
-          <div class="p-4 flex items-start gap-3">
+          <div id="comentario-${c.id}" class="p-4 flex items-start gap-3 ${isReply ? 'pl-12 bg-gray-50/60 dark:bg-slate-800/40' : ''}">
             <a href="perfil.html?user=${encodeURIComponent(name)}" class="flex-shrink-0">
               <img src="${connEscape(avatar)}" class="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-slate-700 hover:opacity-80 transition" alt="${connEscape(name)}">
             </a>
@@ -447,11 +485,77 @@
                 <span class="text-xs text-gray-500 dark:text-gray-400">${formatCompactTime(c.created_at)}</span>
               </div>
               <p class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line mt-0.5">${linkifyContent(c.content)}</p>
+              ${actions}
+              <div id="reply-box-${c.id}" class="hidden mt-2 flex items-start gap-2">
+                <textarea id="reply-input-${c.id}" maxlength="280" rows="1" placeholder="Escribe una respuesta..." class="flex-1 text-sm p-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-transparent text-gray-900 dark:text-gray-100 resize-none focus:outline-none focus:border-blue-500"></textarea>
+                <button onclick="submitReply(${c.id})" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 px-3 rounded-lg transition">Responder</button>
+              </div>
             </div>
           </div>
         `;
+      }
+
+      list.innerHTML = topLevel.map(c => {
+        const replies = (childrenByRoot[c.id] || []).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        return renderComment(c, false) + replies.map(r => renderComment(r, true)).join('');
       }).join('');
     }
+
+    // Abre/cierra la cajita de responder debajo de un comentario.
+    window.onReplyToComment = function (commentId) {
+      const box = document.getElementById(`reply-box-${commentId}`);
+      if (!box) return;
+      const isHidden = box.classList.contains('hidden');
+      document.querySelectorAll('[id^="reply-box-"]').forEach(b => b.classList.add('hidden'));
+      if (isHidden) {
+        box.classList.remove('hidden');
+        document.getElementById(`reply-input-${commentId}`).focus();
+      }
+    };
+
+    async function submitReply(commentId) {
+      const input = document.getElementById(`reply-input-${commentId}`);
+      const content = input.value.trim();
+      if (!content || content.length > 280) return;
+
+      const { error } = await supabaseClient.from('comments').insert({
+        post_id: postId,
+        user_email: currentUser.email,
+        user_name: currentName,
+        content: content,
+        reply_to: commentId
+      });
+      if (error) { alert('Error al responder: ' + error.message); return; }
+
+      input.value = '';
+      await loadComments();
+    }
+
+    // Repostear/citar un comentario: se publica como una nueva publicación en tu perfil que cita el comentario.
+    window.onRepostComment = async function (commentId, quoteText) {
+      const { error } = await supabaseClient.from('posts').insert({
+        user_email: currentUser.email,
+        user_name: currentName,
+        content: null,
+        image_url: null,
+        likes: 0,
+        repost_of_comment_id: commentId,
+        quote_text: quoteText || null
+      });
+      if (error) { alert('Error al repostear: ' + error.message); return; }
+      await loadComments();
+    };
+
+    window.onUndoCommentRepost = async function (commentId) {
+      const { error } = await supabaseClient
+        .from('posts')
+        .delete()
+        .eq('repost_of_comment_id', commentId)
+        .eq('user_email', currentUser.email)
+        .is('quote_text', null);
+      if (error) { alert('Error al deshacer el repost: ' + error.message); return; }
+      await loadComments();
+    };
 
     function onCommentInput() {
       const input = document.getElementById('commentInput');
