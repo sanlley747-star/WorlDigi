@@ -249,21 +249,23 @@
       }
       displayedPost = post;
 
-      const [profRes, channelSet, commentCounts, repostCounts, myRepostRes] = await Promise.all([
+      const [profRes, channelSet, commentCounts, repostCounts, myRepostRes, myLikes] = await Promise.all([
         supabaseClient.from('profiles').select('avatar_url').eq('user_email', post.user_email).maybeSingle(),
         connFetchChannelSet(),
         ccFetchCounts([post.id]),
         ccFetchRepostCounts([post.id]),
-        supabaseClient.from('posts').select('id').eq('repost_of', post.id).eq('user_email', currentUser.email).is('quote_text', null).limit(1)
+        supabaseClient.from('posts').select('id').eq('repost_of', post.id).eq('user_email', currentUser.email).is('quote_text', null).limit(1),
+        ccFetchMyLikes([post.id], currentUser.email)
       ]);
 
       const author = post.user_name || 'Usuario';
       const avatarUrl = (profRes.data && profRes.data.avatar_url) || post.avatar_url || connAvatarFallback(author);
       const isReposted = !!(myRepostRes.data && myRepostRes.data.length);
       const isChannel = connIsChannelEmail(channelSet, post.user_email);
+      const isLiked = myLikes.has(post.id);
 
       document.title = 'ByGether - Publicación de ' + author;
-      renderPost(post, { author, avatarUrl, isReposted, isChannel, commentCount: commentCounts[post.id] || 0, repostCount: repostCounts[post.id] || 0 });
+      renderPost(post, { author, avatarUrl, isReposted, isChannel, isLiked, commentCount: commentCounts[post.id] || 0, repostCount: repostCounts[post.id] || 0 });
 
       document.getElementById('commentsSection').classList.remove('hidden');
       await loadComments();
@@ -297,10 +299,7 @@
 
           <div class="flex items-center space-x-5 border-t border-gray-100 dark:border-slate-800 pt-2 text-sm text-gray-600 dark:text-gray-400">
 
-            <button onclick="likePost(${id})" title="Me gusta" class="flex items-center gap-1.5 hover:text-red-500 font-semibold transition">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"></path></svg>
-              <span id="likes-count-${id}">${post.likes || 0}</span>
-            </button>
+            ${ccLikeButtonHtml(id, post.likes, v.isLiked, currentUser.email, currentName)}
 
             <button onclick="focusCommentBox()" title="Comentar" class="flex items-center gap-1.5 hover:text-blue-600 font-semibold transition">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"></path></svg>
@@ -315,7 +314,7 @@
 
               <div id="repost-menu" class="hidden absolute left-0 bottom-full mb-2 w-52 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg overflow-hidden z-40">
                 ${v.isReposted ? `
-                  <button onclick="undoRepost()" class="${menuBtnCls}">${repostIcon} Deshacer</button>
+                  <button onclick="undoRepost()" class="${menuBtnCls}">${repostIcon} Deshacer repost</button>
                   <button onclick="quotePost()" class="${menuBtnCls}">${quoteIcon} Citar</button>
                 ` : `
                   <button onclick="repostPost()" class="${menuBtnCls}">${repostIcon} Repostear</button>
@@ -334,15 +333,6 @@
     }
 
     // ---------- Botones de la publicación (mismas funciones que el muro) ----------
-    async function likePost(id) {
-      const counterElement = document.getElementById(`likes-count-${id}`);
-      const newLikes = (parseInt(counterElement ? counterElement.textContent : '0', 10) || 0) + 1;
-      if (counterElement) counterElement.textContent = newLikes;
-
-      await supabaseClient.from('posts').update({ likes: newLikes }).eq('id', id);
-      await supabaseClient.from('post_likes').insert({ post_id: id, user_email: currentUser.email, user_name: currentName });
-    }
-
     function focusCommentBox() {
       const box = document.getElementById('commentInput');
       box.scrollIntoView({ behavior: 'smooth', block: 'center' });

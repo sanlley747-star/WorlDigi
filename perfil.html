@@ -487,6 +487,7 @@
       // Cantidad de comentarios de cada publicación (una sola consulta)
       const commentCounts = await ccFetchCounts(posts.map(p => p.id));
       const repostCounts = await ccFetchRepostCounts(posts.map(p => p.id));
+      const myLikes = await ccFetchMyLikes(posts.map(p => p.id), currentUserEmail);
 
       feed.innerHTML = posts.map(post => {
         const compactTime = formatCompactTime(post.created_at);
@@ -543,13 +544,7 @@
             
             <div class="flex items-center space-x-5 border-t border-gray-100 dark:border-slate-800 pt-2 text-sm text-gray-600 dark:text-gray-400">
 
-              <button
-                onclick="likePost(${post.id}, ${post.likes || 0})"
-                title="Me gusta"
-                class="flex items-center gap-1.5 hover:text-red-500 font-semibold transition">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"></path></svg>
-                <span id="likes-count-${post.id}">${post.likes || 0}</span>
-              </button>
+              ${ccLikeButtonHtml(post.id, post.likes, myLikes.has(post.id), currentUserEmail, loggedUserName)}
 
               <button
                 onclick="commentPost(${post.id})"
@@ -579,7 +574,7 @@
                       onclick="undoRepost(${post.id})"
                       class="w-full flex items-center gap-2 text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-slate-800 transition">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
-                      Deshacer
+                      Deshacer repost
                     </button>
 
                     <button
@@ -695,17 +690,6 @@
 
     function commentPost(postId) {
       openCommentModal(postId);
-    }
-
-    async function likePost(id, currentLikes) {
-      if (!currentUserEmail) { window.location.href = 'index.html'; return; }
-      const newLikes = currentLikes + 1;
-      const counterElement = document.getElementById(`likes-count-${id}`);
-      if (counterElement) counterElement.textContent = newLikes;
-      await supabaseClient.from('posts').update({ likes: newLikes }).eq('id', id);
-
-      // Registramos quién dio el like (para poder notificar al dueño de la publicación)
-      await supabaseClient.from('post_likes').insert({ post_id: id, user_email: currentUserEmail, user_name: loggedUserName });
     }
 
     function toggleRepostMenu(postId) {
