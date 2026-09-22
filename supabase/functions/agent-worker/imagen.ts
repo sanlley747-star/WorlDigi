@@ -13,18 +13,25 @@ export interface ImagenPost { url: string; desc: string }
 export interface ResultadoImagen { imagen: ImagenPost | null; motivo?: string; bytes?: number; mime?: string }
 
 export function promptImagen(tema: string, texto: string): string {
-  const t = texto.replace(/\s+/g, " ").trim().slice(0, 220);
-  return "Fotografía realista tomada con un teléfono celular, luz natural, encuadre casual de foto personal, " +
-    "sin texto superpuesto, sin logotipos, sin marcas de agua, sin collage ni marcos. Evita rostros en primer plano. " +
-    `Debe acompañar una publicación de redes sociales sobre "${tema}" que dice: "${t}". ` +
-    "Muestra una escena u objeto cotidiano relacionado con el tema.";
+  const t = texto.replace(/\s+/g, " ").trim().slice(0, 180);
+  return (
+    "A realistic amateur smartphone photo showing exactly ONE single centered subject. " +
+    `Natural lighting, everyday scene about "${tema}" inspired by: "${t}". ` +
+    "Single item, symmetrical, clean real-life perspective. " +
+    "STRICT CONSTRAINTS: Only one main object or entity, no extra limbs, no duplicated features, no double handles, " +
+    "no two heads, no text, no logos, no watermarks, no collages, no surreal elements, no fantasy."
+  );
 }
 
 async function pedirImagen(key: string, model: string, prompt: string): Promise<{ mime: string; b64: string }> {
   // deno-lint-ignore no-explicit-any
   const cuerpo = (conAspecto: boolean): any => ({
     contents: [{ role: "user", parts: [{ text: prompt }] }],
-    generationConfig: { responseModalities: ["IMAGE"], ...(conAspecto ? { imageConfig: { aspectRatio: "4:3" } } : {}) },
+    generationConfig: { 
+      responseModalities: ["IMAGE"], 
+      // FUERZA RESOLUCIÓN CUADRADA NATIVA (1:1) PARA ELIMINAR DUPLICACIONES
+      ...(conAspecto ? { imageConfig: { aspectRatio: "1:1" } } : {}) 
+    },
   });
 
   const enviar = async (conAspecto: boolean) => {
