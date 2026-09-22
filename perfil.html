@@ -357,18 +357,20 @@
       document.getElementById('editAvatarInput').value = '';
     }
 
-    document.getElementById('editCoverInput').addEventListener('change', e => {
-      const file = e.target.files[0];
-      if (!file) return;
-      pendingCoverFile = file;
-      document.getElementById('editCoverPreview').src = URL.createObjectURL(file);
-    });
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('editCoverInput').addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        pendingCoverFile = file;
+        document.getElementById('editCoverPreview').src = URL.createObjectURL(file);
+      });
 
-    document.getElementById('editAvatarInput').addEventListener('change', e => {
-      const file = e.target.files[0];
-      if (!file) return;
-      pendingAvatarFile = file;
-      document.getElementById('editAvatarPreview').src = URL.createObjectURL(file);
+      document.getElementById('editAvatarInput').addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        pendingAvatarFile = file;
+        document.getElementById('editAvatarPreview').src = URL.createObjectURL(file);
+      });
     });
 
     async function uploadProfileImage(file, tipo) {
