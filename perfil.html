@@ -83,13 +83,8 @@
   <div id="coverWrapper" class="group relative w-full h-48 bg-slate-800 cursor-pointer">
     <img id="profileCover" class="w-full h-full object-cover" alt="">
     <div class="hidden absolute inset-0 bg-black/40 items-center justify-center transition opacity-0 group-hover:opacity-100" data-edit-overlay>
-      <span class="text-white text-sm font-semibold">📷 Cambiar portada</span>
+      <span class="text-white text-sm font-semibold">🔍 Ver imagen</span>
     </div>
-
-    <button id="editProfileBtn" onclick="toggleEditMode()" style="display:none;"
-      class="absolute top-3 right-3 bg-slate-900/70 hover:bg-slate-900 text-white text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 transition">
-      Editar perfil
-    </button>
   </div>
 
   <!-- Avatar circular sobrepuesto abajo a la izquierda -->
@@ -97,9 +92,14 @@
         <div id="avatarWrapper" class="group absolute -top-10 left-6 cursor-pointer">
       <img id="profileAvatar" class="w-20 h-20 rounded-full object-cover border-4 border-white dark:border-slate-900 shadow-md bg-slate-200 dark:bg-slate-800" alt="">
             <div class="hidden absolute inset-0 rounded-full bg-black/40 items-center justify-center transition opacity-0 group-hover:opacity-100" data-edit-overlay>
-        <span class="text-white text-xs">📷</span>
+        <span class="text-white text-xs">🔍</span>
       </div>
     </div>
+
+    <button id="editProfileBtn" onclick="openEditProfileModal()" style="display:none;"
+      class="absolute top-2 left-28 sm:left-32 bg-slate-900/80 hover:bg-slate-900 text-white text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 transition z-10">
+      Editar perfil
+    </button>
 
     <div class="pt-12 sm:pl-24 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div class="text-center sm:text-left">
@@ -112,12 +112,6 @@
       <div id="connBtnWrap" class="flex justify-center sm:justify-end"></div>
     </div>
   </div>
-
-  <!-- Inputs ocultos para seleccionar archivos (se activarán en el paso de edición) -->
-
-  <!-- Inputs ocultos para seleccionar archivos (se activarán en el paso de edición) -->
-  <input type="file" id="coverInput" accept="image/*" class="hidden">
-  <input type="file" id="avatarInput" accept="image/*" class="hidden">
 
 </div>
 
@@ -314,13 +308,6 @@
       }
     }
 
-    function toggleEditMode() {
-      document.querySelectorAll('[data-edit-overlay]').forEach(el => {
-        el.classList.toggle('hidden');
-        el.classList.toggle('flex');
-      });
-    }
-
     function openImageViewer(src) {
       if (!src) return;
       document.getElementById('imageViewerImg').src = src;
@@ -336,31 +323,55 @@
     }
 
     document.getElementById('coverWrapper').addEventListener('click', () => {
-      const overlay = document.querySelector('#coverWrapper [data-edit-overlay]');
-      if (isOwnProfile && !overlay.classList.contains('hidden')) {
-        document.getElementById('coverInput').click();
-      } else {
-        const coverImg = document.getElementById('profileCover');
-        if (coverImg.style.display !== 'none') openImageViewer(coverImg.src);
-      }
+      const coverImg = document.getElementById('profileCover');
+      if (coverImg.style.display !== 'none') openImageViewer(coverImg.src);
     });
 
     document.getElementById('avatarWrapper').addEventListener('click', () => {
-      const overlay = document.querySelector('#avatarWrapper [data-edit-overlay]');
-      if (isOwnProfile && !overlay.classList.contains('hidden')) {
-        document.getElementById('avatarInput').click();
-      } else {
-        openImageViewer(document.getElementById('profileAvatar').src);
-      }
+      openImageViewer(document.getElementById('profileAvatar').src);
     });
 
-    document.getElementById('coverInput').addEventListener('change', e => handleImageUpload(e, 'cover'));
-    document.getElementById('avatarInput').addEventListener('change', e => handleImageUpload(e, 'avatar'));
+    // ===== MODAL: Editar perfil (portada + avatar) =====
+    let pendingCoverFile = null;
+    let pendingAvatarFile = null;
 
-    async function handleImageUpload(event, tipo) {
-      const file = event.target.files[0];
+    function openEditProfileModal() {
+      const coverImg = document.getElementById('profileCover');
+      document.getElementById('editCoverPreview').src = coverImg.style.display !== 'none' ? coverImg.src : '';
+      document.getElementById('editAvatarPreview').src = document.getElementById('profileAvatar').src;
+      pendingCoverFile = null;
+      pendingAvatarFile = null;
+
+      const modal = document.getElementById('editProfileModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeEditProfileModal() {
+      const modal = document.getElementById('editProfileModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      pendingCoverFile = null;
+      pendingAvatarFile = null;
+      document.getElementById('editCoverInput').value = '';
+      document.getElementById('editAvatarInput').value = '';
+    }
+
+    document.getElementById('editCoverInput').addEventListener('change', e => {
+      const file = e.target.files[0];
       if (!file) return;
+      pendingCoverFile = file;
+      document.getElementById('editCoverPreview').src = URL.createObjectURL(file);
+    });
 
+    document.getElementById('editAvatarInput').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      pendingAvatarFile = file;
+      document.getElementById('editAvatarPreview').src = URL.createObjectURL(file);
+    });
+
+    async function uploadProfileImage(file, tipo) {
       const ext = file.name.split('.').pop();
       const filePath = `${currentUserEmail}/${tipo}.${ext}`;
 
@@ -369,38 +380,58 @@
         .from('profile-images')
         .upload(filePath, file, { upsert: true });
 
-      if (uploadError) {
-        alert('Error al subir la imagen: ' + uploadError.message);
-        return;
-      }
+      if (uploadError) throw new Error('Error al subir la imagen: ' + uploadError.message);
 
       const { data: urlData } = supabaseClient
         .storage
         .from('profile-images')
         .getPublicUrl(filePath);
 
-      const publicUrl = urlData.publicUrl + '?t=' + Date.now();
-      const campoDb = tipo === 'avatar' ? 'avatar_url' : 'cover_url';
+      return urlData.publicUrl + '?t=' + Date.now();
+    }
 
-      const { error: dbError } = await supabaseClient
-        .from('profiles')
-        .upsert({
-          user_email: currentUserEmail,
-          user_name: currentUsername,
-          [campoDb]: publicUrl
-        }, { onConflict: 'user_email' });
-
-      if (dbError) {
-        alert('Error al guardar en la base de datos: ' + dbError.message);
+    async function saveProfileChanges() {
+      if (!pendingAvatarFile && !pendingCoverFile) {
+        closeEditProfileModal();
         return;
       }
 
-      if (tipo === 'avatar') {
-        document.getElementById('profileAvatar').src = publicUrl;
-      } else {
-        const coverImg = document.getElementById('profileCover');
-        coverImg.src = publicUrl;
-        coverImg.style.display = 'block';
+      const saveBtn = document.getElementById('saveProfileBtn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Guardando...';
+
+      try {
+        const updates = { user_email: currentUserEmail, user_name: currentUsername };
+        let newAvatarUrl = null;
+        let newCoverUrl = null;
+
+        if (pendingAvatarFile) {
+          newAvatarUrl = await uploadProfileImage(pendingAvatarFile, 'avatar');
+          updates.avatar_url = newAvatarUrl;
+        }
+        if (pendingCoverFile) {
+          newCoverUrl = await uploadProfileImage(pendingCoverFile, 'cover');
+          updates.cover_url = newCoverUrl;
+        }
+
+        const { error: dbError } = await supabaseClient
+          .from('profiles')
+          .upsert(updates, { onConflict: 'user_email' });
+        if (dbError) throw new Error('Error al guardar en la base de datos: ' + dbError.message);
+
+        if (newAvatarUrl) document.getElementById('profileAvatar').src = newAvatarUrl;
+        if (newCoverUrl) {
+          const coverImg = document.getElementById('profileCover');
+          coverImg.src = newCoverUrl;
+          coverImg.style.display = 'block';
+        }
+
+        closeEditProfileModal();
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Guardar';
       }
     }
 
@@ -789,6 +820,43 @@
 
     initProfile();
   </script>
+  <!-- Modal: Editando perfil (portada + avatar) -->
+  <div id="editProfileModal" class="hidden fixed inset-0 bg-black/70 z-[110] items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-xl w-full max-w-lg overflow-hidden shadow-xl">
+
+      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-800">
+        <button onclick="closeEditProfileModal()" class="text-2xl text-gray-500 hover:text-gray-800 dark:hover:text-white leading-none" aria-label="Cerrar">&times;</button>
+        <h3 class="font-bold text-gray-900 dark:text-white">Editando perfil</h3>
+        <button id="saveProfileBtn" onclick="saveProfileChanges()" class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-bold py-1.5 px-4 rounded-full transition">Guardar</button>
+      </div>
+
+      <div class="p-4">
+        <!-- Portada -->
+        <div class="relative w-full h-40 bg-slate-800 rounded-lg overflow-hidden">
+          <img id="editCoverPreview" class="w-full h-full object-cover" alt="">
+          <button onclick="document.getElementById('editCoverInput').click()"
+            class="absolute bottom-2 right-2 bg-slate-900/80 hover:bg-slate-900 text-white w-9 h-9 rounded-full flex items-center justify-center text-lg shadow">
+            📷
+          </button>
+        </div>
+
+        <!-- Avatar -->
+        <div class="flex justify-center -mt-12 mb-2">
+          <div class="relative">
+            <img id="editAvatarPreview" class="w-24 h-24 rounded-full object-cover border-4 border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-800" alt="">
+            <button onclick="document.getElementById('editAvatarInput').click()"
+              class="absolute bottom-0 right-0 bg-slate-900/80 hover:bg-slate-900 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm shadow">
+              📷
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <input type="file" id="editCoverInput" accept="image/*" class="hidden">
+      <input type="file" id="editAvatarInput" accept="image/*" class="hidden">
+    </div>
+  </div>
+
   <!-- Visor de imagen (avatar/portada) -->
   <div id="imageViewer" class="hidden fixed inset-0 bg-black/90 z-[100] items-center justify-center p-4" onclick="closeImageViewer()">
     <img id="imageViewerImg" src="" class="max-w-full max-h-full rounded-lg object-contain" alt="Vista ampliada">
