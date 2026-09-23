@@ -96,19 +96,41 @@
     return urls.some((u) => parseYouTube(u));
   };
 
+  // Auto-pausa: si el video se está reproduciendo y el usuario hace scroll de modo que
+  // queda menos de la mitad visible, se pausa (no se reanuda solo al volver).
+  const YT_ORIGIN = 'https://www.youtube-nocookie.com';
+  const VISIBLE_MIN = 0.5;
+
+  function pauseFrame(frame) {
+    const iframe = frame.querySelector('iframe');
+    if (!iframe || !iframe.contentWindow) return;
+    try {
+      iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), YT_ORIGIN);
+    } catch (e) { /* el reproductor aún no cargó: no hay nada que pausar */ }
+  }
+
+  const visibilityObserver = ('IntersectionObserver' in window)
+    ? new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          if (en.intersectionRatio < VISIBLE_MIN) pauseFrame(en.target);
+        });
+      }, { threshold: [0, VISIBLE_MIN] })
+    : null;
+
   function loadPlayer(box, autoplay) {
     const frame = box.querySelector('.yt-frame');
     if (frame.querySelector('iframe')) return;
     const id = box.dataset.ytId;
     const start = parseInt(box.dataset.ytStart, 10) || 0;
     const iframe = document.createElement('iframe');
-    iframe.src = `https://www.youtube-nocookie.com/embed/${id}?rel=0&playsinline=1&modestbranding=1${autoplay ? '&autoplay=1' : ''}${start ? '&start=' + start : ''}`;
+    iframe.src = `https://www.youtube-nocookie.com/embed/${id}?rel=0&playsinline=1&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}${autoplay ? '&autoplay=1' : ''}${start ? '&start=' + start : ''}`;
     iframe.title = 'Reproductor de YouTube';
     iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen';
     iframe.allowFullscreen = true;
     iframe.referrerPolicy = 'strict-origin-when-cross-origin';
     iframe.loading = 'lazy';
     frame.querySelector('.yt-play').replaceWith(iframe);
+    if (visibilityObserver) visibilityObserver.observe(frame);
   }
 
   function isFullscreen() { return document.fullscreenElement || document.webkitFullscreenElement; }
