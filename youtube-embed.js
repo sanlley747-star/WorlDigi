@@ -89,6 +89,13 @@
     return out.join('');
   };
 
+  // true si el post tiene un video de YouTube y su imagen es la miniatura de YouTube (el reproductor ya la muestra)
+  window.ytOwnsImage = function (text, imageUrl) {
+    if (!text || !imageUrl || !/(^|\/\/)i\.ytimg\.com\//.test(imageUrl)) return false;
+    const urls = String(text).match(/https?:\/\/[^\s<>"]+/g) || [];
+    return urls.some((u) => parseYouTube(u));
+  };
+
   function loadPlayer(box, autoplay) {
     const frame = box.querySelector('.yt-frame');
     if (frame.querySelector('iframe')) return;

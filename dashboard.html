@@ -400,7 +400,7 @@
           ${ytEmbedsFor(displayPost.content)}
         ` : ''}
 
-        ${displayPost.image_url ? `
+        ${displayPost.image_url && !ytOwnsImage(displayPost.content, displayPost.image_url) ? `
           <img
             src="${displayPost.image_url}"
             class="w-full rounded-lg max-h-96 object-cover cursor-pointer"
