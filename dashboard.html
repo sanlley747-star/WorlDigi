@@ -395,7 +395,7 @@
 
         ${displayPost.content ? `
           <p class="text-gray-800 dark:text-gray-200 text-sm break-words cursor-pointer" onclick="openPostPage(${displayPost.id})">
-            ${linkifyContent(displayPost.content)}
+            ${linkifyContent(ytStripLink(displayPost.content))}
           </p>
           ${ytEmbedsFor(displayPost.content)}
         ` : ''}

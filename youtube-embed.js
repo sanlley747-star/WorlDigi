@@ -72,28 +72,64 @@
     </div>`;
   }
 
-  // API pública
-  window.ytEmbedsFor = function (text) {
-    if (!text) return '';
-    ensureStyles();
+  // Quita la puntuación que suele quedar pegada al final de un enlace escrito en un texto: "(url)" o "url."
+  function trimUrl(url) { return url.replace(/[.,;:!?)\]}'"]+$/, ''); }
+
+  // Videos que se van a mostrar como reproductor en un post (únicos, hasta el máximo permitido)
+  function embeddedVideos(text) {
     const vistos = new Set();
     const out = [];
     const urls = String(text).match(/https?:\/\/[^\s<>"]+/g) || [];
     for (const url of urls) {
-      const v = parseYouTube(url);
+      const v = parseYouTube(trimUrl(url));
       if (!v || vistos.has(v.id)) continue;
       vistos.add(v.id);
-      out.push(renderEmbed(v));
+      out.push(v);
       if (out.length >= MAX_EMBEDS_POR_POST) break;
     }
-    return out.join('');
+    return out;
+  }
+
+  // API pública
+  window.ytEmbedsFor = function (text) {
+    if (!text) return '';
+    const videos = embeddedVideos(text);
+    if (!videos.length) return '';
+    ensureStyles();
+    return videos.map(renderEmbed).join('');
+  };
+
+  // Devuelve el texto del post SIN el enlace del video que ya se muestra como reproductor.
+  // Solo afecta a lo que se ve: el texto guardado en la base de datos no cambia (el reproductor lo necesita).
+  window.ytStripLink = function (text) {
+    if (!text) return text;
+    const ids = new Set(embeddedVideos(text).map((v) => v.id));
+    if (!ids.size) return text;
+    let removed = false;
+    let out = String(text).replace(/https?:\/\/[^\s<>"]+/g, function (url) {
+      const v = parseYouTube(trimUrl(url));
+      if (v && ids.has(v.id)) {
+        removed = true;
+        // conserva solo los cierres pegados al enlace (")", comillas) para que el paréntesis vacío "()" se limpie abajo
+        return url.slice(trimUrl(url).length).replace(/[.,;:!?]/g, '');
+      }
+      return url;
+    });
+    if (!removed) return text;
+    return out
+      .replace(/\(\s*\)/g, '')                     // paréntesis que quedaron vacíos
+      .replace(/[ \t]*[—–-][ \t]*(?=\n|$)/g, '')    // separador (" —") que quedó colgando al final de línea
+      .replace(/[ \t]{2,}/g, ' ')
+      .replace(/[ \t]+$/gm, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
   };
 
   // true si el post tiene un video de YouTube y su imagen es la miniatura de YouTube (el reproductor ya la muestra)
   window.ytOwnsImage = function (text, imageUrl) {
     if (!text || !imageUrl || !/(^|\/\/)i\.ytimg\.com\//.test(imageUrl)) return false;
     const urls = String(text).match(/https?:\/\/[^\s<>"]+/g) || [];
-    return urls.some((u) => parseYouTube(u));
+    return urls.some((u) => parseYouTube(trimUrl(u)));
   };
 
   // Auto-pausa: si el video se está reproduciendo y el usuario hace scroll de modo que
