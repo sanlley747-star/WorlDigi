@@ -22,6 +22,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="notifications.js"></script>
   <script src="connections.js"></script>
+  <script src="youtube-embed.js"></script>
   <script src="comment-counts.js"></script>
   <script src="user-card.js"></script>
   <style>
@@ -294,7 +295,7 @@
             </div>
           </div>
 
-          ${post.content ? `<p class="text-gray-800 dark:text-gray-200 text-base break-words whitespace-pre-line">${linkifyContent(post.content)}</p>` : ''}
+          ${post.content ? `<p class="text-gray-800 dark:text-gray-200 text-base break-words whitespace-pre-line">${linkifyContent(post.content)}</p>${ytEmbedsFor(post.content)}` : ''}
 
           ${post.image_url ? `<img src="${connEscape(post.image_url)}" class="w-full rounded-lg max-h-[32rem] object-cover" alt="Imagen de publicación">` : ''}
 

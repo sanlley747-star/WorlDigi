@@ -25,6 +25,7 @@
   <script src="comment-counts.js"></script>
   <script src="user-card.js"></script>
   <script src="comment-modal.js"></script>
+  <script src="youtube-embed.js"></script>
   <style>
     /* Mientras la sesión no se haya verificado, el contenido queda oculto.
        Esto es clave para que, si el navegador restaura esta página desde su
@@ -396,6 +397,7 @@
           <p class="text-gray-800 dark:text-gray-200 text-sm break-words cursor-pointer" onclick="openPostPage(${displayPost.id})">
             ${linkifyContent(displayPost.content)}
           </p>
+          ${ytEmbedsFor(displayPost.content)}
         ` : ''}
 
         ${displayPost.image_url ? `

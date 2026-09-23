@@ -22,6 +22,7 @@
   <script src="comment-counts.js"></script>
   <script src="user-card.js"></script>
   <script src="comment-modal.js"></script>
+  <script src="youtube-embed.js"></script>
   <style>
     html{scrollbar-width:thin;scrollbar-color:#050b18 transparent}
     ::-webkit-scrollbar{width:10px}
@@ -589,7 +590,7 @@
               </div>
             </div>
 
-            ${displayPost.content ? `<p class="text-gray-800 dark:text-gray-200 text-sm cursor-pointer whitespace-pre-line break-words" onclick="openPostPage(${displayPost.id})">${linkifyContent(displayPost.content)}</p>` : ''}
+            ${displayPost.content ? `<p class="text-gray-800 dark:text-gray-200 text-sm cursor-pointer whitespace-pre-line break-words" onclick="openPostPage(${displayPost.id})">${linkifyContent(displayPost.content)}</p>${ytEmbedsFor(displayPost.content)}` : ''}
             ${displayPost.image_url ? `<img src="${displayPost.image_url}" class="w-full rounded-lg max-h-96 object-cover cursor-pointer" onclick="openPostViewer(${displayPost.id})">` : ''}
             
             <div class="flex items-center space-x-5 border-t border-gray-100 dark:border-slate-800 pt-2 text-sm text-gray-600 dark:text-gray-400">
