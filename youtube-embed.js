@@ -122,7 +122,11 @@
       .replace(/[ \t]{2,}/g, ' ')
       .replace(/[ \t]+$/gm, '')
       .replace(/\n{3,}/g, '\n\n')
-      .trim();
+      .trim()
+      // Posts de canales de YouTube: la última línea "Canal: ESPN" pasa a cerrar el titular como "… - ESPN"
+      .replace(/\s*\n+\s*Canal:[ \t]*([^\n]+?)[ \t]*$/i, ' - $1')
+      .replace(/\s*\n+\s*Canal:[ \t]*$/i, '')                 // "Canal:" sin nombre: se elimina
+      .replace(/^Canal:[ \t]*([^\n]+?)[ \t]*$/i, '$1');        // post sin titular: solo queda el medio
   };
 
   // true si el post tiene un video de YouTube y su imagen es la miniatura de YouTube (el reproductor ya la muestra)
