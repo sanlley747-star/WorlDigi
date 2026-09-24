@@ -34,8 +34,8 @@ async function agentePersona(sb:SupabaseClient,email:string):Promise<Fila|null>{
   return data??null;
 }
 function dato(v:unknown,max:number){
-  let t=String(v??"").replace(/[\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f\\x7f]/g,"");
-  t=t.replace(/<\\s*\\/?\\s*dato\\s*>/gi,"").replace(/\\s+/g," ").trim();
+  let t=String(v??"").replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g,"");
+  t=t.replace(/<\s*\/?\s*dato\s*>/gi,"").replace(/\s+/g," ").trim();
   return t.slice(0,max);
 }
 function maxCaracteres(estilo:Fila){
@@ -64,17 +64,17 @@ Relaciona el comentario con un detalle concreto de la noticia y conserva la voz 
 }
 const FRASES=[
   /como (un )?modelo de lenguaje/i,/como (un )?asistente (virtual|de ia|de inteligencia)/i,
-  /soy (una?|un) (ia|inteligencia artificial|bot|asistente|modelo)\\b/i,
-  /\\bcomo (una )?ia\\b/i,/language model/i,/as an? (ai|language model|assistant)/i,
+  /soy (una?|un) (ia|inteligencia artificial|bot|asistente|modelo)\b/i,
+  /\bcomo (una )?ia\b/i,/language model/i,/as an? (ai|language model|assistant)/i,
   /aqu[ií] tienes/i,/claro,? aqu[ií]/i,/espero que esto (te )?(ayude|sirva)/i,/excelente pregunta/i,
-  /<\\/?\\s*dato/i
+  /<\/?\s*dato/i
 ];
 function validar(bruto:string,maxChars:number){
   let t=String(bruto??"").trim();
-  t=t.replace(/^\`\`\`[a-z]*\\n?|\`\`\`$/gi,"").trim();
-  t=t.replace(/^(comentario|respuesta|publicaci[oó]n|post|texto)\\s*:\\s*/i,"");
-  t=t.replace(/^[\\"'“”«»]+|[\\"'“”«»]+$/g,"").replace(/\\*\\*|__/g,"")
-    .replace(/[ \\t]+/g," ").replace(/\\n{3,}/g,"\\n\\n").trim();
+  t=t.replace(/^\`\`\`[a-z]*\n?|\`\`\`$/gi,"").trim();
+  t=t.replace(/^(comentario|respuesta|publicaci[oó]n|post|texto)\s*:\s*/i,"");
+  t=t.replace(/^[\"'“”«»]+|[\"'“”«»]+$/g,"").replace(/\*\*|__/g,"")
+    .replace(/[ \t]+/g," ").replace(/\n{3,}/g,"\n\n").trim();
   if(!t)return {ok:false,texto:"",motivo:"salida vacia"};
   const frase=FRASES.find(r=>r.test(t)); if(frase)return {ok:false,texto:t,motivo:"frase de asistente"};
   if(t.length>maxChars*1.25){
@@ -114,7 +114,7 @@ async function redactar(sb:SupabaseClient,email:string,noticia:Fila){
   const {data:persona}=await sb.from("agent_personas").select("persona_id,nombre,system_prompt,estilo").eq("persona_id",agente.persona_id).eq("activa",true).maybeSingle();
   if(!persona)throw new Error("personalidad inexistente o inactiva");
   const {data:cfg}=await sb.from("agent_config").select("valor").eq("clave","modelo").maybeSingle();
-  const modelo=String(cfg?.valor??"gemini-flash-lite-latest").replace(/^\\"|\\"$/g,"");
+  const modelo=String(cfg?.valor??"gemini-flash-lite-latest").replace(/^\"|\"$/g,"");
   const prompt=construirPrompt(agente,persona,noticia);
   const bruto=await gemini(sb,email,prompt,modelo);
   const validacion=validar(bruto,prompt.max);
