@@ -234,37 +234,24 @@ async function procesarTarea(s: Sesion, t: Fila): Promise<Resultado> {
   }
 
   if (t.action_type === "POST") {
-    const esNoticia = t.payload?.tipo === "noticia" || t.payload?.origen === "agent-noticias" || t.payload?.noticia === true;
-    if (esNoticia) {
-      const url = Deno.env.get("SUPABASE_URL")!;
-      const token = await tokenEsperado(s.sb);
-      if (!token) return fallar("no hay AGENT_WORKER_TOKEN para conectar agent-noticias", true);
-      const r = await fetch(`${url}/functions/v1/agent-noticias`, {
-        method: "POST", headers: { "Content-Type": "application/json", "x-worker-token": token },
-        body: JSON.stringify({ modo: "publicar", agent_email: t.agent_id, tema: t.payload?.tema ?? null, max_horas: Number(t.payload?.max_horas ?? 96) }),
-        signal: AbortSignal.timeout(80_000),
-      });
-      const raw = await r.text(); let json: Fila = {};
-      try { json = JSON.parse(raw); } catch {}
-      if (!r.ok || json.ok !== true) return fallar(`agent-noticias: ${String(json.error ?? json.etapa ?? raw.slice(0, 300))}`);
-      const { error } = await s.sb.rpc("worker_completar_post", {
-        p_task_id: t.id, p_agent_email: t.agent_id, p_content: String(json.salida ?? ""),
-        p_image_url: json.imagen?.public_url ?? null, p_image_desc: null, p_metadata: json.metadata ?? null,
-      });
-      if (error) return fallar(`no se pudo cerrar tarea noticia: ${error.message}`);
-      return "completada";
-    }
-    const prep = await prepararPost(s, t.agent_id, t.payload?.tema ?? null, false);
-    if ("error" in prep) return fallar(prep.error, true);
-    const { validacion } = await generarTexto(s, t.agent_id, prep.prompt, "post");
-    if (!validacion.ok) return fallar(`salida rechazada: ${validacion.motivo}`);
-    const enlace = await extractOpenGraph(validacion.texto);
-    const metadata = enlace ? { ...enlace, comment: generateLinkComment(enlace) } : null;
-    const { error } = await s.sb.rpc("worker_completar_post", {
-      p_task_id: t.id, p_agent_email: t.agent_id, p_content: validacion.texto,
-      p_image_url: null, p_image_desc: null, p_metadata: metadata,
+    // Bloque 6: todo POST de cuentas-persona pasa por agent-noticias.
+    // La imagen ya no se solicita/genera aquí; agent-noticias aporta la foto de la noticia.
+    const url = Deno.env.get("SUPABASE_URL")!;
+    const token = await tokenEsperado(s.sb);
+    if (!token) return fallar("no hay AGENT_WORKER_TOKEN para conectar agent-noticias", true);
+    const r = await fetch(`${url}/functions/v1/agent-noticias`, {
+      method: "POST", headers: { "Content-Type": "application/json", "x-worker-token": token },
+      body: JSON.stringify({ modo: "publicar", agent_email: t.agent_id, tema: t.payload?.tema ?? null, max_horas: Number(t.payload?.max_horas ?? 96) }),
+      signal: AbortSignal.timeout(80_000),
     });
-    if (error) return fallar(`no se pudo publicar: ${error.message}`);
+    const raw = await r.text(); let json: Fila = {};
+    try { json = JSON.parse(raw); } catch {}
+    if (!r.ok || json.ok !== true) return fallar(`agent-noticias: ${String(json.error ?? json.etapa ?? raw.slice(0, 300))}`);
+    const { error } = await s.sb.rpc("worker_completar_post", {
+      p_task_id: t.id, p_agent_email: t.agent_id, p_content: String(json.salida ?? ""),
+      p_image_url: json.imagen?.public_url ?? null, p_image_desc: null, p_metadata: json.metadata ?? null,
+    });
+    if (error) return fallar(`no se pudo cerrar tarea noticia: ${error.message}`);
     return "completada";
   }
   return fallar(`action_type no soportado por el worker: ${t.action_type}`, true);
