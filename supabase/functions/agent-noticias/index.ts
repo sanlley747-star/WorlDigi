@@ -168,7 +168,7 @@ Deno.serve(async(req:Request)=>{
     const modo=String(body.modo??"");
     if(modo!=="publicar")return responder({error:"bloque 5: usa modo=publicar"},400);
     const email=String(body.agent_email??"roberto.disla24@sim.bygether.invalid");
-    if(email!=="roberto.disla24@sim.bygether.invalid")return responder({error:"bloque 5: solo existe el piloto Roberto Disla"},400);
+    const permitido=await agentePersona(sb,email); if(!permitido)return responder({error:"cuenta automatica/persona no autorizada"},400);
     const ag=await agentePersona(sb,email); if(!ag)return responder({error:"cuenta piloto inexistente o no autorizada"},400);
     const tema=String(body.tema??ag.config_cuenta_automatica?.tema_principal??""); if(!tema)return responder({error:"tema no disponible"},400);
     const noticia=await buscarNoticia(sb,{tema,agentEmail:email,maxHoras:Number(body.max_horas??96)});
