@@ -109,6 +109,23 @@ async function gemini(sb:SupabaseClient,agenteEmail:string,prompt:Fila,modelo:st
   await cerrar({status:200,ok:true,tokens_in:j?.usageMetadata?.promptTokenCount,tokens_out:j?.usageMetadata?.candidatesTokenCount});
   return texto;
 }
+async function copiarImagen(sb:SupabaseClient,email:string,imageUrl:string){
+  const u=new URL(imageUrl);
+  const res=await fetch(u,{headers:{"User-Agent":"Mozilla/5.0 (compatible; ByGetherBot/1.0)","Accept":"image/*"},redirect:"follow",signal:AbortSignal.timeout(20000)});
+  if(!res.ok)throw new Error(`imagen HTTP ${res.status}`);
+  const tipo=(res.headers.get("content-type")??"image/jpeg").split(";")[0].toLowerCase();
+  if(!/^image\\/(jpeg|png|webp|gif)$/.test(tipo))throw new Error(`tipo de imagen no soportado: ${tipo}`);
+  const bytes=new Uint8Array(await res.arrayBuffer());
+  if(bytes.byteLength>5000000)throw new Error("imagen demasiado grande");
+  const ext=tipo==="image/png"?"png":tipo==="image/webp"?"webp":tipo==="image/gif"?"gif":"jpg";
+  const path=`${email.split("@")[0]}/noticia-${Date.now()}.${ext}`;
+  const {error}=await sb.storage.from("posts-images").upload(path,bytes,{contentType:tipo,upsert:false});
+  if(error)throw new Error(`storage: ${error.message}`);
+  const {data}=sb.storage.from("posts-images").getPublicUrl(path);
+  if(!data?.publicUrl)throw new Error("no se pudo obtener URL publica");
+  return data.publicUrl;
+}
+
 async function redactar(sb:SupabaseClient,email:string,noticia:Fila){
   const agente=await agentePersona(sb,email); if(!agente)throw new Error("cuenta inexistente o no autorizada");
   const {data:persona}=await sb.from("agent_personas").select("persona_id,nombre,system_prompt,estilo").eq("persona_id",agente.persona_id).eq("activa",true).maybeSingle();
@@ -126,7 +143,8 @@ Deno.serve(async(req:Request)=>{
   if(!(await autorizar(sb,req)))return responder({error:"no autorizado"},401);
   const body:Fila=await req.json().catch(()=>({}));
   try{
-    if(body.dry_run!=="redaccion")return responder({error:"bloque 4: usa dry_run=redaccion"},400);
+    const modo=String(body.modo??(body.dry_run==="redaccion"?"redaccion":""));
+    if(modo!=="publicar")return responder({error:"bloque 5: usa modo=publicar"},400);
     const email=String(body.agent_email??"roberto.disla24@sim.bygether.invalid");
     if(email!=="roberto.disla24@sim.bygether.invalid")return responder({error:"bloque 4: solo existe el piloto Roberto Disla"},400);
     const ag=await agentePersona(sb,email); if(!ag)return responder({error:"cuenta piloto inexistente o no autorizada"},400);
@@ -135,8 +153,17 @@ Deno.serve(async(req:Request)=>{
     const noticia=await buscarNoticia(sb,{tema,agentEmail:email,maxHoras:Number(body.max_horas??96)});
     if(!noticia.ok)return responder({etapa:"busqueda",...noticia},422);
     const r=await redactar(sb,email,noticia);
-    return responder({ok:r.validacion.ok,bloque:4,version:"bloque-4.1-redaccion-dry-run",cuenta:{email:r.agente.user_name,persona_id:r.agente.persona_id,tema},
-      modelo:r.modelo,noticia:{titulo:r.noticia.noticia.titulo,url:r.noticia.noticia.url_normalizada,fuente:r.noticia.fuente.nombre,imagen_url:r.noticia.imagen.url},
-      salida:r.validacion.texto,validacion:r.validacion,log_ia:"agent_llm_calls"});
+    if(!r.validacion.ok)return responder({ok:false,bloque:5,version:"bloque-5.1-publicar",validacion:r.validacion},422);
+    const imagePublicUrl=await copiarImagen(sb,email,r.noticia.imagen.url);
+    const {data:postId,error:pubError}=await sb.rpc("agent_noticias_publicar",{
+      p_agent_email:email,p_url:r.noticia.noticia.url_normalizada,p_titulo:r.noticia.noticia.titulo,
+      p_contenido:r.validacion.texto,p_image_url:imagePublicUrl,p_fuente_id:r.noticia.fuente.id,
+      p_metadata:{tipo:"link_preview",url:r.noticia.noticia.url_normalizada,og_title:r.noticia.noticia.titulo,og_description:r.noticia.noticia.descripcion,og_image_source:r.noticia.imagen.url}
+    });
+    if(pubError)throw new Error(`publicacion: ${pubError.message}`);
+    return responder({ok:true,bloque:5,version:"bloque-5.1-publicar",post_id:postId,
+      cuenta:{nombre:r.agente.user_name,persona_id:r.agente.persona_id,tema},
+      modelo:r.modelo,noticia:{titulo:r.noticia.noticia.titulo,url:r.noticia.noticia.url_normalizada,fuente:r.noticia.fuente.nombre},
+      imagen:{source:r.noticia.imagen.url,public_url:imagePublicUrl},salida:r.validacion.texto,validacion:r.validacion,log_ia:"agent_llm_calls"});
   }catch(e){console.error("agent-noticias bloque 4:",e);return responder({ok:false,etapa:"redaccion",error:e instanceof Error?e.message:String(e)},500);}
 });
