@@ -37,6 +37,22 @@ export default function PostCard({ post, currentUserId, onLike, onRepost, onQuot
                 </a>
             )}
 
+            {post.image_url && (
+                <img src={post.image_url} alt={post.metadata?.og_title || 'Imagen de la publicación'}
+                    className="w-full rounded-xl mb-4 max-h-[420px] object-cover" loading="lazy" />
+            )}
+
+            {post.metadata?.tipo === 'link_preview' && post.metadata?.url && (
+                <a href={post.metadata.url} target="_blank" rel="noopener noreferrer"
+                    className="block border border-gray-700 rounded-xl p-3 mb-4 hover:bg-gray-800 transition">
+                    <div className="text-xs text-gray-400 mb-1">{post.metadata.domain || 'Enlace'}</div>
+                    <div className="text-sm font-medium text-gray-100">{post.metadata.og_title || post.metadata.url}</div>
+                    {post.metadata.og_description && (
+                        <div className="text-xs text-gray-400 mt-1 line-clamp-2">{post.metadata.og_description}</div>
+                    )}
+                </a>
+            )}
+
             {/* Barra de Acciones Estilo X */}
             <div className="flex items-center justify-between border-t border-gray-800 pt-3 text-gray-400 max-w-md mx-auto relative">
                 
