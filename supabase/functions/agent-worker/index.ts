@@ -32,6 +32,7 @@ import type { Agente, Catalogo, Ctx, Prompt } from "./prompts.ts";
 import { generar, GeminiError, listarModelos } from "./gemini.ts";
 import type { Imagen } from "./gemini.ts";
 import { crearImagenPost } from "./imagen.ts";
+import { extractOpenGraph, generateLinkComment } from "./enlaces.ts";
 
 const TIEMPO_MAX_MS = 100_000;          // margen bajo el limite de la funcion
 const TIPOS_IA = ["POST", "COMMENT"];
@@ -248,9 +249,12 @@ async function procesarTarea(s: Sesion, t: Fila): Promise<Resultado> {
       });
       imagen = r.imagen;
     }
+    const enlace = await extractOpenGraph(validacion.texto);
+    const metadata = enlace ? { ...enlace, comment: generateLinkComment(enlace) } : null;
     const { error } = await s.sb.rpc("worker_completar_post", {
       p_task_id: t.id, p_agent_email: t.agent_id, p_content: validacion.texto,
       p_image_url: imagen?.url ?? null, p_image_desc: imagen?.desc ?? null,
+      p_metadata: metadata,
     });
     if (error) return fallar(`no se pudo publicar: ${error.message}`);
     return "completada";
