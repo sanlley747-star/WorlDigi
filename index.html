@@ -7,6 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ByGether — Get together</title>
   <link rel="stylesheet" href="styles.css">
+<style>.password-toggle-icon{width:16px;height:16px;display:block}</style>
 </head>
 <body>
   <header class="topbar">
@@ -86,7 +87,7 @@
   <div class="relative">
     <input type="password" id="passwordField" placeholder="Tu contraseña" class="w-full p-3 border border-gray-300 rounded-lg pr-20 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
     <button type="button" id="togglePassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-600 bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded font-semibold transition">
-      👁️ Ver
+      <svg class="password-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg><span>Ver</span>
     </button>
   </div>
         <a href="#" id="forgotPasswordLink" class="forgot-password-link" style="display:none;">¿Olvidaste tu contraseña?</a>
