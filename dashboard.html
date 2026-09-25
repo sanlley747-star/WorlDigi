@@ -796,7 +796,7 @@
       }
 
       const author = post.user_name || 'Usuario';
-      const authorAvatar = post.avatar_url ||
+      const authorAvatar = avatarByUser[post.user_email] || avatarByUser[author] || post.avatar_url ||
         `https://ui-avatars.com/api/?name=${encodeURIComponent(author)}&background=random`;
 
       body.innerHTML = `
