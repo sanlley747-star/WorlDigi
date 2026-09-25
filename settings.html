@@ -62,6 +62,20 @@
       <button onclick="logout()" class="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition">Cerrar Sesión</button>
     </div>
 
+    <!-- Cambiar contraseña -->
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow border border-gray-200 dark:border-slate-800" id="passwordCard" style="display:none;">
+      <h2 class="text-lg font-bold mb-1 text-gray-900 dark:text-white">Contraseña</h2>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Cambia la contraseña de tu cuenta.</p>
+      <form id="passwordForm" class="space-y-3">
+        <input type="password" id="newPasswordInput" placeholder="Nueva contraseña" minlength="8" required
+          class="w-full p-3 border border-gray-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <input type="password" id="confirmPasswordInput" placeholder="Confirmar nueva contraseña" minlength="8" required
+          class="w-full p-3 border border-gray-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <button type="submit" id="passwordSubmit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition">Actualizar contraseña</button>
+      </form>
+      <p class="text-sm mt-3" id="passwordStatus"></p>
+    </div>
+
   </main>
 
   <script>
@@ -134,12 +148,50 @@
       window.location.replace('index.html');
     }
 
+    function showPasswordStatus(message, isError) {
+      const el = document.getElementById('passwordStatus');
+      el.textContent = message;
+      el.className = 'text-sm mt-3 ' + (isError ? 'text-red-500' : 'text-green-600 dark:text-green-400');
+    }
+
+    document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const newPassword = document.getElementById('newPasswordInput').value;
+      const confirmPassword = document.getElementById('confirmPasswordInput').value;
+      const submitBtn = document.getElementById('passwordSubmit');
+
+      if (newPassword !== confirmPassword) {
+        showPasswordStatus('Las dos contraseñas no coinciden.', true);
+        return;
+      }
+      if (newPassword.length < 8) {
+        showPasswordStatus('La contraseña debe tener al menos 8 caracteres.', true);
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Actualizando...';
+
+      const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+
+      if (error) {
+        showPasswordStatus('No se pudo actualizar: ' + error.message, true);
+      } else {
+        showPasswordStatus('Contraseña actualizada correctamente.', false);
+        document.getElementById('passwordForm').reset();
+      }
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Actualizar contraseña';
+    });
+
     async function init() {
       const { data: { user } } = await supabaseClient.auth.getUser();
       if (user) {
         document.getElementById('accountEmail').textContent = 'Sesión iniciada como ' + user.email;
+        document.getElementById('passwordCard').style.display = 'block';
       } else {
         document.getElementById('accountEmail').textContent = 'No has iniciado sesión.';
+        document.getElementById('passwordCard').style.display = 'none';
       }
       updateThemeButtons();
       applyFontScale(getFontScale());
@@ -150,3 +202,4 @@
   <script src="mobile-nav.js"></script>
 </body>
 </html>
+
