@@ -60,7 +60,6 @@
     return `<div class="yt-embed" data-yt-id="${v.id}" data-yt-start="${v.start}">
       <div class="yt-frame${v.short ? ' yt-short' : ''}">
         <button type="button" class="yt-play" style="background-image:url('${thumb}')" aria-label="Reproducir video"></button>
-        <button type="button" class="yt-expand" aria-label="Pantalla completa" title="Pantalla completa">${ICON_EXPAND}</button>
       </div>
       <div class="yt-meta"><a href="${watch}" target="_blank" rel="noopener noreferrer">YouTube</a></div>
     </div>`;
