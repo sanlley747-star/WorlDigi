@@ -108,7 +108,22 @@ function ccLikeHover(wrapper, show) {
 // btn: el <button> pulsado. id: id del post. currentLikes: contador actual mostrado. isLiked: si ya tenía like.
 // userEmail/userName: identidad de quien da el like.
 async function ccToggleLike(btn) {
-  if (window.matchMedia && window.matchMedia('(max-width: 1023px)').matches && navigator.vibrate) navigator.vibrate(10);
+  if (window.matchMedia && window.matchMedia('(max-width: 1023px)').matches) {
+    if (navigator.vibrate) navigator.vibrate(10);
+    const rect = btn.getBoundingClientRect();
+    for (let i = 0; i < 8; i++) {
+      const spark = document.createElement('span');
+      spark.textContent = '✦';
+      spark.style.cssText = `position:fixed;left:${rect.left + rect.width / 2}px;top:${rect.top + rect.height / 2}px;color:#ef4444;font-size:${8 + Math.random() * 5}px;pointer-events:none;z-index:9999;transition:transform .45s ease,opacity .45s ease;`;
+      document.body.appendChild(spark);
+      const angle = (Math.PI * 2 * i) / 8;
+      requestAnimationFrame(() => {
+        spark.style.transform = `translate(${Math.cos(angle) * (14 + Math.random() * 8)}px,${Math.sin(angle) * (14 + Math.random() * 8)}px) scale(.7)`;
+        spark.style.opacity = '0';
+      });
+      setTimeout(() => spark.remove(), 500);
+    }
+  }
   const id = btn.getAttribute('data-post-id');
   const currentLikes = parseInt(btn.getAttribute('data-likes') || '0', 10);
   const isLiked = btn.getAttribute('data-liked') === 'true';
