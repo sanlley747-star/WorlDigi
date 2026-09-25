@@ -369,12 +369,22 @@
       <div id="post-${post.id}"
            class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 space-y-3">
 
-        ${post.repost_of ? `
+        ${post.repost_of ? (post.quote_text ? `
+          <div class="flex items-start gap-3">
+            <a href="perfil.html?user=${encodeURIComponent(author)}" class="flex-shrink-0">
+              <img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700" alt="${connEscape(author)}">
+            </a>
+            <div class="min-w-0 flex-1">
+              <a href="perfil.html?user=${encodeURIComponent(author)}" data-user-card="${connEscape(author)}" class="font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(author)}</a>
+              <p class="mt-1 text-gray-800 dark:text-gray-200 text-sm break-words whitespace-pre-line">${connEscape(post.quote_text)}</p>
+            </div>
+          </div>
+        ` : `
           <div class="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 font-semibold">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0 text-green-600"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
             <span data-user-card="${connEscape(author)}" class="hover:underline">${connEscape(author)}</span> repostó
           </div>
-        ` : ''}
+        `) : ''}
 
         <div class="flex items-center space-x-3">
 
