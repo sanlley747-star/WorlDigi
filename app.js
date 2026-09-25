@@ -22,7 +22,9 @@ if (togglePasswordBtn && passwordField) {
   togglePasswordBtn.addEventListener('click', () => {
     const isPassword = passwordField.type === 'password';
     passwordField.type = isPassword ? 'text' : 'password';
-    togglePasswordBtn.textContent = isPassword ? '🙈 Ocultar' : '👁️ Ver';
+    togglePasswordBtn.innerHTML = isPassword
+      ? '<svg class="password-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"></path><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"></path><path d="M9.9 4.3A10.8 10.8 0 0 1 12 4c6.5 0 10 8 10 8a18.3 18.3 0 0 1-3.1 4.3"></path><path d="M6.6 6.6C3.7 8.5 2 12 2 12s3.5 8 10 8a10.8 10.8 0 0 0 3.2-.5"></path></svg><span>Ocultar</span>'
+      : '<svg class="password-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg><span>Ver</span>';
   });
 }
 
@@ -38,7 +40,7 @@ function openModal(mode) {
     title.textContent = signup ? 'Create your account' : 'Welcome back';
     subtitle.textContent = signup
       ? 'Join WorlDigi and begin exploring.'
-      : 'Sign in to your WorlDigi account.';
+      : 'Sign in to your ByGether account.';
   }
 
   if (nameField) {
