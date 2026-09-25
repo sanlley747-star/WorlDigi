@@ -4,6 +4,8 @@ export default function PostCard({ post, currentUserId, onLike, onRepost, onQuot
     const [showRepostMenu, setShowRepostMenu] = useState(false);
 
     return (
+        <>
+        <style>{'@keyframes bygetherRepostSheet{from{transform:translateY(100%)}to{transform:translateY(0)}}'}</style>
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 mb-4 text-gray-100 shadow-xl max-w-xl mx-auto">
             {/* Cabecera del Post */}
             <div className="flex items-center space-x-3 mb-3">
@@ -69,18 +71,35 @@ export default function PostCard({ post, currentUserId, onLike, onRepost, onQuot
                         <span className="text-xs font-medium">{post.repostsCount || 12}</span>
                     </button>
                     
-                    {/* Menú flotante */}
+                    {/* Menú flotante en escritorio / hoja emergente en móvil */}
                     {showRepostMenu && (
-                        <div className="absolute left-0 bottom-full mb-2 w-48 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-20 overflow-hidden">
-                            <button onClick={() => { onRepost(post.id); setShowRepostMenu(false); }} className="w-full text-left px-4 py-2.5 text-xs text-gray-200 hover:bg-gray-700 flex items-center space-x-2">
-                                <span>🔄</span> <span>Repostear ahora</span>
-                            </button>
-                            <button onClick={() => { onQuote(post.id); setShowRepostMenu(false); }} className="w-full text-left px-4 py-2.5 text-xs text-gray-200 hover:bg-gray-700 flex items-center space-x-2 border-t border-gray-700">
-                                <span>✏️</span> <span>Citar publicación</span>
-                            </button>
-                        </div>
+                        <>
+                            <div className="hidden md:block absolute left-0 bottom-full mb-2 w-48 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-20 overflow-hidden">
+                                <button onClick={() => { onRepost(post.id); setShowRepostMenu(false); }} className="w-full text-left px-4 py-2.5 text-xs text-gray-200 hover:bg-gray-700 flex items-center space-x-2">
+                                    <span>🔄</span> <span>Repostear ahora</span>
+                                </button>
+                                <button onClick={() => { onQuote(post.id); setShowRepostMenu(false); }} className="w-full text-left px-4 py-2.5 text-xs text-gray-200 hover:bg-gray-700 flex items-center space-x-2 border-t border-gray-700">
+                                    <span>✏️</span> <span>Citar publicación</span>
+                                </button>
+                            </div>
+
+                            <div className="md:hidden fixed inset-0 z-50 bg-black/50" onClick={() => setShowRepostMenu(false)} aria-hidden="true"></div>
+                            <div className="md:hidden fixed inset-x-0 bottom-0 z-[51] bg-gray-900 border-t border-gray-700 rounded-t-2xl shadow-2xl p-4" style={{ animation: 'bygetherRepostSheet .25s ease-out' }} role="dialog" aria-modal="true" aria-label="Opciones de repost">
+                                <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-gray-600"></div>
+                                <div className="space-y-1">
+                                    <button onClick={() => { onRepost(post.id); setShowRepostMenu(false); }} className="w-full text-left px-4 py-3.5 text-sm text-gray-200 hover:bg-gray-800 rounded-xl flex items-center space-x-3">
+                                        <span>🔄</span><span>Repostear ahora</span>
+                                    </button>
+                                    <button onClick={() => { onQuote(post.id); setShowRepostMenu(false); }} className="w-full text-left px-4 py-3.5 text-sm text-gray-200 hover:bg-gray-800 rounded-xl flex items-center space-x-3">
+                                        <span>✏️</span><span>Citar publicación</span>
+                                    </button>
+                                    <button type="button" onClick={() => setShowRepostMenu(false)} className="w-full mt-2 px-4 py-3.5 text-sm font-medium text-gray-400 bg-gray-800 hover:bg-gray-700 rounded-xl">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        </>
                     )}
-                </div>
 
                 {/* Me Gusta (Corazón Rojo) */}
                 <button onClick={() => onLike(post.id)} className="flex items-center space-x-2 text-red-500 transition p-1.5 rounded-lg hover:bg-gray-800">
@@ -94,5 +113,6 @@ export default function PostCard({ post, currentUserId, onLike, onRepost, onQuot
                 </button>
             </div>
         </div>
+        </>
     );
 }
