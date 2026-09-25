@@ -47,7 +47,8 @@
     '  .gm-fab{display:flex;position:fixed;right:20px;bottom:calc(68px + env(safe-area-inset-bottom));width:58px;height:58px;border:0;border-radius:9999px;background:#2563eb;color:#fff;align-items:center;justify-content:center;z-index:90;cursor:pointer;opacity:1;box-shadow:0 6px 18px rgba(37,99,235,.45);transition:opacity .25s ease,transform .15s ease;-webkit-tap-highlight-color:transparent}',
     '  .gm-fab svg{width:26px;height:26px}',
     '  .gm-fab:active{transform:scale(.94)}',
-    '  .gm-fab.gm-dim{opacity:.3}',
+    '  .gm-fab.gm-dim{opacity:.3}
+  .gm-bottom.gm-dim{opacity:0}',
     '  .gm-topbar-mobile{height:62px!important;padding:6px 14px!important;transform:translateY(0);transition:transform .25s ease,opacity .25s ease}',
     '  .gm-topbar-mobile .h-12{height:40px!important}',
     '  .gm-topbar-mobile.gm-hide{transform:translateY(-100%);opacity:0}',
@@ -207,15 +208,18 @@
     if (Math.abs(delta) > 6) {
       if (delta > 0 && y > 40) {
         fab.classList.add('gm-dim');
+        bottom.classList.add('gm-dim');
         if (mobileTopbar) mobileTopbar.classList.add('gm-hide');
       } else if (delta < 0) {
         fab.classList.remove('gm-dim');
+        bottom.classList.remove('gm-dim');
         if (mobileTopbar) mobileTopbar.classList.remove('gm-hide');
       }
       lastY = y;
     }
     if (y <= 40) {
       fab.classList.remove('gm-dim');
+      bottom.classList.remove('gm-dim');
       if (mobileTopbar) mobileTopbar.classList.remove('gm-hide');
     }
     ticking = false;
