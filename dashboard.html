@@ -530,6 +530,19 @@
       }, 2500);
     }
 
+    function showQuotePublishedToast(postId) {
+      const toast = document.getElementById('toastMessage');
+      if (!toast) return;
+      toast.innerHTML = 'Tu cita se publicó · <a href="#post-' + connEscape(postId) + '" onclick="setTimeout(() => { document.getElementById(\'toastMessage\').classList.add(\'hidden\'); }, 0)" class="underline font-bold">Mirar</a>';
+      toast.classList.remove('hidden');
+      requestAnimationFrame(() => { toast.style.opacity = '1'; });
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.classList.add('hidden'), 400);
+      }, 3500);
+    }
+
     function openComposerModal() {
       document.getElementById('postContentModal').value = '';
       document.getElementById('postImageModal').value = '';
@@ -813,7 +826,7 @@
         currentUser.user_metadata?.full_name ||
         currentUser.email.split('@')[0];
 
-      const { error } = await supabaseClient
+      const { data: createdQuote, error } = await supabaseClient
         .from('posts')
         .insert([{
           user_email: currentUser.email,
@@ -823,7 +836,9 @@
           likes: 0,
           repost_of: quoteComposerPostId,
           quote_text: quoteText
-        }]);
+        }])
+        .select('id')
+        .single();
 
       if (error) {
         console.error(error);
@@ -832,8 +847,8 @@
       }
 
       closeQuoteComposer();
-      loadPosts();
-      showToast('Tu cita se publicó');
+      await loadPosts();
+      showQuotePublishedToast(createdQuote.id);
     }
 
     function sharePost(text) {
