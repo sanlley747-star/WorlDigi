@@ -108,6 +108,7 @@ function ccLikeHover(wrapper, show) {
 // btn: el <button> pulsado. id: id del post. currentLikes: contador actual mostrado. isLiked: si ya tenía like.
 // userEmail/userName: identidad de quien da el like.
 async function ccToggleLike(btn) {
+  if (window.matchMedia && window.matchMedia('(max-width: 1023px)').matches && navigator.vibrate) navigator.vibrate(10);
   const id = btn.getAttribute('data-post-id');
   const currentLikes = parseInt(btn.getAttribute('data-likes') || '0', 10);
   const isLiked = btn.getAttribute('data-liked') === 'true';
