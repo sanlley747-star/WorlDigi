@@ -4,6 +4,7 @@
 (function () {
   const MAX_EMBEDS_POR_POST = 1;
   const ID_RE = /^[A-Za-z0-9_-]{11}$/;
+  const ICON_EXPAND = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M3 3l6 6M16 3h5v5M21 3l-6 6M8 21H3v-5M3 21l6-6M16 21h5v-5M21 21l-6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
   function parseStart(u) {
     const raw = u.searchParams.get('t') || u.searchParams.get('start');
@@ -45,6 +46,10 @@
       .yt-play { padding: 0; cursor: pointer; background: #000 center / cover no-repeat; display: flex; align-items: center; justify-content: center; }
       .yt-play::after { content: ''; width: 68px; height: 48px; border-radius: 12px; background: rgba(0,0,0,.72) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M9 6.5v11l9-5.5z'/></svg>") center / 30px no-repeat; transition: background-color .15s; }
       .yt-play:hover::after, .yt-play:focus-visible::after { background-color: #ff0000; }
+      .yt-expand { display: none; position: absolute; right: .5rem; bottom: .5rem; width: 42px; height: 42px; border: 0; border-radius: .5rem; background: rgba(0,0,0,.72); color: #fff; align-items: center; justify-content: center; cursor: pointer; z-index: 3; }
+      .yt-expand svg { width: 22px; height: 22px; }
+      @media (max-width: 767px) { .yt-expand { display: flex; } }
+      .yt-frame.yt-theater { position: fixed; inset: 0; z-index: 9999; width: 100vw; height: 100vh; aspect-ratio: auto; border-radius: 0; }
       .yt-meta { margin-top: .25rem; font-size: .75rem; }
       .yt-meta a { color: #6b7280; }
       .yt-meta a:hover { text-decoration: underline; }
@@ -60,6 +65,7 @@
     return `<div class="yt-embed" data-yt-id="${v.id}" data-yt-start="${v.start}">
       <div class="yt-frame${v.short ? ' yt-short' : ''}">
         <button type="button" class="yt-play" style="background-image:url('${thumb}')" aria-label="Reproducir video"></button>
+        <button type="button" class="yt-expand" aria-label="Pantalla completa" title="Pantalla completa">${ICON_EXPAND}</button>
       </div>
       <div class="yt-meta"><a href="${watch}" target="_blank" rel="noopener noreferrer">YouTube</a></div>
     </div>`;
@@ -194,6 +200,7 @@
     if (!box) return;
     e.stopPropagation();
     if (e.target.closest('.yt-play')) { loadPlayer(box, true); }
+    else if (e.target.closest('.yt-expand')) { toggleExpand(box); }
   }, true);
 
   document.addEventListener('keydown', function (e) {
