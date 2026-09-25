@@ -350,7 +350,7 @@
 
     const author = post.user_name || 'Usuario';
     const compactTime = formatCompactTime(post.created_at);
-    const avatarUrl = post.avatar_url ||
+    const avatarUrl = avatarByUser[post.user_email] || avatarByUser[author] || post.avatar_url ||
       `https://ui-avatars.com/api/?name=${encodeURIComponent(author)}&background=random`;
 
     // Si es un repost, obtenemos la publicación original
