@@ -34,6 +34,8 @@
     html.auth-pending body { display: none; }
     .avatar-image { visibility: hidden; }
     .avatar-image.is-loaded { visibility: visible; }
+    @keyframes bygetherSheetIn { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .bygether-sheet-in { animation: bygetherSheetIn .22s ease-out; }
     html{scrollbar-width:thin;scrollbar-color:#050b18 transparent}
     ::-webkit-scrollbar{width:10px}
     ::-webkit-scrollbar-track{background:transparent}
@@ -610,17 +612,20 @@
     });
 
     function toggleRepostMenu(postId) {
-     const menu = document.getElementById(`repost-menu-${postId}`);
+      if (window.innerWidth < 768) {
+        openMobileRepostSheet(postId);
+        return;
+      }
 
+      const menu = document.getElementById(`repost-menu-${postId}`);
       if (!menu) return;
 
-      // Cierra cualquier otro menú de repost que haya quedado abierto
       document.querySelectorAll('[id^="repost-menu-"]').forEach(m => {
         if (m !== menu) m.classList.add('hidden');
       });
 
-  menu.classList.toggle('hidden');
-   }
+      menu.classList.toggle('hidden');
+    }
 
     // Cierra el menú de repost si el usuario hace clic en cualquier otro lugar
     document.addEventListener('click', (e) => {
@@ -688,8 +693,111 @@
     }
 
     async function quotePost(postId) {
-      const quoteText = prompt('Escribe tu cita para este repost:');
-      if (quoteText === null) return;
+      openQuoteComposer(postId);
+    }
+
+    let mobileRepostPostId = null;
+    let quoteComposerPostId = null;
+
+    function closeMobileRepostSheet() {
+      const sheet = document.getElementById('mobileRepostSheet');
+      if (!sheet) return;
+      sheet.classList.add('hidden');
+      sheet.classList.remove('flex');
+      mobileRepostPostId = null;
+    }
+
+    function openMobileRepostSheet(postId) {
+      mobileRepostPostId = postId;
+      const sheet = document.getElementById('mobileRepostSheet');
+      const repostAction = document.getElementById('mobileRepostAction');
+      if (!sheet || !repostAction) return;
+
+      const hasRepost = document.querySelector(`#repost-menu-${postId} button[onclick^="undoRepost"]`);
+      repostAction.textContent = hasRepost ? 'Deshacer repost' : 'Repostear ahora';
+      repostAction.onclick = () => {
+        const id = mobileRepostPostId;
+        closeMobileRepostSheet();
+        if (hasRepost) undoRepost(id);
+        else repostPost(id);
+      };
+
+      sheet.classList.remove('hidden');
+      sheet.classList.add('flex');
+    }
+
+    function closeQuoteComposer() {
+      const modal = document.getElementById('quoteComposerModal');
+      if (!modal) return;
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      quoteComposerPostId = null;
+    }
+
+    function closeQuoteComposerBackdrop(e) {
+      if (e.target.id === 'quoteComposerModal') closeQuoteComposer();
+    }
+
+    async function openQuoteComposer(postId) {
+      closeMobileRepostSheet();
+      quoteComposerPostId = postId;
+
+      const modal = document.getElementById('quoteComposerModal');
+      const body = document.getElementById('quoteComposerBody');
+      const input = document.getElementById('quoteComposerText');
+      const avatar = document.getElementById('quoteComposerAvatar');
+      if (!modal || !body || !input) return;
+
+      if (myAvatarUrl) {
+        avatar.src = myAvatarUrl;
+        avatar.classList.add('is-loaded');
+      } else {
+        avatar.removeAttribute('src');
+        avatar.classList.remove('is-loaded');
+      }
+
+      input.value = '';
+      body.innerHTML = '<div class="text-sm text-gray-500 dark:text-gray-400 text-center py-6">Cargando publicación...</div>';
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+
+      const { data: post, error } = await supabaseClient
+        .from('posts')
+        .select('*')
+        .eq('id', postId)
+        .single();
+
+      if (error || !post) {
+        body.innerHTML = '<div class="text-sm text-red-500 text-center py-6">No se pudo cargar la publicación.</div>';
+        return;
+      }
+
+      const author = post.user_name || 'Usuario';
+      const authorAvatar = post.avatar_url ||
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(author)}&background=random`;
+
+      body.innerHTML = `
+        <div class="border border-gray-200 dark:border-slate-700 rounded-xl p-3">
+          <div class="flex items-center gap-2 mb-2">
+            <img src="${connEscape(authorAvatar)}" class="w-8 h-8 rounded-full object-cover flex-shrink-0" alt="">
+            <div class="min-w-0">
+              <div class="font-bold text-sm text-gray-900 dark:text-white truncate">${connEscape(author)}</div>
+              <div class="text-xs text-gray-400">${formatCompactTime(post.created_at)}</div>
+            </div>
+          </div>
+          ${post.content ? `<p class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line">${linkifyContent(ytStripLink(post.content))}</p>` : ''}
+          ${ytEmbedsFor(post.content || '')}
+          ${post.image_url && !ytOwnsImage(post.content || '', post.image_url) ? `<img src="${connEscape(post.image_url)}" class="w-full rounded-lg max-h-72 object-cover mt-3" alt="Imagen de publicación">` : ''}
+        </div>
+      `;
+    }
+
+    async function submitQuote() {
+      const input = document.getElementById('quoteComposerText');
+      if (!input || !quoteComposerPostId || !currentUser) return;
+
+      const quoteText = input.value.trim();
+      if (!quoteText) return;
 
       const authorName =
         currentUser.user_metadata?.full_name ||
@@ -697,25 +805,25 @@
 
       const { error } = await supabaseClient
         .from('posts')
-        .insert([
-          {
-            user_email: currentUser.email,
-            user_name: authorName,
-            content: null,
-            image_url: null,
-            likes: 0,
-            repost_of: postId,
-            quote_text: quoteText.trim() || null
-          }
-        ]);
+        .insert([{
+          user_email: currentUser.email,
+          user_name: authorName,
+          content: null,
+          image_url: null,
+          likes: 0,
+          repost_of: quoteComposerPostId,
+          quote_text: quoteText
+        }]);
 
       if (error) {
         console.error(error);
+        alert('Error al citar la publicación: ' + error.message);
         return;
       }
 
-      toggleRepostMenu(postId);
+      closeQuoteComposer();
       loadPosts();
+      showToast('Tu cita se publicó');
     }
 
     function sharePost(text) {
@@ -934,6 +1042,43 @@
           <span id="postImagePreviewModal" class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[140px]"></span>
         </div>
         <button id="btnPublishModal" disabled class="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:hover:bg-blue-600 disabled:cursor-not-allowed text-white font-bold py-2 px-6 rounded-lg transition">Publicar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hoja móvil: Repostear / Citar -->
+  <div id="mobileRepostSheet" class="hidden fixed inset-0 z-[120] items-end bg-black/60" onclick="if(event.target===this) closeMobileRepostSheet()">
+    <div class="bygether-sheet-in w-full bg-white dark:bg-slate-900 rounded-t-2xl border-t border-gray-200 dark:border-slate-700 shadow-2xl p-3 pb-5">
+      <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-slate-700 mx-auto mb-4"></div>
+      <button id="mobileRepostAction" class="w-full px-4 py-4 text-left text-gray-900 dark:text-white rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 transition font-semibold">
+        Repostear ahora
+      </button>
+      <button onclick="openQuoteComposer(mobileRepostPostId)" class="w-full px-4 py-4 text-left text-gray-900 dark:text-white rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 transition font-semibold">
+        Citar publicación
+      </button>
+      <button onclick="closeMobileRepostSheet()" class="w-full mt-1 px-4 py-3 rounded-xl text-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition">
+        Cancelar
+      </button>
+    </div>
+  </div>
+
+  <!-- Compositor de cita -->
+  <div id="quoteComposerModal" class="hidden fixed inset-0 z-[130] bg-black/70 items-end md:items-center justify-center p-0 md:p-4" onclick="closeQuoteComposerBackdrop(event)">
+    <div class="w-full md:max-w-2xl bg-white dark:bg-slate-900 rounded-t-2xl md:rounded-xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-800">
+        <h2 class="font-bold text-gray-900 dark:text-white">Citar publicación</h2>
+        <button onclick="closeQuoteComposer()" class="text-2xl leading-none text-gray-500 hover:text-gray-900 dark:hover:text-white">&times;</button>
+      </div>
+      <div class="overflow-y-auto p-4 space-y-4">
+        <div class="flex items-start gap-3">
+          <img id="quoteComposerAvatar" class="avatar-image w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700 flex-shrink-0" alt="Tu avatar">
+          <textarea id="quoteComposerText" maxlength="280" rows="4" placeholder="Añade tu comentario..." class="flex-1 w-full min-h-[96px] resize-none rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+        </div>
+        <div id="quoteComposerBody"></div>
+      </div>
+      <div class="flex items-center justify-end gap-2 px-4 py-3 border-t border-gray-200 dark:border-slate-800">
+        <button onclick="closeQuoteComposer()" class="px-4 py-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition">Cancelar</button>
+        <button onclick="submitQuote()" class="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold transition">Citar</button>
       </div>
     </div>
   </div>
