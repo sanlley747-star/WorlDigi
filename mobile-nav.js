@@ -40,7 +40,6 @@
     '  .gm-publish{margin-top:14px;background:#2563eb;color:#fff;font-weight:700}',
     '  .gm-publish:active{background:#1d4ed8}',
     '  .gm-bottom{display:flex;position:fixed;left:0;right:0;bottom:0;height:52px;padding:0 18px calc(env(safe-area-inset-bottom));box-sizing:content-box;',
-    '    background:#2563eb;color:#fff;align-items:center;justify-content:center;z-index:90;cursor:pointer;opacity:1;',
     '    background:rgba(2,6,23,.94);border-top:1px solid rgba(148,163,184,.18);color:#e5e7eb;align-items:center;justify-content:space-around;z-index:80;opacity:1;transition:opacity .25s ease,transform .2s ease;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);-webkit-tap-highlight-color:transparent}',
     '  html:not(.dark) .gm-bottom{background:rgba(255,255,255,.94);color:#111827;border-top-color:rgba(148,163,184,.28)}',
     '  .gm-bottom a,.gm-bottom button{width:48px;height:48px;border:0;background:transparent;color:inherit;display:flex;align-items:center;justify-content:center;border-radius:9999px;cursor:pointer;-webkit-tap-highlight-color:transparent}',
