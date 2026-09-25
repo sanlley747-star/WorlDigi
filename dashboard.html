@@ -796,7 +796,13 @@
       }
 
       const author = post.user_name || 'Usuario';
-      const authorAvatar = avatarByUser[post.user_email] || avatarByUser[author] || post.avatar_url ||
+      const { data: authorProfile } = await supabaseClient
+        .from('profiles')
+        .select('avatar_url')
+        .or(`user_email.eq.${post.user_email},user_name.eq.${author}`)
+        .limit(1)
+        .maybeSingle();
+      const authorAvatar = authorProfile?.avatar_url || post.avatar_url ||
         `https://ui-avatars.com/api/?name=${encodeURIComponent(author)}&background=random`;
 
       body.innerHTML = `
