@@ -208,18 +208,15 @@
     if (Math.abs(delta) > 6) {
       if (delta > 0 && y > 40) {
         fab.classList.add('gm-dim');
-        bottom.classList.add('gm-dim');
         if (mobileTopbar) mobileTopbar.classList.add('gm-hide');
       } else if (delta < 0) {
         fab.classList.remove('gm-dim');
-        bottom.classList.remove('gm-dim');
         if (mobileTopbar) mobileTopbar.classList.remove('gm-hide');
       }
       lastY = y;
     }
     if (y <= 40) {
       fab.classList.remove('gm-dim');
-      bottom.classList.remove('gm-dim');
       if (mobileTopbar) mobileTopbar.classList.remove('gm-hide');
     }
     ticking = false;
