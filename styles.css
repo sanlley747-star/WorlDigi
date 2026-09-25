@@ -50,7 +50,8 @@ input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(18,207,227,.12)}
   display:grid;
   grid-template-columns:minmax(280px,1fr) minmax(520px,760px);
   column-gap:7vw;
-  align-items:center;
+  row-gap:0;
+  align-items:start;
   text-align:right;
 }
 .logo-wrap{justify-content:flex-start;margin-bottom:0}
