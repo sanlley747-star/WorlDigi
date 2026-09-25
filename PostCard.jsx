@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 
 export default function PostCard({ post, currentUserId, onLike, onRepost, onQuote }) {
     const [showRepostMenu, setShowRepostMenu] = useState(false);
+    const [showQuoteModal, setShowQuoteModal] = useState(false);
+    const [quoteText, setQuoteText] = useState('');
 
     return (
         <>
@@ -78,7 +80,7 @@ export default function PostCard({ post, currentUserId, onLike, onRepost, onQuot
                                 <button onClick={() => { onRepost(post.id); setShowRepostMenu(false); }} className="w-full text-left px-4 py-2.5 text-xs text-gray-200 hover:bg-gray-700 flex items-center space-x-2">
                                     <span>🔄</span> <span>Repostear ahora</span>
                                 </button>
-                                <button onClick={() => { onQuote(post.id); setShowRepostMenu(false); }} className="w-full text-left px-4 py-2.5 text-xs text-gray-200 hover:bg-gray-700 flex items-center space-x-2 border-t border-gray-700">
+                                <button onClick={() => { setShowRepostMenu(false); setShowQuoteModal(true); }} className="w-full text-left px-4 py-2.5 text-xs text-gray-200 hover:bg-gray-700 flex items-center space-x-2 border-t border-gray-700">
                                     <span>✏️</span> <span>Citar publicación</span>
                                 </button>
                             </div>
@@ -112,7 +114,79 @@ export default function PostCard({ post, currentUserId, onLike, onRepost, onQuot
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
                 </button>
             </div>
-        </div>
+            </div>
+
+            {showQuoteModal && (
+                <>
+                    <div className="fixed inset-0 z-[60] bg-black/60" onClick={() => setShowQuoteModal(false)} aria-hidden="true"></div>
+                    <div className="fixed inset-0 z-[61] flex items-end md:items-center justify-center p-0 md:p-4">
+                        <div className="w-full md:max-w-xl bg-gray-900 border border-gray-700 rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden"
+                            role="dialog" aria-modal="true" aria-label="Citar publicación">
+                            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+                                <h3 className="text-sm font-semibold text-gray-100">Citar publicación</h3>
+                                <button type="button" onClick={() => setShowQuoteModal(false)}
+                                    className="text-gray-400 hover:text-white text-xl leading-none" aria-label="Cerrar">
+                                    ×
+                                </button>
+                            </div>
+
+                            <div className="p-4">
+                                <div className="flex items-start space-x-3 mb-4">
+                                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center font-bold text-white shrink-0">
+                                        {post.currentUserInitials || post.viewerInitials || 'Tú'}
+                                    </div>
+                                    <textarea
+                                        value={quoteText}
+                                        onChange={(e) => setQuoteText(e.target.value)}
+                                        placeholder="Añade un comentario a tu cita..."
+                                        className="flex-1 min-h-[88px] resize-none bg-transparent text-sm text-gray-100 placeholder-gray-500 outline-none border-0 focus:ring-0"
+                                        autoFocus
+                                    />
+                                </div>
+
+                                <div className="border border-gray-700 rounded-xl p-3 bg-gray-950/40">
+                                    <div className="flex items-center space-x-3 mb-3">
+                                        <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center font-bold text-white text-xs">
+                                            {post.authorInitials || 'SS'}
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-sm text-gray-100">{post.authorName || 'Sanlley Sánchez Pérez'}</h4>
+                                            <span className="text-xs text-gray-400">@{post.authorHandle || 'sanylley'} · {post.timeAgo || '10m'}</span>
+                                        </div>
+                                    </div>
+                                    <p className="text-sm text-gray-200 leading-relaxed">{post.content}</p>
+                                    {post.image_url && (
+                                        <img src={post.image_url} alt={post.metadata?.og_title || 'Imagen de la publicación'}
+                                            className="w-full rounded-xl mt-3 max-h-[260px] object-cover" loading="lazy" />
+                                    )}
+                                    {post.metadata?.tipo === 'link_preview' && post.metadata?.url && (
+                                        <a href={post.metadata.url} target="_blank" rel="noopener noreferrer"
+                                            className="block border border-gray-700 rounded-xl p-3 mt-3">
+                                            <div className="text-xs text-gray-400 mb-1">{post.metadata.domain || 'Enlace'}</div>
+                                            <div className="text-sm font-medium text-gray-100">{post.metadata.og_title || post.metadata.url}</div>
+                                        </a>
+                                    )}
+                                </div>
+
+                                <div className="flex justify-end space-x-2 mt-4">
+                                    <button type="button" onClick={() => setShowQuoteModal(false)}
+                                        className="px-4 py-2.5 text-sm text-gray-300 bg-gray-800 hover:bg-gray-700 rounded-xl">
+                                        Cancelar
+                                    </button>
+                                    <button type="button" onClick={() => {
+                                        onQuote(post.id, quoteText);
+                                        setQuoteText('');
+                                        setShowQuoteModal(false);
+                                    }}
+                                        className="px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-xl">
+                                        Citar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
         </>
     );
 }
