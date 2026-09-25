@@ -162,10 +162,11 @@
     });
   }
 
-  bottom.querySelector('[data-gm-bottom="home"]').addEventListener('click', function (e) {
+  bottom.querySelector('[data-gm-bottom="home"]').addEventListener('click', async function (e) {
     if (isDashboard) {
       e.preventDefault();
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (typeof window.loadPosts === 'function') await window.loadPosts();
     }
   });
 
