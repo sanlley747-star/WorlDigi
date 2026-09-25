@@ -273,7 +273,7 @@
     .from('posts')
     .select('*')
     .order('created_at', { ascending: false });
-     const { data: profiles } = await supabaseClient .from('profiles') .select('user_name, avatar_url'); const avatarByUser = {}; (profiles || []).forEach(p => { avatarByUser[p.user_name] = p.avatar_url; });
+     const { data: profiles } = await supabaseClient .from('profiles') .select('user_name, user_email, avatar_url'); const avatarByUser = {}; (profiles || []).forEach(p => { if (p.user_name && p.avatar_url) avatarByUser[p.user_name] = p.avatar_url; if (p.user_email && p.avatar_url) avatarByUser[p.user_email] = p.avatar_url; });
      const channelSet = await connFetchChannelSet();
 
   const feed = document.getElementById('feed');
