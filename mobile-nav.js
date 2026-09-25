@@ -216,7 +216,6 @@
     }
     if (y <= 40) {
       fab.classList.remove('gm-dim');
-      bottom.classList.remove('gm-dim');
       if (mobileTopbar) mobileTopbar.classList.remove('gm-hide');
     }
     ticking = false;
