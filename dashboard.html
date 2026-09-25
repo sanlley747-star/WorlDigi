@@ -32,6 +32,8 @@
        caché de retroceso (bfcache) tras cerrar sesión, no se alcance a ver
        ni un instante el muro antes de redirigir al login. */
     html.auth-pending body { display: none; }
+    .avatar-image { visibility: hidden; }
+    .avatar-image.is-loaded { visibility: visible; }
     html{scrollbar-width:thin;scrollbar-color:#050b18 transparent}
     ::-webkit-scrollbar{width:10px}
     ::-webkit-scrollbar-track{background:transparent}
@@ -91,7 +93,7 @@
       <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800">
         <h2 class="text-lg font-bold mb-3 text-gray-900 dark:text-white">Crear Publicación</h2>
         <div class="flex items-start gap-3">
-          <img id="composerAvatar" src="" class="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700 flex-shrink-0" alt="Tu avatar">
+          <img id="composerAvatar" class="avatar-image w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700 flex-shrink-0">
           <textarea id="postContent" maxlength="280" oninput="updatePublishState('postContent','btnPublish')" class="flex-1 w-full p-3 border-0 resize-none bg-transparent text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none" placeholder="¿Qué estás pensando?"></textarea>
         </div>
 
@@ -249,10 +251,16 @@
         .eq('user_name', authorName)
         .maybeSingle();
 
-      myAvatarUrl = myProfileRow?.avatar_url ||
-        `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=random`;
+      myAvatarUrl = myProfileRow?.avatar_url || null;
 
-      document.getElementById('composerAvatar').src = myAvatarUrl;
+      const composerAvatar = document.getElementById('composerAvatar');
+      if (myAvatarUrl) {
+        composerAvatar.src = myAvatarUrl;
+        composerAvatar.classList.add('is-loaded');
+      } else {
+        composerAvatar.removeAttribute('src');
+        composerAvatar.classList.remove('is-loaded');
+      }
 
       initNotifications(currentUser.email);
       loadPosts();
@@ -514,7 +522,14 @@
       document.getElementById('postContentModal').value = '';
       document.getElementById('postImageModal').value = '';
       document.getElementById('postImagePreviewModal').textContent = '';
-      document.getElementById('composerAvatarModal').src = myAvatarUrl || '';
+      const composerAvatarModal = document.getElementById('composerAvatarModal');
+      if (myAvatarUrl) {
+        composerAvatarModal.src = myAvatarUrl;
+        composerAvatarModal.classList.add('is-loaded');
+      } else {
+        composerAvatarModal.removeAttribute('src');
+        composerAvatarModal.classList.remove('is-loaded');
+      }
       document.getElementById('btnPublishModal').disabled = true;
 
       const modal = document.getElementById('composerModal');
@@ -906,7 +921,7 @@
       <h2 class="text-lg font-bold mb-3 text-gray-900 dark:text-white pr-8">Crear Publicación</h2>
 
       <div class="flex items-start gap-3">
-        <img id="composerAvatarModal" src="" class="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700 flex-shrink-0" alt="Tu avatar">
+        <img id="composerAvatarModal" class="avatar-image w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700 flex-shrink-0">
         <textarea id="postContentModal" maxlength="280" oninput="updatePublishState('postContentModal','btnPublishModal')" class="flex-1 w-full p-3 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="¿Qué estás pensando?"></textarea>
       </div>
 
