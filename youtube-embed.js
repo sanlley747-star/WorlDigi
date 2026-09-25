@@ -45,20 +45,14 @@
       .yt-play { padding: 0; cursor: pointer; background: #000 center / cover no-repeat; display: flex; align-items: center; justify-content: center; }
       .yt-play::after { content: ''; width: 68px; height: 48px; border-radius: 12px; background: rgba(0,0,0,.72) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M9 6.5v11l9-5.5z'/></svg>") center / 30px no-repeat; transition: background-color .15s; }
       .yt-play:hover::after, .yt-play:focus-visible::after { background-color: #ff0000; }
-      .yt-expand { position: absolute; top: .5rem; right: .5rem; z-index: 2; width: 34px; height: 34px; border-radius: 9999px; border: 0; cursor: pointer; background: rgba(0,0,0,.6); color: #fff; display: flex; align-items: center; justify-content: center; }
-      .yt-expand:hover { background: rgba(0,0,0,.85); }
       .yt-meta { margin-top: .25rem; font-size: .75rem; }
       .yt-meta a { color: #6b7280; }
       .yt-meta a:hover { text-decoration: underline; }
       /* Modo teatro (respaldo cuando el navegador no permite fullscreen de elementos, p. ej. iPhone) */
-      .yt-frame.yt-theater { position: fixed; inset: 0; z-index: 9999; max-width: none; width: 100vw; height: 100dvh; aspect-ratio: auto; border-radius: 0; }
-      .yt-frame:fullscreen { border-radius: 0; max-width: none; aspect-ratio: auto; }
-      .yt-frame:-webkit-full-screen { border-radius: 0; max-width: none; aspect-ratio: auto; }
     `;
     document.head.appendChild(s);
   }
 
-  const ICON_EXPAND = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>';
 
   function renderEmbed(v) {
     const thumb = `https://i.ytimg.com/vi/${v.id}/hqdefault.jpg`;
@@ -68,7 +62,7 @@
         <button type="button" class="yt-play" style="background-image:url('${thumb}')" aria-label="Reproducir video"></button>
         <button type="button" class="yt-expand" aria-label="Pantalla completa" title="Pantalla completa">${ICON_EXPAND}</button>
       </div>
-      <div class="yt-meta"><a href="${watch}" target="_blank" rel="noopener noreferrer">Ver en YouTube</a></div>
+      <div class="yt-meta"><a href="${watch}" target="_blank" rel="noopener noreferrer">YouTube</a></div>
     </div>`;
   }
 
@@ -200,7 +194,6 @@
     const box = e.target.closest && e.target.closest('.yt-embed');
     if (!box) return;
     e.stopPropagation();
-    if (e.target.closest('.yt-expand')) { toggleExpand(box); return; }
     if (e.target.closest('.yt-play')) { loadPlayer(box, true); }
   }, true);
 
