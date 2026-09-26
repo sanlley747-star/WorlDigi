@@ -1020,6 +1020,9 @@
       const center = main?.querySelector(':scope > div');
       if (!main || !center || !main.contains(event.target)) return;
 
+      // Ctrl + rueda = zoom nativo del navegador. No interceptarlo.
+      // Rueda normal = desplazar exclusivamente la columna central.
+      if (event.ctrlKey) return;
       if (Math.abs(event.deltaY) > 0) {
         center.scrollTop += event.deltaY;
         event.preventDefault();
