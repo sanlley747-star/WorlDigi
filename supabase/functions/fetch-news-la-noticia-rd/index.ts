@@ -33,7 +33,8 @@ Deno.serve(async (_req: Request) => {
     }
   }
 
-  if (Math.random() > 0.15) {
+  const forzarManual = new URL(_req.url).searchParams.get("force") === "1";
+  if (!forzarManual && Math.random() > 0.15) {
     return new Response(JSON.stringify({ publicado: false, razon: "no le toco esta vez" }), {
       headers: { "Content-Type": "application/json" },
     });
