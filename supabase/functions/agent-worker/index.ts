@@ -26,7 +26,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { encodeBase64 } from "jsr:@std/encoding@1/base64";
 import {
-  imagenDelPost, limpiarSalida, PROMPT_DESCRIPCION_IMAGEN, promptComentario, promptPublicacion,
+  imagenDelPost, limpiarSalida, PROMPT_DESCRIPCION_IMAGEN, promptCita, promptComentario, promptPublicacion,
 } from "./prompts.ts";
 import type { Agente, Catalogo, Ctx, Prompt } from "./prompts.ts";
 import { generar, GeminiError, listarModelos } from "./gemini.ts";
@@ -35,7 +35,7 @@ import { crearImagenPost } from "./imagen.ts";
 import { extractOpenGraph, generateLinkComment } from "./enlaces.ts";
 
 const TIEMPO_MAX_MS = 100_000;          // margen bajo el limite de la funcion
-const TIPOS_IA = ["POST", "COMMENT"];
+const TIPOS_IA = ["POST", "COMMENT", "REPOST"];
 const IMG_MAX_BYTES = 4_000_000;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -192,7 +192,7 @@ async function prepararComentario(
   return { agente, ctx, prompt: promptComentario(ctx, agente, s.cat, { responderA, objetivo }) };
 }
 
-async function prepararPost(
+async function prepararCita(\n  s: Sesion, postId: number, agenteEmail: string,\n): Promise<{ agente: Agente; ctx: Ctx; prompt: Prompt } | { error: string }> {\n  const agente = await agenteDe(s, agenteEmail);\n  if (!agente) return { error: `cuenta automatica inexistente: ${agenteEmail}` };\n  const { data: ctx } = await s.sb.rpc("contexto_hilo", { p_post_id: postId, p_agent_email: agenteEmail });\n  if (!ctx) return { error: `post inexistente: ${postId}` };\n  const { count } = await s.sb.from("cuentas_canal").select("user_email", { count: "exact", head: true }).ilike("user_email", String(ctx.post?.autor_email ?? ""));\n  return { agente, ctx, prompt: promptCita(ctx, agente, s.cat, Number(count ?? 0) > 0) };\n}\n\nasync function prepararPost(
   s: Sesion, agenteEmail: string, tema: string | null, conImagen = false,
 ): Promise<{ agente: Agente; prompt: Prompt } | { error: string }> {
   const agente = await agenteDe(s, agenteEmail);
@@ -233,7 +233,7 @@ async function procesarTarea(s: Sesion, t: Fila): Promise<Resultado> {
     return "completada";
   }
 
-  if (t.action_type === "POST") {
+  if (t.action_type === "REPOST" && t.payload?.con_cita === true) {\n    const postId = Number(t.target_id);\n    if (!Number.isFinite(postId)) return fallar(`target_id invalido: ${t.target_id}`, true);\n    const prep = await prepararCita(s, postId, t.agent_id);\n    if ("error" in prep) return fallar(prep.error, true);\n    const { validacion } = await generarTexto(s, t.agent_id, prep.prompt, "cita");\n    if (!validacion.ok) return fallar(`salida rechazada: ${validacion.motivo}`);\n    const { error } = await s.sb.rpc("worker_completar_cita", { p_task_id: t.id, p_post_id: postId, p_agent_email: t.agent_id, p_quote_text: validacion.texto });\n    if (error) return fallar(`no se pudo publicar cita: ${error.message}`, /inexistente/.test(error.message));\n    return "completada";\n  }\n\n  if (t.action_type === "POST") {
     // Bloque 6: todo POST de cuentas-persona pasa por agent-noticias.
     // La imagen ya no se solicita/genera aquí; agent-noticias aporta la foto de la noticia.
     const url = Deno.env.get("SUPABASE_URL")!;
@@ -343,7 +343,9 @@ async function dryRun(sb: SupabaseClient, body: Fila) {
   try {
     const prep = body.dry_run === "post"
       ? await prepararPost(s, String(body.agent_email), body.tema ?? null, body.con_imagen === true)
-      : await prepararComentario(s, Number(body.post_id), String(body.agent_email), body.responder_a != null ? Number(body.responder_a) : null);
+      : body.dry_run === "cita"
+        ? await prepararCita(s, Number(body.post_id), String(body.agent_email))
+        : await prepararComentario(s, Number(body.post_id), String(body.agent_email), body.responder_a != null ? Number(body.responder_a) : null);
     if ("error" in prep) return { error: prep.error };
     const { r, validacion } = await generarTexto(s, String(body.agent_email), prep.prompt, "prueba");
     return { modelo: s.modelo, prompt: prep.prompt, generado: r.texto, validacion, tokens: { entrada: r.tokensIn, salida: r.tokensOut, pensamiento: r.pensamiento }, finish: r.finish, llamadas: s.llamadas };
