@@ -1,0 +1,24 @@
+-- ByGether — Bloque 2: verificación de noticias
+-- Este archivo documenta las comprobaciones ejecutadas sobre producción.
+-- No modifica datos por sí mismo.
+--
+-- Objetivo del bloque:
+-- 1) noticias_usadas: URL normalizada única + trazabilidad.
+-- 2) enlaces_publicados: URL normalizada única + trazabilidad.
+-- 3) worker_completar_post: crea el post y completa la tarea de forma atómica.
+--
+-- Prueba reversible ejecutada en producción:
+-- BEGIN;
+-- UPDATE agent_queue SET status='processing', started_at=now() WHERE id=<tarea_pending>;
+-- SELECT worker_completar_post(...);
+-- ROLLBACK;
+--
+-- Resultado observado el 26/09/2026:
+-- worker_completar_post(...) devolvió id de post 1080.
+-- La tarea volvió a status='pending'.
+-- El post 1080 no quedó persistido.
+-- noticias_usadas y enlaces_publicados conservaron sus contadores.
+--
+-- Índices verificados:
+-- noticias_usadas_url_normalizada_key UNIQUE(url_normalizada)
+-- enlaces_publicados_url_norm_uk UNIQUE(url_norm)
