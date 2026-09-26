@@ -36,8 +36,9 @@
     '.uc-card::before{top:-12px}.uc-card::after{bottom:-12px}',
     '.uc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}',
     '.uc-id{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;flex:1 1 auto}',
-    '.uc-avatar{display:block;width:56px;height:56px;border-radius:9999px;object-fit:cover;background:#e2e8f0;border:1px solid #e2e8f0}',
-    'html.dark .uc-avatar{background:#1e293b;border-color:#334155}',
+    '.uc-avatar{display:block;width:56px;height:56px;border-radius:9999px;overflow:hidden;background:#fff;border:1px solid #e2e8f0}',
+    '.uc-avatar img{display:block;width:100%;height:100%;object-fit:cover}',
+    'html.dark .uc-avatar{background:#fff;border-color:#e2e8f0}',
     '.uc-name{max-width:100%;font-weight:700;font-size:.95rem;line-height:1.2rem;color:inherit;text-decoration:none;overflow-wrap:anywhere}',
     '.uc-name:hover{text-decoration:underline}',
     '.uc-action{flex:0 0 auto;min-height:2rem}',
@@ -114,10 +115,13 @@
       counts: { following: 0, followers: 0 }, state: { iFollow: false, followsMe: false }
     };
     try {
-      info.me = await getMe();
-
-      var prof = await supabaseClient.from('profiles')
+      // Sesión y perfil son consultas independientes: arrancan al mismo tiempo.
+      var mePromise = getMe();
+      var profPromise = supabaseClient.from('profiles')
         .select('user_email, avatar_url').eq('user_name', name).limit(1);
+      info.me = await mePromise;
+
+      var prof = await profPromise;
       if (prof.data && prof.data.length) {
         info.email = prof.data[0].user_email;
         info.avatar = prof.data[0].avatar_url || null;
@@ -153,9 +157,11 @@
     return card;
   }
 
-  function renderCard(name, info) {
+  function renderCard(name, info, loading) {
     var isChannelHidden = info && info.channel && !info.isMe; // "Siguiendo" privado en cuentas canal
-    var avatar = (info && info.avatar) || connAvatarFallback(name);
+    // Mientras llegan los datos, el avatar permanece completamente blanco.
+    // No mostramos las iniciales/fallback porque ese contenido da una falsa sensación de dato ya cargado.
+    var avatar = (info && info.avatar) || (loading ? "" : connAvatarFallback(name));
     var profileUrl = connProfileUrl(name);
     var following = info ? info.counts.following : '–';
     var followers = info ? info.counts.followers : '–';
@@ -163,7 +169,9 @@
     card.innerHTML =
       '<div class="uc-top">' +
         '<div class="uc-id">' +
-          '<a href="' + connEscape(profileUrl) + '"><img class="uc-avatar" src="' + connEscape(avatar) + '" alt="' + connEscape(name) + '"></a>' +
+          '<a href="' + connEscape(profileUrl) + '"><span class="uc-avatar" aria-hidden="true">' +
+          (avatar ? '<img src="' + connEscape(avatar) + '" alt="' + connEscape(name) + '">' : '') +
+        '</span></a>' +
           '<a class="uc-name" href="' + connEscape(profileUrl) + '">' + connEscape(name) + (info && info.channel ? connChannelChip() : '') + '</a>' +
         '</div>' +
         '<div class="uc-action" data-uc-action></div>' +
@@ -219,7 +227,7 @@
   }
 
   // ---------- Abrir / cerrar ----------
-  async function open(el, name) {
+  async function open(el, name, prefetchedInfo) {
     if (!canHover() || !name || name === 'Usuario' || typeof supabaseClient === 'undefined') return;
     anchorEl = el;
     var mySeq = ++seq;
@@ -227,14 +235,14 @@
     ensureCard();
     var hit = cache[name];
     var fresh = hit && Date.now() - hit.t < CACHE_MS;
-    renderCard(name, fresh ? hit.info : null); // primero un esqueleto rápido; luego los datos reales
+    renderCard(name, fresh ? hit.info : null, !fresh); // durante la carga, avatar blanco
     card.classList.add('uc-show');
     place();
 
     if (fresh) return;
-    var info = await loadInfo(name);
+    var info = prefetchedInfo || await loadInfo(name);
     if (mySeq !== seq) return; // el usuario ya movió el cursor a otro nombre
-    renderCard(name, info);
+    renderCard(name, info, false);
     place();
   }
 
@@ -261,7 +269,23 @@
     if (isOpen() && anchorEl === t.el) { clearTimeout(openTimer); return; }
 
     clearTimeout(openTimer);
-    openTimer = setTimeout(function () { open(t.el, t.name); }, isOpen() ? SWITCH_DELAY : OPEN_DELAY);
+
+    // Empieza a cargar los datos en cuanto el cursor entra en el nombre.
+    // El retardo de apertura sigue evitando parpadeos, pero ya no se desperdicia ese tiempo.
+    var prefetched = null;
+    var hit = cache[t.name];
+    if (!(hit && Date.now() - hit.t < CACHE_MS) && typeof supabaseClient !== 'undefined') {
+      prefetched = loadInfo(t.name);
+    }
+
+    openTimer = setTimeout(function () {
+      if (prefetched) {
+        prefetched.then(function (info) { open(t.el, t.name, info); })
+          .catch(function () { open(t.el, t.name); });
+      } else {
+        open(t.el, t.name);
+      }
+    }, isOpen() ? SWITCH_DELAY : OPEN_DELAY);
   });
 
   document.addEventListener('mouseout', function (e) {
