@@ -118,7 +118,7 @@ Deno.serve(async (_req: Request) => {
           const descripcion = htmlToText(item.desc).slice(0,900);
           candidatos.push({
             fuente,titulo:item.title,enlace:item.link,imagen,lockUrl:item.link,
-            contenido:"🌀 " + item.title + "\n\n" + (descripcion ? descripcion + "\n\n" : "") + "Fuente: " + fuente.nombre + " — " + item.link,
+            contenido:"🌀 " + item.title + "\n\nFuente: " + fuente.nombre + " — " + item.link,
             prioridad:esNHC ? 100 : 60
           });
         }
@@ -136,7 +136,7 @@ Deno.serve(async (_req: Request) => {
 
         candidatos.push({
           fuente,titulo:title,enlace:fuente.feed_url,imagen:image,lockUrl,
-          contenido:"🌦️ " + title + "\n\n" + htmlToText(desc) + "\n\nFuente: " + fuente.nombre + " — " + fuente.feed_url,
+          contenido:"🌦️ " + title + "\n\nFuente: " + fuente.nombre + " — " + fuente.feed_url,
           prioridad:/INDOMET/i.test(fuente.nombre) ? 90 : 40
         });
       }
