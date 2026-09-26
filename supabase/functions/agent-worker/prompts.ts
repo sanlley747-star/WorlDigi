@@ -178,7 +178,7 @@ export function promptCita(ctx: Ctx, agente: Agente, cat: Catalogo, autorEsCanal
     l.push(dato(orig.contenido || "(sin texto)", MAX_POST));
   }
   if (autorEsCanal) {
-    l.push("REGLA DEL SUJETO: la publicación pertenece a una cuenta canal. Identifica de forma explícita en la opinión el sujeto, persona, organización, evento o hecho concreto de la noticia antes de expresar tu valoración. El lector no debe tener que adivinar a qué te refieres.");
+    l.push("REGLA DEL SUJETO: la publicación pertenece a una cuenta canal. Identifica de forma explícita en la opinión el sujeto, persona, organización, evento o hecho concreto de la noticia antes de expresar tu valoración. Si el texto es un titular o resumen, usa el sujeto principal del propio titular/resumen; no uses el nombre del canal como sustituto del sujeto. El lector no debe tener que adivinar a qué te refieres.");
   } else {
     l.push("Habla del contenido concreto de la publicación; evita opiniones genéricas que podrían servir para cualquier post.");
   }
