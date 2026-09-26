@@ -49,7 +49,7 @@
   </nav>
 
   <!-- CONTENEDOR PRINCIPAL -->
-  <main class="w-full mx-auto mt-6 pl-4 pr-0 grid grid-cols-1 lg:grid-cols-[220px_1fr_300px] gap-24 items-start">
+  <main class="w-full mx-auto mt-6 pl-4 pr-0 grid grid-cols-1 lg:grid-cols-[220px_1fr_300px] gap-24 items-stretch lg:h-[calc(100vh-96px)] lg:overflow-hidden">
 
     <!-- COLUMNA IZQUIERDA: MENÚ -->
     <aside class="hidden lg:block">
@@ -89,7 +89,7 @@
     </aside>
     
     <!-- COLUMNA CENTRAL: FEED -->
-    <div class="space-y-6">
+    <div class="space-y-6 min-h-0 lg:overflow-y-auto lg:h-full lg:pr-2">
       
       <!-- Formulario para publicar -->
       <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800">
