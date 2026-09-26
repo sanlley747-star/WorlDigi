@@ -16,8 +16,15 @@ export interface OG { title?: string; description?: string; image?: string; site
 const FILTRO_TEMA: Record<string, RegExp> = {
   libros: /libro|novela|autor|autora|escritor|escritora|literatur|poes[ií]a|editorial|cuento|ensayo|biblioteca|lectur/i,
   ciencia: /cient[ií]fic|investigaci|estudio|descubr|astr|espacio|f[ií]sica|biolog|clima|universo|especie|planeta|gen[eé]tic|cerebro/i,
+  // Bloque 1 (fuentes dominicanas 70/30): filtros nuevos para las secciones compartidas de Diario Libre
+  // (un solo feed -planeta.xml, revista.xml, economia.xml- sirve a varios temas; sin filtro mostraría lo mismo en todos).
+  "tecnología": /tecnolog|aplicaci[oó]n\b|\bapp\b|software|smartphone|celular|inteligencia artificial|internet|gadget|dispositivo|rob[oó]t|inform[aá]tic/i,
+  moda: /\bmoda\b|dise[ñn]ador|colecci[oó]n|pasarela|tendencia (de )?(ropa|estilo)|belleza|maquillaje|desfile/i,
+  "música": /m[uú]sica|canci[oó]n|[aá]lbum|cantante|artista musical|concierto|banda\b|ritmo|g[eé]nero musical/i,
+  "cine y series": /pel[ií]cula|\bcine\b|\bserie\b|estreno|actor\b|actriz|director(a)? de cine|Netflix|Disney|HBO|temporada|taquilla/i,
+  viajes: /turis|\bviaj|destino tur[ií]stico|\bhotel\b|\bplaya\b|\bvuelo\b|aerol[ií]nea|excursi[oó]n|crucero/i,
 };
-const GENERALISTAS = /Vanguardia|ABC|elDiario/i;
+const GENERALISTAS = /Vanguardia|ABC|elDiario|Diario Libre/i;
 
 export const hostPublico = (u: URL): boolean => {
   if (u.protocol !== "https:") return false;
