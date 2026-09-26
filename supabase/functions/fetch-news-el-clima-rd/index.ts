@@ -67,6 +67,27 @@ async function imageFromPage(url: string): Promise<string | null> {
   try { return meta(await fetchPage(url), "og:image"); } catch { return null; }
 }
 
+function absoluteUrl(src: string, base: string): string {
+  try { return new URL(src, base).href; } catch { return src; }
+}
+
+async function imageFromNhcPage(url: string): Promise<string | null> {
+  try {
+    const html = await fetchPage(url);
+    const direct = meta(html, "og:image");
+    if (direct && /\\.(?:png|jpe?g|gif)(?:[?#]|$)/i.test(direct)) return direct;
+
+    const urls = [...html.matchAll(/(?:src|href)=["']([^"']+)["']/gi)]
+      .map(m => absoluteUrl(m[1], url))
+      .filter(u => /nhc\\.noaa\\.gov\\/storm_graphics\\//i.test(u) && /\\.(?:png|jpe?g|gif)(?:[?#]|$)/i.test(u));
+
+    const preferred = urls.find(u => /5day_(?:cone|expCone)|key.?messages|wind.?probs|prob34|wind_field/i.test(u));
+    return preferred || urls.find(u => /storm_graphics/i.test(u)) || null;
+  } catch {
+    return null;
+  }
+}
+
 Deno.serve(async (_req: Request) => {
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
@@ -91,12 +112,19 @@ Deno.serve(async (_req: Request) => {
             .eq("cuenta",CUENTA).eq("article_url",item.link).limit(1).maybeSingle();
           if (existente) continue;
 
-          const imagen = item.image || await imageFromPage(item.link!);
+          const esNHC = /NHC|NOAA/i.test(fuente.nombre);
+          const imagen = item.image || (esNHC ? await imageFromNhcPage(item.link!) : await imageFromPage(item.link!));
+
+          // NHC: si existe un gráfico oficial asociado, no permitimos publicar el
+          // aviso sin imagen. Si no logramos localizarlo, omitimos ese candidato
+          // para evitar una publicación meteorológica incompleta.
+          if (esNHC && !imagen) continue;
+
           const descripcion = htmlToText(item.desc).slice(0,900);
           candidatos.push({
             fuente,titulo:item.title,enlace:item.link,imagen,lockUrl:item.link,
             contenido:"🌀 " + item.title + "\n\n" + (descripcion ? descripcion + "\n\n" : "") + "Fuente: " + fuente.nombre + " — " + item.link,
-            prioridad:/NHC|NOAA/i.test(fuente.nombre) ? 100 : 60
+            prioridad:esNHC ? 100 : 60
           });
         }
       } else {
