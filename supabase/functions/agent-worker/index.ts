@@ -192,7 +192,18 @@ async function prepararComentario(
   return { agente, ctx, prompt: promptComentario(ctx, agente, s.cat, { responderA, objetivo }) };
 }
 
-async function prepararCita(\n  s: Sesion, postId: number, agenteEmail: string,\n): Promise<{ agente: Agente; ctx: Ctx; prompt: Prompt } | { error: string }> {\n  const agente = await agenteDe(s, agenteEmail);\n  if (!agente) return { error: `cuenta automatica inexistente: ${agenteEmail}` };\n  const { data: ctx } = await s.sb.rpc("contexto_hilo", { p_post_id: postId, p_agent_email: agenteEmail });\n  if (!ctx) return { error: `post inexistente: ${postId}` };\n  const { count } = await s.sb.from("cuentas_canal").select("user_email", { count: "exact", head: true }).ilike("user_email", String(ctx.post?.autor_email ?? ""));\n  return { agente, ctx, prompt: promptCita(ctx, agente, s.cat, Number(count ?? 0) > 0) };\n}\n\nasync function prepararPost(
+async function prepararCita(
+  s: Sesion, postId: number, agenteEmail: string,
+): Promise<{ agente: Agente; ctx: Ctx; prompt: Prompt } | { error: string }> {
+  const agente = await agenteDe(s, agenteEmail);
+  if (!agente) return { error: `cuenta automatica inexistente: ${agenteEmail}` };
+  const { data: ctx } = await s.sb.rpc("contexto_hilo", { p_post_id: postId, p_agent_email: agenteEmail });
+  if (!ctx) return { error: `post inexistente: ${postId}` };
+  const { count } = await s.sb.from("cuentas_canal").select("user_email", { count: "exact", head: true }).ilike("user_email", String(ctx.post?.autor_email ?? ""));
+  return { agente, ctx, prompt: promptCita(ctx, agente, s.cat, Number(count ?? 0) > 0) };
+}
+
+async function prepararPost(
   s: Sesion, agenteEmail: string, tema: string | null, conImagen = false,
 ): Promise<{ agente: Agente; prompt: Prompt } | { error: string }> {
   const agente = await agenteDe(s, agenteEmail);
@@ -233,7 +244,19 @@ async function procesarTarea(s: Sesion, t: Fila): Promise<Resultado> {
     return "completada";
   }
 
-  if (t.action_type === "REPOST" && t.payload?.con_cita === true) {\n    const postId = Number(t.target_id);\n    if (!Number.isFinite(postId)) return fallar(`target_id invalido: ${t.target_id}`, true);\n    const prep = await prepararCita(s, postId, t.agent_id);\n    if ("error" in prep) return fallar(prep.error, true);\n    const { validacion } = await generarTexto(s, t.agent_id, prep.prompt, "cita");\n    if (!validacion.ok) return fallar(`salida rechazada: ${validacion.motivo}`);\n    const { error } = await s.sb.rpc("worker_completar_cita", { p_task_id: t.id, p_post_id: postId, p_agent_email: t.agent_id, p_quote_text: validacion.texto });\n    if (error) return fallar(`no se pudo publicar cita: ${error.message}`, /inexistente/.test(error.message));\n    return "completada";\n  }\n\n  if (t.action_type === "POST") {
+  if (t.action_type === "REPOST" && t.payload?.con_cita === true) {
+    const postId = Number(t.target_id);
+    if (!Number.isFinite(postId)) return fallar(`target_id invalido: ${t.target_id}`, true);
+    const prep = await prepararCita(s, postId, t.agent_id);
+    if ("error" in prep) return fallar(prep.error, true);
+    const { validacion } = await generarTexto(s, t.agent_id, prep.prompt, "cita");
+    if (!validacion.ok) return fallar(`salida rechazada: ${validacion.motivo}`);
+    const { error } = await s.sb.rpc("worker_completar_cita", { p_task_id: t.id, p_post_id: postId, p_agent_email: t.agent_id, p_quote_text: validacion.texto });
+    if (error) return fallar(`no se pudo publicar cita: ${error.message}`, /inexistente/.test(error.message));
+    return "completada";
+  }
+
+  if (t.action_type === "POST") {
     // Bloque 6: todo POST de cuentas-persona pasa por agent-noticias.
     // La imagen ya no se solicita/genera aquí; agent-noticias aporta la foto de la noticia.
     const url = Deno.env.get("SUPABASE_URL")!;
