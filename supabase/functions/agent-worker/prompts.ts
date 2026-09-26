@@ -59,6 +59,16 @@ function directivas(estilo: Estilo, rng: () => number): string[] {
   return d;
 }
 
+function instruccionAcento(cfg: Record<string, any>): string {
+  if (cfg.acento === "RD") {
+    return "Escribes con la idiosincrasia dominicana natural: usa expresiones y cadencia propias de República Dominicana de forma sutil, sin jergas, sin vulgaridades y sin errores ortográficos. Debe sentirse natural, nunca caricaturesco ni forzado.";
+  }
+  if (cfg.acento === "latam_mixto") {
+    return "Escribes en español latinoamericano natural y neutro. Puedes alternar sutilmente entre registros regionales latinoamericanos (por ejemplo, caribeño, mexicano o rioplatense) sin caricaturizar acentos, sin jergas, sin vulgaridades y sin errores ortográficos.";
+  }
+  return "";
+}
+
 function perfil(agente: Agente): string {
   const cfg = agente.config_cuenta_automatica ?? {};
   const p = [`Te llamas ${agente.user_name || "un usuario"}.`];
@@ -68,6 +78,8 @@ function perfil(agente: Agente): string {
   if (cfg.edad_aparente) p.push(`Tienes unos ${Math.floor(Number(cfg.edad_aparente))} años.`);
   if (cfg.tema_principal) p.push(`Tu tema favorito es ${cfg.tema_principal}.`);
   if (cfg.bio) p.push(`Tu bio pública: ${dato(cfg.bio, 200)}`);
+  const acento = instruccionAcento(cfg);
+  if (acento) p.push(acento);
   return p.join(" ");
 }
 
