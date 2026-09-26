@@ -29,7 +29,10 @@
     '.conn-btn[disabled]{opacity:.6;cursor:default}',
     /* Ya conectado: botón con contorno */
     '.conn-btn.conn-on{background:transparent;color:#2563eb;border-color:#2563eb}',
+    '.conn-btn.conn-on.conn-mutual{background:#16a34a;color:#fff;border-color:#16a34a}',
+    '.conn-btn.conn-on.conn-mutual:hover{background:#15803d;border-color:#15803d}',
     'html.dark .conn-btn.conn-on{color:#93c5fd;border-color:#60a5fa}',
+    'html.dark .conn-btn.conn-on.conn-mutual{background:#16a34a;color:#fff;border-color:#16a34a}',
     '.conn-btn.conn-on:hover{background:transparent}',
     /* Desconectar: letras y borde en rojo (hover en escritorio, o "armado" con un toque en móvil) */
     '.conn-btn.conn-on.conn-armed{color:#ef4444 !important;border-color:#ef4444 !important;background:transparent !important}',
@@ -210,7 +213,7 @@ function connCreateButton(opts) {
     else if (opts.variant === 'notif' && followsMe) label = 'Conecta tú también';
     else label = 'Conectar';
 
-    btn.className = 'conn-btn' + (iFollow ? ' conn-on' : '') + (opts.compact ? ' conn-sm' : '');
+    btn.className = 'conn-btn' + (iFollow ? ' conn-on' : '') + (iFollow && followsMe ? ' conn-mutual' : '') + (opts.compact ? ' conn-sm' : '');
     btn.innerHTML = '<span class="conn-lbl">' + label + '</span><span class="conn-off">Desconectar</span>';
     btn.setAttribute('aria-label', iFollow ? label + ' (presiona para desconectar)' : label);
     btn.disabled = busy;
