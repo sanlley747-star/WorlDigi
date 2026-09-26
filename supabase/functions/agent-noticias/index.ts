@@ -59,7 +59,7 @@ Título: <dato>${dato(noticia.noticia.titulo,300)}</dato>
 Descripción: <dato>${dato(noticia.noticia.descripcion,500)}</dato>
 Fuente: <dato>${dato(noticia.fuente.nombre,100)}</dato>
 
-Relaciona el comentario con un detalle concreto de la noticia y conserva la voz de la personalidad. No copies literalmente el titular. Máximo ${Math.floor(Number(estilo.palabras_max??45))} palabras y ${max} caracteres. Escribe solo el texto.`;
+Antes de expresar cualquier opinión, identifica de forma clara el sujeto, persona, evento o hecho concreto al que te refieres. El lector NO leyó la noticia y NO debes asumir que sabe de qué hablas: evita referencias ambiguas como “este brote”, “esta medida”, “el problema” o “la situación” si antes no has dejado claro cuál es el brote, la medida, el problema o la situación. La primera parte del texto debe permitir entender inmediatamente qué noticia estás comentando. Varía de forma natural cómo introduces el sujeto: a veces nómbralo directamente; otras veces usa fórmulas como “Acabo de leer sobre…”, “Vi que…” o “Me topé con…”. No repitas siempre la misma fórmula ni conviertas esta regla en una plantilla rígida. Después de dejar identificado el sujeto, desarrolla la opinión manteniendo la voz y personalidad de la cuenta. Relaciona el comentario con un detalle concreto de la noticia y conserva la voz de la personalidad. No copies literalmente el titular. Máximo ${Math.floor(Number(estilo.palabras_max??45))} palabras y ${max} caracteres. Escribe solo el texto.`;
   return {system,user,max};
 }
 const FRASES=[
