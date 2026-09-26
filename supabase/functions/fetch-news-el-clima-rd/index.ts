@@ -79,7 +79,7 @@ async function imageFromNhcPage(url: string): Promise<string | null> {
 
     const urls = [...html.matchAll(/(?:src|href)=["']([^"']+)["']/gi)]
       .map(m => absoluteUrl(m[1], url))
-      .filter(u => /nhc\\.noaa\\.gov\\/storm_graphics\\//i.test(u) && /\\.(?:png|jpe?g|gif)(?:[?#]|$)/i.test(u));
+      .filter(u => /nhc\.noaa\.gov\/storm_graphics\//i.test(u) && /\.(?:png|jpe?g|gif)(?:[?#]|$)/i.test(u));
 
     const preferred = urls.find(u => /5day_(?:cone|expCone)|key.?messages|wind.?probs|prob34|wind_field/i.test(u));
     return preferred || urls.find(u => /storm_graphics/i.test(u)) || null;
