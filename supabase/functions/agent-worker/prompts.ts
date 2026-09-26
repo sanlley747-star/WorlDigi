@@ -164,6 +164,34 @@ export function promptComentario(
 }
 
 /** Prompt para un POST original de la cuenta. */
+/** Prompt para una CITA: repost + opinion breve. */
+export function promptCita(ctx: Ctx, agente: Agente, cat: Catalogo, autorEsCanal = false): Prompt {
+  const persona = personaDe(cat, agente.persona_id);
+  const post = ctx.post;
+  const rng = rngPara(`${agente.user_email}|q|${post.id}`);
+  const l: string[] = [`PUBLICACIÓN A CITAR de ${post.autor || "un usuario"}:`];
+  if (post.contenido) l.push(dato(post.contenido, MAX_POST));
+  if (post.cita) l.push(`La publicación original ya llevaba esta cita: ${dato(post.cita, MAX_COMENTARIO)}`);
+  const orig = post.repost_de;
+  if (orig) {
+    l.push(`La publicación citada es un repost de ${orig.autor || "un usuario"}:`);
+    l.push(dato(orig.contenido || "(sin texto)", MAX_POST));
+  }
+  if (autorEsCanal) {
+    l.push("REGLA DEL SUJETO: la publicación pertenece a una cuenta canal. Identifica de forma explícita en la opinión el sujeto, persona, organización, evento o hecho concreto de la noticia antes de expresar tu valoración. El lector no debe tener que adivinar a qué te refieres.");
+  } else {
+    l.push("Habla del contenido concreto de la publicación; evita opiniones genéricas que podrían servir para cualquier post.");
+  }
+  l.push("TAREA: escribe una cita breve de 1-2 frases que acompañe este repost. Expresa una opinión, reacción o idea propia desde tu personalidad y perfil. No resumas toda la publicación, no copies el texto original y no inventes datos.");
+  l.push("Indicaciones para esta vez: " + directivas(persona.estilo, rng).join(" "));
+  l.push("Escribe solo el texto de la cita.");
+  return {
+    system: sistema(cat, persona, agente),
+    user: l.join("\n"),
+    meta: { tipo: "cita", post_id: post.id, agent_email: agente.user_email, persona_id: agente.persona_id, autor_es_canal: autorEsCanal, max_caracteres: maxCaracteres(persona.estilo) },
+  };
+}
+
 export function promptPublicacion(
   agente: Agente, cat: Catalogo,
   opts: { tema?: string | null; previas?: string[]; conImagen?: boolean } = {},
