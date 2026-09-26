@@ -1011,6 +1011,21 @@
       await loadComments(currentViewerPostId);
     }
 
+    // ===== SCROLL CENTRAL GLOBAL EN ESCRITORIO =====
+    // El cursor puede estar sobre cualquier columna del dashboard: la rueda
+    // desplaza siempre la columna central, sin volver a habilitar el scroll del body.
+    window.addEventListener('wheel', (event) => {
+      if (window.innerWidth < 1024) return;
+      const main = document.querySelector('main');
+      const center = main?.querySelector(':scope > div');
+      if (!main || !center || !main.contains(event.target)) return;
+
+      if (Math.abs(event.deltaY) > 0) {
+        center.scrollTop += event.deltaY;
+        event.preventDefault();
+      }
+    }, { passive: false });
+
     init();
   </script>
 
