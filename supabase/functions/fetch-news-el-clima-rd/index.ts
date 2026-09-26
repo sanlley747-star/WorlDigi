@@ -115,11 +115,6 @@ Deno.serve(async (_req: Request) => {
           const esNHC = /NHC|NOAA/i.test(fuente.nombre);
           const imagen = item.image || (esNHC ? await imageFromNhcPage(item.link!) : await imageFromPage(item.link!));
 
-          // NHC: si existe un gráfico oficial asociado, no permitimos publicar el
-          // aviso sin imagen. Si no logramos localizarlo, omitimos ese candidato
-          // para evitar una publicación meteorológica incompleta.
-          if (esNHC && !imagen) continue;
-
           const descripcion = htmlToText(item.desc).slice(0,900);
           candidatos.push({
             fuente,titulo:item.title,enlace:item.link,imagen,lockUrl:item.link,
@@ -157,6 +152,31 @@ Deno.serve(async (_req: Request) => {
   }
 
   const elegido = candidatos[0];
+
+  // Biblioteca visual de respaldo: solo se consume cuando la fuente no
+  // proporciona una imagen válida. La selección es persistente y secuencial
+  // mediante una función PostgreSQL atómica, por lo que no se repite una
+  // imagen dentro del ciclo actual, incluso ante ejecuciones concurrentes.
+  if (!elegido.imagen) {
+    const {data:imagenFallback,error:imagenError} = await supabase
+      .rpc("claim_el_clima_rd_fallback_image")
+      .maybeSingle();
+
+    if (imagenError || !imagenFallback?.storage_path) {
+      return new Response(JSON.stringify({
+        publicado:false,
+        razon:"sin imagen de fuente y biblioteca visual de respaldo no disponible",
+        error:imagenError?.message ?? null
+      }), {headers:{"Content-Type":"application/json"}});
+    }
+
+    const {data:publicUrl} = supabase.storage
+      .from("posts-images")
+      .getPublicUrl(imagenFallback.storage_path);
+
+    elegido.imagen = publicUrl.publicUrl;
+  }
+
   const {data:post,error:postError} = await supabase.from("posts").insert({
     user_name:CUENTA,user_email:USER_EMAIL,content:elegido.contenido,image_url:elegido.imagen
   }).select("id").single();
