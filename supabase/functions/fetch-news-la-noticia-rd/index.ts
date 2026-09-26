@@ -24,7 +24,8 @@ Deno.serve(async (_req: Request) => {
     .limit(1)
     .maybeSingle();
 
-  if (ultimoPost) {
+  const forzarManual = new URL(_req.url).searchParams.get("force") === "1";
+  if (ultimoPost && !forzarManual) {
     const minutosDesdeUltimo = (Date.now() - new Date(ultimoPost.created_at).getTime()) / 60000;
     if (minutosDesdeUltimo < 90) {
       return new Response(JSON.stringify({ publicado: false, razon: "en periodo de espera" }), {
@@ -33,7 +34,6 @@ Deno.serve(async (_req: Request) => {
     }
   }
 
-  const forzarManual = new URL(_req.url).searchParams.get("force") === "1";
   if (!forzarManual && Math.random() > 0.15) {
     return new Response(JSON.stringify({ publicado: false, razon: "no le toco esta vez" }), {
       headers: { "Content-Type": "application/json" },
