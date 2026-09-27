@@ -795,7 +795,7 @@
       modal.classList.remove('hidden');
       modal.classList.add('flex');
 
-      const { data: post, error } = await supabaseClient
+      let { data: post, error } = await supabaseClient
         .from('posts')
         .select('*')
         .eq('id', postId)
@@ -805,6 +805,20 @@
         body.innerHTML = '<div class="text-sm text-red-500 text-center py-6">No se pudo cargar la publicación.</div>';
         return;
       }
+
+      let resolvedPost = post;
+      const visitedQuotePosts = new Set();
+      while (resolvedPost.repost_of && !visitedQuotePosts.has(resolvedPost.id)) {
+        visitedQuotePosts.add(resolvedPost.id);
+        const { data: nextPost, error: nextError } = await supabaseClient
+          .from('posts')
+          .select('*')
+          .eq('id', resolvedPost.repost_of)
+          .single();
+        if (nextError || !nextPost) break;
+        resolvedPost = nextPost;
+      }
+      post = resolvedPost;
 
       const author = post.user_name || 'Usuario';
       const { data: authorProfile } = await supabaseClient
