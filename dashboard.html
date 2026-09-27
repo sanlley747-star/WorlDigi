@@ -310,7 +310,30 @@ let feedPostsById = {};
   posts.forEach(post => {
     feedPostsById[post.id] = post;
   });
-  const postsById = feedPostsById
+  const postsById = feedPostsById;);
+
+  // Publicaciones que el usuario actual ya reposteó (sin cita), para pintar el botón en verde
+  const myPlainReposts = new Set(
+    posts
+      .filter(p => p.repost_of && p.user_email === currentUser.email && !p.quote_text)
+      .map(p => p.repost_of)
+  );
+
+  // Cantidad de comentarios de cada publicación (una sola consulta)
+  const commentCounts = await ccFetchCounts(posts.map(p => p.id));
+  const repostCounts = await ccFetchRepostCounts(posts.map(p => p.id));
+  const myLikes = await ccFetchMyLikes(posts.map(p => p.id), currentUser.email);
+  const likerName = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
+
+  // Si alguien reposteó/citó un comentario, traemos ese comentario para mostrarlo dentro de la tarjeta
+  const commentRepostIds = [...new Set(posts.filter(p => p.repost_of_comment_id).map(p => p.repost_of_comment_id))];
+  const commentsById = {};
+  if (commentRepostIds.length) {
+    const { data: quotedComments } = await supabaseClient.from('comments').select('*').in('id', commentRepostIds);
+    (quotedComments || []).forEach(c => { commentsById[c.id] = c; });
+  }
+
+  const pageHtml = posts.map(post => {
 
     // Repost/cita de un comentario: tarjeta propia (el comentario original + like/comentario/compartir)
     if (post.repost_of_comment_id) {
@@ -509,6 +532,7 @@ let feedPostsById = {};
         </div>
 
       </div>
+    `;
   }).join('');
 
   if (isLoadMore) {
