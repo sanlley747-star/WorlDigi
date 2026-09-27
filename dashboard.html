@@ -373,7 +373,6 @@
            class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 space-y-3">
 
         <div class="relative">
-          ${post.repost_of && post.quote_text ? `<div class="absolute left-[20px] top-5 bottom-5 w-0.5 bg-green-500 pointer-events-none"></div>` : ""}
         ${post.repost_of ? (post.quote_text ? `
           <div class="relative z-10">
             <div class="flex items-start gap-3">
@@ -393,18 +392,20 @@
           </div>
         `) : ''}
 
+        ${post.quote_text ? '<div class="mt-2 ml-6 border border-gray-200 dark:border-slate-700 rounded-2xl bg-gray-50 dark:bg-slate-800/40 p-3">': ''}
+
         <div class="flex items-center space-x-3 relative z-10">
 
           <a href="perfil.html?user=${encodeURIComponent(originalAuthor)}">
             <img
               src="${originalAvatarUrl}"
-              class="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700 hover:opacity-80 transition cursor-pointer"
+              class="${post.quote_text ? 'w-6 h-6' : 'w-10 h-10'} rounded-full object-cover border border-gray-300 dark:border-slate-700 hover:opacity-80 transition cursor-pointer"
               alt="${originalAuthor}">
           </a>
 
           <div class="flex items-center space-x-2">
 
-            <a
+            
               href="perfil.html?user=${encodeURIComponent(originalAuthor)}"
               class="font-bold text-gray-900 dark:text-white text-sm hover:underline">
               ${originalAuthor}
@@ -420,7 +421,6 @@
           </div>
         </div>
 
-        </div>
         ${displayPost.content ? `
           <p class="text-gray-800 dark:text-gray-200 text-sm break-words cursor-pointer" onclick="openPostPage(${displayPost.id})">
             ${linkifyContent(ytStripLink(displayPost.content))}
@@ -435,6 +435,9 @@
             alt="Imagen de publicación"
             onclick="openPostViewer(${displayPost.id})">
         ` : ''}
+
+        ${post.quote_text ? '</div>' : ''}
+        </div>
 
         <div class="flex items-center space-x-5 border-t border-gray-100 dark:border-slate-800 pt-2 text-sm text-gray-600 dark:text-gray-400">
 
