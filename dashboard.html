@@ -243,6 +243,7 @@
         return;
       }
       currentUser = user;
+      revealApp();
       
       const authorName = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
       document.getElementById('myProfileLink').href = `perfil.html?user=${encodeURIComponent(authorName)}`;
