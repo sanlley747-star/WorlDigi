@@ -41,6 +41,23 @@
     ::-webkit-scrollbar-track{background:transparent}
     ::-webkit-scrollbar-thumb{background-color:#050b18;border-radius:9999px}
   </style>
+<style>
+  .tadpole-spinner {
+    width: 30px;
+    height: 30px;
+    color: #3b82f6;
+    animation: tadpole-rotate 0.85s linear infinite;
+  }
+  @keyframes tadpole-rotate {
+    to { transform: rotate(360deg); }
+  }
+  #feedLoadingIndicator {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 24px 0;
+  }
+</style>
 </head>
 <body class="bg-gray-100 dark:bg-slate-950 text-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-200">
 
@@ -563,19 +580,44 @@ let feedPostsById = {};
   }
 }
 
+function showFeedLoader() {
+  const feed = document.getElementById('feed');
+  if (!feed || document.getElementById('feedLoadingIndicator')) return;
+  feed.insertAdjacentHTML('beforeend', `
+    <div id="feedLoadingIndicator">
+      <svg class="tadpole-spinner" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="tadpoleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="currentColor" stop-opacity="0"/>
+            <stop offset="100%" stop-color="currentColor" stop-opacity="1"/>
+          </linearGradient>
+        </defs>
+        <circle cx="22" cy="22" r="18" stroke="url(#tadpoleGradient)" stroke-width="4" stroke-linecap="round" stroke-dasharray="85 113"/>
+      </svg>
+    </div>
+  `);
+}
+
+function hideFeedLoader() {
+  const el = document.getElementById('feedLoadingIndicator');
+  if (el) el.remove();
+}
+
 async function loadMorePosts() {
   if (feedIsLoadingMore || !feedHasMore) return;
   feedIsLoadingMore = true;
+  showFeedLoader();
   await loadPosts(true);
+  hideFeedLoader();
   feedIsLoadingMore = false;
 }
 
 function isNearFeedBottom() {
   const container = document.getElementById('feedScrollContainer');
   if (container && container.scrollHeight > container.clientHeight + 10) {
-    return (container.scrollTop + container.clientHeight) >= (container.scrollHeight - 600);
+    return (container.scrollTop + container.clientHeight) >= (container.scrollHeight - 1300);
   }
-  return (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 600);
+  return (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 1300);
 }
 
 function handleFeedScroll() {
