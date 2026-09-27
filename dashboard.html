@@ -73,7 +73,7 @@
       <div class="sticky top-0">
         <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800">
           <nav class="space-y-2 pt-1">
-            <a href="#" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+            <a href="#" id="feedHomeButton" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M3 9.5 12 3l9 6.5"></path><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"></path></svg>
               <span>Inicio</span>
             </a>
@@ -291,20 +291,37 @@ const feedPageSize = 20;
 let feedHasMore = true;
 let feedIsLoadingMore = false;
 let feedPostsById = {};
+let feedSeed = null;
 
    async function loadPosts(isLoadMore = false) {
   if (!isLoadMore) {
     feedOffset = 0;
     feedHasMore = true;
     feedPostsById = {};
+    feedSeed = Math.random();
   }
   if (!feedHasMore) return;
 
-  const { data: posts, error } = await supabaseClient
-    .from('posts')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .range(feedOffset, feedOffset + feedPageSize - 1);
+  let posts;
+  let error;
+
+  if (!isLoadMore) {
+    const rpcResult = await supabaseClient.rpc('feed_ranking_page', {
+      p_seed: feedSeed,
+      p_exclude_ids: [],
+      p_limit: feedPageSize
+    });
+    posts = rpcResult.data;
+    error = rpcResult.error;
+  } else {
+    const directResult = await supabaseClient
+      .from('posts')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(feedOffset, feedOffset + feedPageSize - 1);
+    posts = directResult.data;
+    error = directResult.error;
+  }
      const { data: profiles } = await supabaseClient .from('profiles') .select('user_name, user_email, avatar_url'); const avatarByUser = {}; (profiles || []).forEach(p => { if (p.user_name && p.avatar_url) avatarByUser[p.user_name] = p.avatar_url; if (p.user_email && p.avatar_url) avatarByUser[p.user_email] = p.avatar_url; });
      const channelSet = await connFetchChannelSet();
 
@@ -627,6 +644,13 @@ function handleFeedScroll() {
 
 window.addEventListener('scroll', handleFeedScroll);
 document.getElementById('feedScrollContainer')?.addEventListener('scroll', handleFeedScroll);
+
+document.getElementById('feedHomeButton')?.addEventListener('click', async (event) => {
+  event.preventDefault();
+  await loadPosts();
+  const container = document.getElementById('feedScrollContainer');
+  if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
+});
 
     function updatePublishState(textareaId, buttonId) {
       const textarea = document.getElementById(textareaId);
