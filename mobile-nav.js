@@ -175,10 +175,11 @@
     if (e.key === 'Escape' && panel.classList.contains('gm-open')) closeMenu();
   });
 
-  homeLink.addEventListener('click', function (e) {
+  homeLink.addEventListener('click', async function (e) {
     if (isDashboard) {
       e.preventDefault();
       closeMenu();
+      if (typeof window.loadPosts === 'function') await window.loadPosts();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   });
