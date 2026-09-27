@@ -269,49 +269,48 @@
       loadPosts();
     }
     function linkifyContent(text) { if (!text) return ''; const urlRegex = /(https?:\/\/[^\s]+)/g; return text.replace(urlRegex, (url) => { let domain; try { domain = new URL(url).hostname.replace('www.', ''); } catch (e) { domain = url; } return `<a href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 text-green-600 dark:text-green-400 font-semibold hover:underline align-middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 inline-block"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>${domain}</a>`; }); }
-   async function loadPosts() {
+let feedOffset = 0;
+const feedPageSize = 20;
+let feedHasMore = true;
+let feedIsLoadingMore = false;
+let feedPostsById = {};
+
+   async function loadPosts(isLoadMore = false) {
+  if (!isLoadMore) {
+    feedOffset = 0;
+    feedHasMore = true;
+    feedPostsById = {};
+  }
+  if (!feedHasMore) return;
+
   const { data: posts, error } = await supabaseClient
     .from('posts')
     .select('*')
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .range(feedOffset, feedOffset + feedPageSize - 1);
      const { data: profiles } = await supabaseClient .from('profiles') .select('user_name, user_email, avatar_url'); const avatarByUser = {}; (profiles || []).forEach(p => { if (p.user_name && p.avatar_url) avatarByUser[p.user_name] = p.avatar_url; if (p.user_email && p.avatar_url) avatarByUser[p.user_email] = p.avatar_url; });
      const channelSet = await connFetchChannelSet();
 
   const feed = document.getElementById('feed');
 
   if (error || !posts || !posts.length) {
-    feed.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-900 p-6 rounded-xl shadow border border-gray-200 dark:border-slate-800">No hay publicaciones aún. ¡Sé el primero!</p>';
+    feedHasMore = false;
+    if (!isLoadMore) {
+      feed.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-900 p-6 rounded-xl shadow border border-gray-200 dark:border-slate-800">No hay publicaciones aún. ¡Sé el primero!</p>';
+    }
     return;
   }
 
+  if (posts.length < feedPageSize) feedHasMore = false;
+  feedOffset += posts.length;
+
   // Creamos un índice para encontrar rápidamente la publicación original
-  const postsById = {};
+  // (acumulado entre páginas, para que reposts/citas de páginas anteriores
+  // se sigan resolviendo igual que antes)
   posts.forEach(post => {
-    postsById[post.id] = post;
+    feedPostsById[post.id] = post;
   });
-
-  // Publicaciones que el usuario actual ya reposteó (sin cita), para pintar el botón en verde
-  const myPlainReposts = new Set(
-    posts
-      .filter(p => p.repost_of && p.user_email === currentUser.email && !p.quote_text)
-      .map(p => p.repost_of)
-  );
-
-  // Cantidad de comentarios de cada publicación (una sola consulta)
-  const commentCounts = await ccFetchCounts(posts.map(p => p.id));
-  const repostCounts = await ccFetchRepostCounts(posts.map(p => p.id));
-  const myLikes = await ccFetchMyLikes(posts.map(p => p.id), currentUser.email);
-  const likerName = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
-
-  // Si alguien reposteó/citó un comentario, traemos ese comentario para mostrarlo dentro de la tarjeta
-  const commentRepostIds = [...new Set(posts.filter(p => p.repost_of_comment_id).map(p => p.repost_of_comment_id))];
-  const commentsById = {};
-  if (commentRepostIds.length) {
-    const { data: quotedComments } = await supabaseClient.from('comments').select('*').in('id', commentRepostIds);
-    (quotedComments || []).forEach(c => { commentsById[c.id] = c; });
-  }
-
-  feed.innerHTML = posts.map(post => {
+  const postsById = feedPostsById
 
     // Repost/cita de un comentario: tarjeta propia (el comentario original + like/comentario/compartir)
     if (post.repost_of_comment_id) {
@@ -510,9 +509,27 @@
         </div>
 
       </div>
-    `;
   }).join('');
+
+  if (isLoadMore) {
+    feed.insertAdjacentHTML('beforeend', pageHtml);
+  } else {
+    feed.innerHTML = pageHtml;
+  }
 }
+
+async function loadMorePosts() {
+  if (feedIsLoadingMore || !feedHasMore) return;
+  feedIsLoadingMore = true;
+  await loadPosts(true);
+  feedIsLoadingMore = false;
+}
+
+window.addEventListener('scroll', () => {
+  if (feedIsLoadingMore || !feedHasMore) return;
+  const nearBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 600);
+  if (nearBottom) loadMorePosts();
+});
 
     function updatePublishState(textareaId, buttonId) {
       const textarea = document.getElementById(textareaId);
