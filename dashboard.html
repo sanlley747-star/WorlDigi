@@ -291,14 +291,12 @@ const feedPageSize = 20;
 let feedHasMore = true;
 let feedIsLoadingMore = false;
 let feedPostsById = {};
-let feedSeed = null;
 
    async function loadPosts(isLoadMore = false) {
   if (!isLoadMore) {
     feedOffset = 0;
     feedHasMore = true;
     feedPostsById = {};
-    feedSeed = Math.random();
   }
   if (!feedHasMore) return;
 
@@ -307,7 +305,7 @@ let feedSeed = null;
 
   if (!isLoadMore) {
     const rpcResult = await supabaseClient.rpc('feed_ranking_page', {
-      p_seed: feedSeed,
+      p_user_email: currentUser.email,
       p_exclude_ids: [],
       p_limit: feedPageSize
     });
@@ -316,7 +314,7 @@ let feedSeed = null;
   } else {
     const excludeIds = Object.keys(feedPostsById);
     const rpcResult = await supabaseClient.rpc('feed_ranking_page', {
-      p_seed: feedSeed,
+      p_user_email: currentUser.email,
       p_exclude_ids: excludeIds,
       p_limit: feedPageSize
     });
