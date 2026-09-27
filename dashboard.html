@@ -370,13 +370,16 @@
            class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 space-y-3">
 
         ${post.repost_of ? (post.quote_text ? `
-          <div class="flex items-start gap-3">
+          <div class="relative">
+            <div class="absolute left-[20px] top-5 bottom-5 w-0.5 bg-green-500 pointer-events-none"></div>
+            <div class="relative z-10 flex items-start gap-3">
             <a href="perfil.html?user=${encodeURIComponent(author)}" class="flex-shrink-0">
               <img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700" alt="${connEscape(author)}">
             </a>
             <div class="min-w-0 flex-1">
               <a href="perfil.html?user=${encodeURIComponent(author)}" data-user-card="${connEscape(author)}" class="font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(author)}</a>
               <p class="mt-1 text-gray-800 dark:text-gray-200 text-sm break-words whitespace-pre-line">${connEscape(post.quote_text)}</p>
+            </div>
             </div>
           </div>
         ` : `
@@ -386,7 +389,7 @@
           </div>
         `) : ''}
 
-        <div class="flex items-center space-x-3">
+        <div class="flex items-center space-x-3 relative z-10">
 
           <a href="perfil.html?user=${encodeURIComponent(originalAuthor)}">
             <img
