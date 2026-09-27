@@ -314,13 +314,14 @@ let feedSeed = null;
     posts = rpcResult.data;
     error = rpcResult.error;
   } else {
-    const directResult = await supabaseClient
-      .from('posts')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .range(feedOffset, feedOffset + feedPageSize - 1);
-    posts = directResult.data;
-    error = directResult.error;
+    const excludeIds = Object.keys(feedPostsById);
+    const rpcResult = await supabaseClient.rpc('feed_ranking_page', {
+      p_seed: feedSeed,
+      p_exclude_ids: excludeIds,
+      p_limit: feedPageSize
+    });
+    posts = rpcResult.data;
+    error = rpcResult.error;
   }
      const { data: profiles } = await supabaseClient .from('profiles') .select('user_name, user_email, avatar_url'); const avatarByUser = {}; (profiles || []).forEach(p => { if (p.user_name && p.avatar_url) avatarByUser[p.user_name] = p.avatar_url; if (p.user_email && p.avatar_url) avatarByUser[p.user_email] = p.avatar_url; });
      const channelSet = await connFetchChannelSet();
