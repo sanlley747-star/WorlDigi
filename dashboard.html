@@ -291,12 +291,14 @@ const feedPageSize = 20;
 let feedHasMore = true;
 let feedIsLoadingMore = false;
 let feedPostsById = {};
+let feedRecentShownIds = [];
 
    async function loadPosts(isLoadMore = false) {
   if (!isLoadMore) {
     feedOffset = 0;
     feedHasMore = true;
     feedPostsById = {};
+    feedRecentShownIds = [];
   }
   if (!feedHasMore) return;
 
@@ -312,7 +314,7 @@ let feedPostsById = {};
     posts = rpcResult.data;
     error = rpcResult.error;
   } else {
-    const excludeIds = Object.keys(feedPostsById);
+    const excludeIds = feedRecentShownIds.slice(-30);
     const rpcResult = await supabaseClient.rpc('feed_ranking_page', {
       p_user_email: currentUser.email,
       p_exclude_ids: excludeIds,
@@ -337,12 +339,15 @@ let feedPostsById = {};
   if (posts.length < feedPageSize) feedHasMore = false;
   feedOffset += posts.length;
 
-  // Creamos un índice para encontrar rápidamente la publicación original
-  // (acumulado entre páginas, para que reposts/citas de páginas anteriores
-  // se sigan resolviendo igual que antes)
+  // Índice acumulado para resolver reposts/citas de páginas anteriores.
   posts.forEach(post => {
     feedPostsById[post.id] = post;
   });
+
+  // Ventana deslizante de los últimos ~30 posts mostrados en la sesión.
+  // Se usa exclusivamente para evitar repeticiones cercanas en el RPC.
+  feedRecentShownIds.push(...posts.map(post => post.id));
+  feedRecentShownIds = feedRecentShownIds.slice(-30);
 
   // Si esta página cita/repostea un post que NO está en las páginas ya
   // cargadas, lo buscamos aparte para que la cita no aparezca vacía.
