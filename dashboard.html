@@ -353,13 +353,15 @@
     const avatarUrl = avatarByUser[post.user_email] || avatarByUser[author] || post.avatar_url ||
       `https://ui-avatars.com/api/?name=${encodeURIComponent(author)}&background=random`;
 
-    // Si es un repost, obtenemos la publicación original
-    const originalPost = post.repost_of
-      ? postsById[post.repost_of]
-      : null;
-
-    // Datos que se mostrarán dentro del repost
-    const displayPost = originalPost || post;
+    // Si es un repost, resolvemos toda la cadena hasta la publicación original
+    let displayPost = post;
+    const visitedPosts = new Set();
+    while (displayPost.repost_of && !visitedPosts.has(displayPost.id)) {
+      visitedPosts.add(displayPost.id);
+      const nextPost = postsById[displayPost.repost_of];
+      if (!nextPost) break;
+      displayPost = nextPost;
+    }
 
     const originalAuthor = displayPost.user_name || 'Usuario';
 
