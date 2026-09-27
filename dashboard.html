@@ -89,7 +89,7 @@
     </aside>
     
     <!-- COLUMNA CENTRAL: FEED -->
-    <div class="space-y-6 min-h-0 mt-5 lg:overflow-y-auto lg:h-full lg:pr-2">
+    <div id="feedScrollContainer" class="space-y-6 min-h-0 mt-5 lg:overflow-y-auto lg:h-full lg:pr-2">
       
       <!-- Formulario para publicar -->
       <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800">
@@ -310,6 +310,27 @@ let feedPostsById = {};
   posts.forEach(post => {
     feedPostsById[post.id] = post;
   });
+
+  // Si esta página cita/repostea un post que NO está en las páginas ya
+  // cargadas, lo buscamos aparte para que la cita no aparezca vacía.
+  let idsPendientesDeResolver = [...new Set(
+    posts.map(p => p.repost_of).filter(id => id !== null && id !== undefined)
+  )];
+  let saltosResueltos = 0;
+  while (idsPendientesDeResolver.length && saltosResueltos < 5) {
+    const idsFaltantes = idsPendientesDeResolver.filter(id => !feedPostsById[id]);
+    if (!idsFaltantes.length) break;
+    const { data: postsOriginales } = await supabaseClient
+      .from('posts')
+      .select('*')
+      .in('id', idsFaltantes);
+    (postsOriginales || []).forEach(p => { feedPostsById[p.id] = p; });
+    idsPendientesDeResolver = (postsOriginales || [])
+      .map(p => p.repost_of)
+      .filter(id => id !== null && id !== undefined);
+    saltosResueltos++;
+  }
+
   const postsById = feedPostsById;
 
   // Publicaciones que el usuario actual ya reposteó (sin cita), para pintar el botón en verde
@@ -549,11 +570,21 @@ async function loadMorePosts() {
   feedIsLoadingMore = false;
 }
 
-window.addEventListener('scroll', () => {
+function isNearFeedBottom() {
+  const container = document.getElementById('feedScrollContainer');
+  if (container && container.scrollHeight > container.clientHeight + 10) {
+    return (container.scrollTop + container.clientHeight) >= (container.scrollHeight - 600);
+  }
+  return (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 600);
+}
+
+function handleFeedScroll() {
   if (feedIsLoadingMore || !feedHasMore) return;
-  const nearBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 600);
-  if (nearBottom) loadMorePosts();
-});
+  if (isNearFeedBottom()) loadMorePosts();
+}
+
+window.addEventListener('scroll', handleFeedScroll);
+document.getElementById('feedScrollContainer')?.addEventListener('scroll', handleFeedScroll);
 
     function updatePublishState(textareaId, buttonId) {
       const textarea = document.getElementById(textareaId);
