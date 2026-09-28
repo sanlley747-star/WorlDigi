@@ -293,14 +293,10 @@ begin
         exit;
       end if;
 
-      select coalesce(array_agg(p.id order by
-        case when fs.post_id is null then 0 else 1 end asc,
-        fs.last_shown_at asc nulls first,
-        pg_catalog.random()
-      ), '{}'::bigint[])
+      select coalesce(array_agg(candidate.id), '{}'::bigint[])
         into v_band_ids
       from (
-        select p.id, fs.post_id, fs.last_shown_at
+        select p.id
         from public.posts p
         left join public.feed_seen fs
           on fs.user_email = p_user_email
@@ -316,6 +312,10 @@ begin
               else 5
             end
           ) = v_band
+        order by
+          case when fs.post_id is null then 0 else 1 end asc,
+          fs.last_shown_at asc nulls first,
+          pg_catalog.random()
         limit 1
       ) candidate;
 
