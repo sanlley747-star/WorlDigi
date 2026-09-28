@@ -293,34 +293,37 @@ begin
         exit;
       end if;
 
-      select p.id
-        into v_target
-      from public.posts p
-      left join public.feed_seen fs
-        on fs.user_email = p_user_email
-       and fs.post_id = p.id
-      where not (p.id = any(coalesce(p_exclude_ids, '{}'::bigint[])))
-        and not (p.id = any(coalesce(v_selected_ids, '{}'::bigint[])))
-        and (
-          case
-            when p.created_at >= v_now - interval '2 hours' then 1
-            when p.created_at >= v_now - interval '5 hours' then 2
-            when p.created_at >= v_now - interval '10 hours' then 3
-            when p.created_at >= v_now - interval '24 hours' then 4
-            else 5
-          end
-        ) = v_band
-      order by
+      select coalesce(array_agg(p.id order by
         case when fs.post_id is null then 0 else 1 end asc,
         fs.last_shown_at asc nulls first,
         pg_catalog.random()
-      limit 1;
+      ), '{}'::bigint[])
+        into v_band_ids
+      from (
+        select p.id, fs.post_id, fs.last_shown_at
+        from public.posts p
+        left join public.feed_seen fs
+          on fs.user_email = p_user_email
+         and fs.post_id = p.id
+        where not (p.id = any(coalesce(p_exclude_ids, '{}'::bigint[])))
+          and not (p.id = any(coalesce(v_selected_ids, '{}'::bigint[])))
+          and (
+            case
+              when p.created_at >= v_now - interval '2 hours' then 1
+              when p.created_at >= v_now - interval '5 hours' then 2
+              when p.created_at >= v_now - interval '10 hours' then 3
+              when p.created_at >= v_now - interval '24 hours' then 4
+              else 5
+            end
+          ) = v_band
+        limit 1
+      ) candidate;
 
-      if v_target is null then
+      if coalesce(array_length(v_band_ids, 1), 0) = 0 then
         continue;
       end if;
 
-      v_selected_ids := v_selected_ids || v_target::bigint;
+      v_selected_ids := v_selected_ids || v_band_ids[1];
       v_quota[v_band] := v_quota[v_band] + 1;
     end loop;
 
