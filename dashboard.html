@@ -57,12 +57,26 @@
     align-items: center;
     padding: 24px 0;
   }
+  #accountSearchResults a { display:flex; align-items:center; gap:12px; padding:10px 12px; transition:background-color .15s; }
+  #accountSearchResults a:hover { background-color:rgba(148,163,184,.12); }
+  @media (max-width:640px) {
+    #accountSearchWrap { max-width:none; margin-left:10px; }
+    #accountSearchWrap > div { height:38px; }
+    #accountSearchInput { font-size:13px; }
+  }
 </style>
 </head>
 <body class="bg-gray-100 dark:bg-slate-950 text-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-200">
 
   <nav class="sticky top-0 z-50 bg-black text-white px-4 py-3 flex justify-between items-center shadow-md border-b border-slate-800">
-    <a href="dashboard.html" class="flex items-center"><img src="assets/logo-circle.png" alt="ByGether" class="h-12 w-auto"></a>
+    <a href="dashboard.html" class="flex items-center flex-shrink-0"><img src="assets/logo-circle.png" alt="ByGether" class="h-12 w-auto"></a>
+    <div id="accountSearchWrap" class="relative flex-1 max-w-md ml-4">
+      <div class="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-full px-3 h-10">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-gray-400 flex-shrink-0"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+        <input id="accountSearchInput" type="search" autocomplete="off" placeholder="Buscar..." aria-label="Buscar cuentas" class="w-full bg-transparent text-white placeholder-gray-400 text-sm outline-none">
+      </div>
+      <div id="accountSearchResults" class="hidden absolute left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden z-[60]"></div>
+    </div>
   </nav>
 
   <!-- CONTENEDOR PRINCIPAL -->
@@ -285,6 +299,67 @@
       initNotifications(currentUser.email);
       loadPosts();
     }
+    async function searchAccounts() {
+      const input = document.getElementById('accountSearchInput');
+      const results = document.getElementById('accountSearchResults');
+      if (!input || !results) return;
+
+      const term = input.value.trim();
+      if (!term) {
+        results.classList.add('hidden');
+        results.innerHTML = '';
+        return;
+      }
+
+      const { data, error } = await supabaseClient
+        .from('profiles')
+        .select('user_name, avatar_url')
+        .ilike('user_name', `%${term}%`)
+        .order('user_name', { ascending: true })
+        .limit(8);
+
+      if (error) {
+        results.classList.add('hidden');
+        results.innerHTML = '';
+        return;
+      }
+
+      if (!data || !data.length) {
+        results.innerHTML = '<div class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">No se encontraron cuentas.</div>';
+        results.classList.remove('hidden');
+        return;
+      }
+
+      results.innerHTML = data.map(profile => {
+        const name = profile.user_name || '';
+        const avatar = profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
+        return `
+          <a href="perfil.html?user=${encodeURIComponent(name)}">
+            <img src="${avatar}" class="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-slate-700 flex-shrink-0" alt="${connEscape(name)}">
+            <span class="font-semibold text-sm text-gray-900 dark:text-white truncate">${connEscape(name)}</span>
+          </a>
+        `;
+      }).join('');
+      results.classList.remove('hidden');
+    }
+
+    let accountSearchTimer = null;
+    document.getElementById('accountSearchInput')?.addEventListener('input', () => {
+      clearTimeout(accountSearchTimer);
+      accountSearchTimer = setTimeout(searchAccounts, 180);
+    });
+
+    document.getElementById('accountSearchInput')?.addEventListener('focus', () => {
+      if (document.getElementById('accountSearchInput').value.trim()) searchAccounts();
+    });
+
+    document.addEventListener('click', (event) => {
+      const wrap = document.getElementById('accountSearchWrap');
+      if (wrap && !wrap.contains(event.target)) {
+        document.getElementById('accountSearchResults')?.classList.add('hidden');
+      }
+    });
+
     function linkifyContent(text) { if (!text) return ''; const urlRegex = /(https?:\/\/[^\s]+)/g; return text.replace(urlRegex, (url) => { let domain; try { domain = new URL(url).hostname.replace('www.', ''); } catch (e) { domain = url; } return `<a href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 text-green-600 dark:text-green-400 font-semibold hover:underline align-middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 inline-block"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>${domain}</a>`; }); }
 let feedOffset = 0;
 const feedPageSize = 20;
