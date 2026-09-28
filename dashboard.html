@@ -322,6 +322,25 @@ let feedRecentShownIds = [];
     });
     posts = rpcResult.data;
     error = rpcResult.error;
+
+    // Si el RPC devuelve menos de 20, completa la misma carga con una
+    // segunda solicitud al mismo ranking, excluyendo también las IDs recibidas.
+    if (!error && posts && posts.length > 0 && posts.length < feedPageSize) {
+      const faltantes = feedPageSize - posts.length;
+      const idsRecibidas = posts.map(post => post.id);
+      const excludeIdsCompletas = [...new Set([...excludeIds, ...idsRecibidas])];
+      const completionResult = await supabaseClient.rpc('feed_ranking_page', {
+        p_user_email: currentUser.email,
+        p_exclude_ids: excludeIdsCompletas,
+        p_limit: faltantes
+      });
+
+      if (!completionResult.error && completionResult.data && completionResult.data.length) {
+        posts = [...posts, ...completionResult.data.slice(0, faltantes)];
+      } else if (completionResult.error) {
+        error = completionResult.error;
+      }
+    }
   }
      const { data: profiles } = await supabaseClient .from('profiles') .select('user_name, user_email, avatar_url'); const avatarByUser = {}; (profiles || []).forEach(p => { if (p.user_name && p.avatar_url) avatarByUser[p.user_name] = p.avatar_url; if (p.user_email && p.avatar_url) avatarByUser[p.user_email] = p.avatar_url; });
      const channelSet = await connFetchChannelSet();
