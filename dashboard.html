@@ -332,7 +332,7 @@ let feedRecentShownIds = [];
       const completionResult = await supabaseClient.rpc('feed_ranking_page', {
         p_user_email: currentUser.email,
         p_exclude_ids: excludeIdsCompletas,
-        p_limit: faltantes
+        p_limit: Math.max(10, faltantes)
       });
 
       if (!completionResult.error && completionResult.data && completionResult.data.length) {
