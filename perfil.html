@@ -51,7 +51,7 @@
       <a href="dashboard.html" class="flex items-center"><img src="assets/logo-circle.png" alt="ByGether" class="h-12 w-auto"></a>
     </div>
     <div class="profile-top-title absolute left-[calc(1rem+220px+6rem)] top-1/2 -translate-y-1/2 flex items-center gap-2">
-      <a href="dashboard.html" aria-label="Volver al dashboard" title="Volver al dashboard"
+      <a href="dashboard.html" aria-label="Volver al dashboard" title="Volver al dashboard" onclick="if (document.referrer && new URL(document.referrer).origin === window.location.origin && window.history.length > 1) { event.preventDefault(); window.history.back(); }"
         class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition"
         onclick="event.stopPropagation()">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
