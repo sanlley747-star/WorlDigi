@@ -36,6 +36,15 @@
     .publicacion-comment-actions > div > :nth-child(2) { order: 1; }
     .publicacion-comment-actions > div > :nth-child(3) { order: 2; }
     .publicacion-comment-actions > div > :nth-child(4) { order: 4; }
+    .publicacion-post-actions {
+      width: 100%;
+      justify-content: space-between;
+      gap: 0;
+    }
+    .publicacion-post-actions > :nth-child(1) { order: 3; }
+    .publicacion-post-actions > :nth-child(2) { order: 1; }
+    .publicacion-post-actions > :nth-child(3) { order: 2; }
+    .publicacion-post-actions > :nth-child(4) { order: 4; }
     html{scrollbar-width:thin;scrollbar-color:#050b18 transparent}
     ::-webkit-scrollbar{width:10px}
     ::-webkit-scrollbar-track{background:transparent}
@@ -308,7 +317,7 @@
 
           ${post.image_url && !ytOwnsImage(post.content, post.image_url) ? `<img src="${connEscape(post.image_url)}" class="w-full rounded-lg max-h-[32rem] object-cover" alt="Imagen de publicación">` : ''}
 
-          <div class="flex items-center space-x-5 border-t border-gray-100 dark:border-slate-800 pt-2 text-sm text-gray-600 dark:text-gray-400">
+          <div class="publicacion-post-actions flex items-center space-x-5 border-t border-gray-100 dark:border-slate-800 pt-2 text-sm text-gray-600 dark:text-gray-400">
 
             ${ccLikeButtonHtml(id, post.likes, v.isLiked, currentUser.email, currentName)}
 
