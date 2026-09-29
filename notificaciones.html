@@ -34,8 +34,38 @@
 <body class="bg-gray-100 dark:bg-slate-950 text-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-200">
 
   <nav class="sticky top-0 z-50 bg-black text-white px-4 py-3 flex justify-between items-center shadow-md border-b border-slate-800"><a href="dashboard.html" aria-label="Volver al dashboard" title="Volver al dashboard" onclick="if (document.referrer && new URL(document.referrer).origin === window.location.origin && window.history.length > 1) { event.preventDefault(); window.history.back(); }" class="absolute left-[calc(1rem+220px)] top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M15 18l-6-6 6-6"></path></svg></a>
-    <a href="dashboard.html" class="flex items-center"><img src="assets/logo-circle.png" alt="ByGether" class="h-12 w-auto"></a>
+    <button id="mobileMenuToggle" type="button" aria-label="Abrir menú" aria-expanded="false" class="flex items-center lg:hidden">
+      <img src="assets/logo-circle.png" alt="ByGether" class="h-12 w-auto">
+    </button>
+    <a href="dashboard.html" class="hidden lg:flex items-center"><img src="assets/logo-circle.png" alt="ByGether" class="h-12 w-auto"></a>
   </nav>
+  <div id="mobileFunctionMenu" class="hidden lg:hidden fixed top-[72px] left-4 z-40 w-[220px] bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-gray-200 dark:border-slate-800 p-4">
+    <nav class="space-y-2">
+      <a href="dashboard.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M3 9.5 12 3l9 6.5"></path><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"></path></svg>
+        <span>Inicio</span>
+      </a>
+      <a href="perfil.html" id="mobileMyProfileLink" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        <span>Mi perfil</span>
+      </a>
+      <a href="notificaciones.html" class="flex items-center gap-3 p-2 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white font-semibold">
+        <span class="relative inline-flex flex-shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+          <span id="mobileNotifBadge" class="hidden absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-green-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">0</span>
+        </span>
+        <span>Notificaciones</span>
+      </a>
+      <a href="conexiones.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        <span>Conexiones</span>
+      </a>
+      <a href="settings.html" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1-2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"></path></svg>
+        <span>Ajustes</span>
+      </a>
+    </nav>
+  </div>
 
   <!-- CONTENEDOR PRINCIPAL -->
   <main class="w-full mx-auto mt-6 pl-4 pr-0 grid grid-cols-1 lg:grid-cols-[220px_1fr_300px] gap-8">
@@ -170,6 +200,20 @@
 
       const authorName = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
       document.getElementById('myProfileLink').href = `perfil.html?user=${encodeURIComponent(authorName)}`;
+      document.getElementById('mobileMyProfileLink').href = `perfil.html?user=${encodeURIComponent(authorName)}`;
+
+      const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+      const mobileFunctionMenu = document.getElementById('mobileFunctionMenu');
+      mobileMenuToggle?.addEventListener('click', () => {
+        const isHidden = mobileFunctionMenu.classList.toggle('hidden');
+        mobileMenuToggle.setAttribute('aria-expanded', String(!isHidden));
+      });
+      mobileFunctionMenu?.addEventListener('click', (event) => {
+        if (event.target.closest('a')) {
+          mobileFunctionMenu.classList.add('hidden');
+          mobileMenuToggle?.setAttribute('aria-expanded', 'false');
+        }
+      });
 
       initNotifications(currentUser.email);
       await loadNotifWall();
