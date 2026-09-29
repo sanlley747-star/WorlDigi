@@ -81,14 +81,15 @@
       <div class="relative bg-white dark:bg-slate-900 rounded-xl shadow border border-gray-200 dark:border-slate-800 overflow-hidden">
 
   <!-- Foto de portada (flyer) -->
+  <div class="relative">
+  <a href="dashboard.html" aria-label="Volver al dashboard" title="Volver al dashboard"
+    class="absolute -top-12 left-0 z-20 w-10 h-10 rounded-full bg-black hover:bg-slate-800 text-white flex items-center justify-center shadow-lg transition"
+    onclick="event.stopPropagation()">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
+      <path d="M15 18l-6-6 6-6"></path>
+    </svg>
+  </a>
   <div id="coverWrapper" class="group relative w-full h-48 bg-slate-800 cursor-pointer">
-    <a href="dashboard.html" aria-label="Volver al dashboard" title="Volver al dashboard"
-      class="absolute top-3 left-3 z-20 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center shadow-lg transition"
-      onclick="event.stopPropagation()">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
-        <path d="M15 18l-6-6 6-6"></path>
-      </svg>
-    </a>
     <img id="profileCover" class="w-full h-full object-cover" alt="">
     <div class="hidden absolute inset-0 bg-black/40 items-center justify-center transition opacity-0 group-hover:opacity-100" data-edit-overlay>
       <span class="text-white text-sm font-semibold">🔍 Ver imagen</span>
