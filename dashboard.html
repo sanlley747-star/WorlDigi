@@ -252,7 +252,30 @@
     // del navegador (bfcache) -por cualquier motivo, incluido cerrar sesión-
     // la volvemos a ocultar. Así, si más tarde se restaura con "atrás", la
     // "foto" guardada ya está oculta y nunca llega a pintarse el muro.
-    window.addEventListener('pagehide', hideForAuth);
+    function saveDashboardState() {
+      const feed = document.getElementById('feed');
+      const container = document.getElementById('feedScrollContainer');
+      if (!feed || !container || !currentUser) return;
+      try {
+        sessionStorage.setItem('bygether_dashboard_state', JSON.stringify({
+          userEmail: currentUser.email,
+          feedMode,
+          feedOffset,
+          feedHasMore,
+          feedPostsById,
+          feedRecentShownIds,
+          feedHtml: feed.innerHTML,
+          scrollTop: container.scrollTop
+        }));
+      } catch (err) {
+        console.warn('No se pudo guardar el estado del dashboard:', err);
+      }
+    }
+
+    window.addEventListener('pagehide', () => {
+      saveDashboardState();
+      hideForAuth();
+    });
 
     // Cada vez que la página se muestra (carga normal o restaurada desde
     // bfcache) verificamos la sesión real antes de revelar el contenido.
@@ -367,7 +390,33 @@
       }
 
       initNotifications(currentUser.email);
-      loadPosts();
+
+      let restored = false;
+      try {
+        const saved = JSON.parse(sessionStorage.getItem('bygether_dashboard_state') || 'null');
+        if (saved && saved.userEmail === currentUser.email && saved.feedHtml) {
+          const feed = document.getElementById('feed');
+          const container = document.getElementById('feedScrollContainer');
+          if (feed && container) {
+            feedMode = saved.feedMode === 'destacado' ? 'destacado' : 'reciente';
+            feedOffset = Number.isFinite(saved.feedOffset) ? saved.feedOffset : 0;
+            feedHasMore = saved.feedHasMore !== false;
+            feedPostsById = saved.feedPostsById || {};
+            feedRecentShownIds = Array.isArray(saved.feedRecentShownIds) ? saved.feedRecentShownIds : [];
+            feed.innerHTML = saved.feedHtml;
+            updateFeedModeTabs();
+            restored = true;
+            requestAnimationFrame(() => {
+              container.scrollTop = Number(saved.scrollTop) || 0;
+            });
+            sessionStorage.removeItem('bygether_dashboard_state');
+          }
+        }
+      } catch (err) {
+        console.warn('No se pudo restaurar el estado del dashboard:', err);
+      }
+
+      if (!restored) loadPosts();
     }
     async function searchAccounts() {
       const input = document.getElementById('accountSearchInput');
@@ -1124,7 +1173,12 @@ function handleFeedScroll() {
 }
 
 window.addEventListener('scroll', handleFeedScroll);
-document.getElementById('feedScrollContainer')?.addEventListener('scroll', handleFeedScroll);
+let dashboardStateSaveTimer = null;
+document.getElementById('feedScrollContainer')?.addEventListener('scroll', () => {
+  handleFeedScroll();
+  clearTimeout(dashboardStateSaveTimer);
+  dashboardStateSaveTimer = setTimeout(saveDashboardState, 250);
+});
 
 document.getElementById('feedHomeButton')?.addEventListener('click', async (event) => {
   event.preventDefault();
