@@ -175,8 +175,7 @@ async function ccToggleLike(btn) {
       return;
     }
 
-    // 3. Sincronizar conteo en la tabla posts
-    await supabaseClient.from('posts').update({ likes: newLikes }).eq('id', id);
+    // 3. El contador de posts.likes se sincroniza automáticamente desde post_likes mediante trigger.
 
   } catch (err) {
     console.error('Error inesperado de ejecución:', err);
