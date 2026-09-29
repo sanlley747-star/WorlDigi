@@ -27,6 +27,15 @@
   <script src="user-card.js"></script>
   <style>
     html.auth-pending body { display: none; }
+    .publicacion-comment-actions > div {
+      width: 100%;
+      justify-content: space-between;
+      gap: 0;
+    }
+    .publicacion-comment-actions > div > :nth-child(1) { order: 3; }
+    .publicacion-comment-actions > div > :nth-child(2) { order: 1; }
+    .publicacion-comment-actions > div > :nth-child(3) { order: 2; }
+    .publicacion-comment-actions > div > :nth-child(4) { order: 4; }
     html{scrollbar-width:thin;scrollbar-color:#050b18 transparent}
     ::-webkit-scrollbar{width:10px}
     ::-webkit-scrollbar-track{background:transparent}
@@ -486,7 +495,7 @@
                 <span class="text-xs text-gray-500 dark:text-gray-400">${formatCompactTime(c.created_at)}</span>
               </div>
               <p class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line mt-0.5">${linkifyContent(c.content)}</p>
-              ${actions}
+              <div class="publicacion-comment-actions">${actions}</div>
               <div id="reply-box-${c.id}" class="hidden mt-2 flex items-start gap-2">
                 <textarea id="reply-input-${c.id}" maxlength="280" rows="1" placeholder="Escribe una respuesta..." class="flex-1 text-sm p-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-transparent text-gray-900 dark:text-gray-100 resize-none focus:outline-none focus:border-blue-500"></textarea>
                 <button onclick="submitReply(${c.id})" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 px-3 rounded-lg transition">Responder</button>
