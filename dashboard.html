@@ -361,6 +361,7 @@
     document.getElementById('feedModeFeatured')?.addEventListener('click', () => setFeedMode('destacado'));
 
     async function init() {
+      feedRestoringState = true;
       const { data: { user } } = await supabaseClient.auth.getUser();
       if (!user) {
         window.location.replace('index.html');
@@ -404,6 +405,9 @@
             feedPostsById = saved.feedPostsById || {};
             feedRecentShownIds = Array.isArray(saved.feedRecentShownIds) ? saved.feedRecentShownIds : [];
             feed.innerHTML = saved.feedHtml;
+            // El estado guardado puede haber capturado el spinner justo antes
+            // de salir de la página. Nunca lo conservamos al restaurar.
+            hideFeedLoader();
             updateFeedModeTabs();
             restored = true;
             requestAnimationFrame(() => {
@@ -413,6 +417,12 @@
               } else {
                 container.scrollTop = savedScrollTop;
               }
+              // Dejamos que el navegador y la restauración del dashboard
+              // terminen de ajustar el scroll antes de permitir paginación.
+              requestAnimationFrame(() => {
+                feedRestoringState = false;
+                handleFeedScroll();
+              });
             });
             sessionStorage.removeItem('bygether_dashboard_state');
           }
@@ -421,7 +431,10 @@
         console.warn('No se pudo restaurar el estado del dashboard:', err);
       }
 
-      if (!restored) loadPosts();
+      if (!restored) {
+        feedRestoringState = false;
+        loadPosts();
+      }
     }
     async function searchAccounts() {
       const input = document.getElementById('accountSearchInput');
@@ -491,6 +504,7 @@ let feedHasMore = true;
 let feedIsLoadingMore = false;
 let feedPostsById = {};
 let feedRecentShownIds = [];
+let feedRestoringState = false;
 
    async function loadRecentPosts(isLoadMore = false) {
   const requestGeneration = feedRequestGeneration;
@@ -1173,7 +1187,7 @@ function isNearFeedBottom() {
 }
 
 function handleFeedScroll() {
-  if (feedIsLoadingMore || !feedHasMore) return;
+  if (feedRestoringState || feedIsLoadingMore || !feedHasMore) return;
   if (isNearFeedBottom()) loadMorePosts();
 }
 
