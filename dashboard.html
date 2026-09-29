@@ -265,7 +265,7 @@
           feedPostsById,
           feedRecentShownIds,
           feedHtml: feed.innerHTML,
-          scrollTop: container.scrollTop
+          scrollTop: window.innerWidth < 1024 ? window.scrollY : container.scrollTop
         }));
       } catch (err) {
         console.warn('No se pudo guardar el estado del dashboard:', err);
@@ -407,7 +407,12 @@
             updateFeedModeTabs();
             restored = true;
             requestAnimationFrame(() => {
-              container.scrollTop = Number(saved.scrollTop) || 0;
+              const savedScrollTop = Number(saved.scrollTop) || 0;
+              if (window.innerWidth < 1024) {
+                window.scrollTo(0, savedScrollTop);
+              } else {
+                container.scrollTop = savedScrollTop;
+              }
             });
             sessionStorage.removeItem('bygether_dashboard_state');
           }
@@ -1174,10 +1179,18 @@ function handleFeedScroll() {
 
 window.addEventListener('scroll', handleFeedScroll);
 let dashboardStateSaveTimer = null;
+window.addEventListener('scroll', () => {
+  if (window.innerWidth < 1024) {
+    clearTimeout(dashboardStateSaveTimer);
+    dashboardStateSaveTimer = setTimeout(saveDashboardState, 250);
+  }
+});
 document.getElementById('feedScrollContainer')?.addEventListener('scroll', () => {
   handleFeedScroll();
-  clearTimeout(dashboardStateSaveTimer);
-  dashboardStateSaveTimer = setTimeout(saveDashboardState, 250);
+  if (window.innerWidth >= 1024) {
+    clearTimeout(dashboardStateSaveTimer);
+    dashboardStateSaveTimer = setTimeout(saveDashboardState, 250);
+  }
 });
 
 document.getElementById('feedHomeButton')?.addEventListener('click', async (event) => {
