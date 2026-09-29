@@ -282,7 +282,8 @@
       return `${day} ${month} ${year}`;
     }
 
-    let feedMode = 'destacado';
+    let feedMode = 'reciente';
+    let feedRequestGeneration = 0;
 
     function updateFeedModeTabs() {
       const recent = document.getElementById('feedModeRecent');
@@ -299,10 +300,13 @@
       const sameMode = feedMode === mode;
       feedMode = mode;
       updateFeedModeTabs();
-      if (sameMode) {
-        await loadPosts();
-        return;
-      }
+      feedRequestGeneration++;
+      feedIsLoadingMore = false;
+      feedOffset = 0;
+      feedHasMore = true;
+      feedPostsById = {};
+      feedRecentShownIds = [];
+      document.getElementById('feed')?.replaceChildren();
       await loadPosts();
     }
 
@@ -410,7 +414,8 @@ let feedIsLoadingMore = false;
 let feedPostsById = {};
 let feedRecentShownIds = [];
 
-   async function loadPosts(isLoadMore = false) {
+   async function loadRecentPosts(isLoadMore = false) {
+  const requestGeneration = feedRequestGeneration;
   if (!isLoadMore) {
     feedOffset = 0;
     feedHasMore = true;
@@ -419,48 +424,20 @@ let feedRecentShownIds = [];
   }
   if (!feedHasMore) return;
 
-  let posts;
-  let error;
+  const from = feedOffset;
+  const to = from + feedPageSize - 1;
+  const { data: posts, error } = await supabaseClient
+    .from('posts')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .range(from, to);
 
-  if (!isLoadMore) {
-    const rpcResult = await supabaseClient.rpc('feed_ranking_page', {
-      p_user_email: currentUser.email,
-      p_exclude_ids: [],
-      p_limit: feedPageSize
-    });
-    posts = rpcResult.data;
-    error = rpcResult.error;
-  } else {
-    const excludeIds = feedRecentShownIds.slice(-30);
-    const rpcResult = await supabaseClient.rpc('feed_ranking_page', {
-      p_user_email: currentUser.email,
-      p_exclude_ids: excludeIds,
-      p_limit: feedPageSize
-    });
-    posts = rpcResult.data;
-    error = rpcResult.error;
+  if (requestGeneration !== feedRequestGeneration) return;
 
-    // Si el RPC devuelve menos de 20, completa la misma carga con una
-    // segunda solicitud al mismo ranking, excluyendo también las IDs recibidas.
-    if (!error && posts && posts.length > 0 && posts.length < feedPageSize) {
-      const faltantes = feedPageSize - posts.length;
-      const idsRecibidas = posts.map(post => post.id);
-      const excludeIdsCompletas = [...new Set([...excludeIds, ...idsRecibidas])];
-      const completionResult = await supabaseClient.rpc('feed_ranking_page', {
-        p_user_email: currentUser.email,
-        p_exclude_ids: excludeIdsCompletas,
-        p_limit: Math.max(10, faltantes)
-      });
-
-      if (!completionResult.error && completionResult.data && completionResult.data.length) {
-        posts = [...posts, ...completionResult.data.slice(0, faltantes)];
-      } else if (completionResult.error) {
-        error = completionResult.error;
-      }
-    }
-  }
      const { data: profiles } = await supabaseClient .from('profiles') .select('user_name, user_email, avatar_url'); const avatarByUser = {}; (profiles || []).forEach(p => { if (p.user_name && p.avatar_url) avatarByUser[p.user_name] = p.avatar_url; if (p.user_email && p.avatar_url) avatarByUser[p.user_email] = p.avatar_url; });
      const channelSet = await connFetchChannelSet();
+
+  if (requestGeneration !== feedRequestGeneration) return;
 
   const feed = document.getElementById('feed');
 
@@ -737,6 +714,7 @@ let feedRecentShownIds = [];
   }
 }
    async function loadFeaturedPosts(isLoadMore = false) {
+  const requestGeneration = feedRequestGeneration;
   if (!isLoadMore) {
     feedOffset = 0;
     feedHasMore = true;
@@ -787,6 +765,8 @@ let feedRecentShownIds = [];
   }
      const { data: profiles } = await supabaseClient .from('profiles') .select('user_name, user_email, avatar_url'); const avatarByUser = {}; (profiles || []).forEach(p => { if (p.user_name && p.avatar_url) avatarByUser[p.user_name] = p.avatar_url; if (p.user_email && p.avatar_url) avatarByUser[p.user_email] = p.avatar_url; });
      const channelSet = await connFetchChannelSet();
+
+  if (feedRequestGeneration !== requestGeneration) return;
 
   const feed = document.getElementById('feed');
 
@@ -1065,6 +1045,7 @@ let feedRecentShownIds = [];
 
 
 async function loadPosts(isLoadMore = false) {
+  if (feedMode === 'reciente') return loadRecentPosts(isLoadMore);
   return loadFeaturedPosts(isLoadMore);
 }
 
@@ -1093,9 +1074,14 @@ function hideFeedLoader() {
 
 async function loadMorePosts() {
   if (feedIsLoadingMore || !feedHasMore) return;
+  const requestGeneration = feedRequestGeneration;
   feedIsLoadingMore = true;
   showFeedLoader();
   await loadPosts(true);
+  if (requestGeneration !== feedRequestGeneration) {
+    hideFeedLoader();
+    return;
+  }
   hideFeedLoader();
   feedIsLoadingMore = false;
 }
