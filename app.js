@@ -5,6 +5,11 @@ const SUPABASE_ANON_KEY = 'sb_publishable_fL7vTXJ4NLhC2CJs9nPVAg_fvzWbfCY'; // <
 // Inicializar el cliente de Supabase
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Si ya existe una sesión activa, entrar directamente al muro.
+supabaseClient.auth.getSession().then(({ data }) => {
+  if (data.session) window.location.replace('dashboard.html');
+});
+
 const modal = document.getElementById('modal');
 const title = document.getElementById('modalTitle');
 const subtitle = document.getElementById('modalSubtitle');
