@@ -10,23 +10,6 @@ supabaseClient.auth.getSession().then(({ data }) => {
   if (data.session) window.location.replace('dashboard.html');
 });
 
-// ---------------------------------------------------------
-// BYGETHER SPLASH SCREEN
-// ---------------------------------------------------------
-function hideByGetherSplash() {
-  const splash = document.getElementById('bygether-splash');
-
-  if (!splash) return;
-
-  requestAnimationFrame(() => {
-    splash.classList.add('splash-hidden');
-
-    setTimeout(() => {
-      splash.remove();
-    }, 500);
-  });
-}
-
 const modal = document.getElementById('modal');
 const title = document.getElementById('modalTitle');
 const subtitle = document.getElementById('modalSubtitle');
@@ -169,5 +152,3 @@ const email = emailField.value;
   }
 });
 
-// La interfaz principal ya terminó su inicialización.
-hideByGetherSplash();
