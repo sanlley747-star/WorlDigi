@@ -1,6 +1,20 @@
 <!DOCTYPE html>
 <html lang="es" class="dark auth-pending">
 <head>
+  <link rel="preload" as="image" href="assets/logo.png">
+  <style id="bygether-boot-screen">
+    html.auth-pending {
+      background-color: #000;
+      background-image: url("assets/logo.png");
+      background-repeat: no-repeat;
+      background-position: center center;
+      background-size: min(320px, 70vw) auto;
+      background-attachment: fixed;
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+    html.auth-pending body { display: none; }
+  </style>
   <script>
     const savedScale = localStorage.getItem('fontScale');
     if (savedScale) document.documentElement.style.fontSize = savedScale + '%';
@@ -30,8 +44,8 @@
     /* Mientras la sesión no se haya verificado, el contenido queda oculto.
        Esto es clave para que, si el navegador restaura esta página desde su
        caché de retroceso (bfcache) tras cerrar sesión, no se alcance a ver
-       ni un instante el muro antes de redirigir al login. */
-    html.auth-pending body { display: none; }
+       ni un instante el muro antes de redirigir al login.
+       La regla html.auth-pending body { display: none; } ahora vive en #bygether-boot-screen. */
     .avatar-image { visibility: hidden; }
     .avatar-image.is-loaded { visibility: visible; }
     @keyframes bygetherSheetIn { from { transform: translateY(100%); } to { transform: translateY(0); } }
