@@ -5,9 +5,11 @@ const SUPABASE_ANON_KEY = 'sb_publishable_fL7vTXJ4NLhC2CJs9nPVAg_fvzWbfCY'; // <
 // Inicializar el cliente de Supabase
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Si ya existe una sesión activa, entrar directamente al muro.
+// Respaldo: si ya existe una sesión activa, entrar directamente al muro.
+// El pre-chequeo síncrono del <head> de index.html cubre el caso normal;
+// esto cubre sesiones que ese pre-chequeo no detecte.
 supabaseClient.auth.getSession().then(({ data }) => {
-  if (data.session) window.location.replace('dashboard.html');
+  if (data.session && !window.__bygetherBounced) window.location.replace('dashboard.html');
 });
 
 const modal = document.getElementById('modal');
