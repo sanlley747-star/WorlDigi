@@ -6,10 +6,61 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ByGether — Get together</title>
+  <link rel="preload" as="image" href="assets/logo.png">
   <link rel="stylesheet" href="styles.css">
 <style>.password-toggle-icon{width:16px;height:16px;display:block}</style>
+<style>
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    background: #000000;
+  }
+
+  #bygether-splash {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    background: #000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999999;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 500ms ease, visibility 500ms ease;
+  }
+
+  #bygether-splash.splash-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  #bygether-splash img {
+    display: block;
+    width: min(320px, 70vw);
+    height: auto;
+    object-fit: contain;
+    animation: bygetherSplashPulse 1.8s ease-in-out infinite;
+  }
+
+  @keyframes bygetherSplashPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.035); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #bygether-splash img { animation: none; }
+  }
+</style>
 </head>
 <body>
+  <div id="bygether-splash" aria-hidden="true">
+    <img src="assets/logo.png" alt="ByGether">
+  </div>
+
   <header class="topbar">
     <a class="brand" href="#">
      <img src="assets/logo-circle.png" alt="ByGether logo">
@@ -102,4 +153,3 @@
   <script src="app.js"></script>
 </body>
 </html>
-
