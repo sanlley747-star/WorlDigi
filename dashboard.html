@@ -260,6 +260,19 @@
       document.documentElement.classList.remove('auth-pending');
     }
 
+    const BYGETHER_AUTH_KEY = 'sb-aiymadawznadvavzspxj-auth-token';
+
+    // Vuelve a la landing dejando una marca de un solo uso para que index.html
+    // no reenvíe de inmediato al dashboard (evita el bucle).
+    // clearSession = true solo cuando se CONFIRMÓ que no hay sesión real.
+    function bounceToLanding(clearSession) {
+      try {
+        if (clearSession) localStorage.removeItem(BYGETHER_AUTH_KEY);
+        sessionStorage.setItem('bygether_session_bounce', '1');
+      } catch (e) {}
+      window.location.replace('index.html');
+    }
+
     // Justo antes de que esta página se congele en el caché de retroceso
     // del navegador (bfcache) -por cualquier motivo, incluido cerrar sesión-
     // la volvemos a ocultar. Así, si más tarde se restaura con "atrás", la
@@ -294,7 +307,7 @@
     window.addEventListener('pageshow', async () => {
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (!session) {
-        window.location.replace('index.html');
+        bounceToLanding(true);
         return;
       }
       revealApp();
@@ -376,7 +389,8 @@
       feedRestoringState = true;
       const { data: { user } } = await supabaseClient.auth.getUser();
       if (!user) {
-        window.location.replace('index.html');
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        bounceToLanding(!session); // borrar el token solo si tampoco hay sesión local
         return;
       }
       currentUser = user;
