@@ -1,6 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<style id="bygether-boot-screen">
+  html.bygether-entering {
+    background-color: #000;
+    background-image: url("assets/logo.png");
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: min(320px, 70vw) auto;
+    background-attachment: fixed;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  html.bygether-entering body { display: none; }
+</style>
+<script>
+(function () {
+  try {
+    var KEY = 'sb-aiymadawznadvavzspxj-auth-token';
+
+    // Marca de un solo uso que deja el dashboard cuando rebota por no tener
+    // sesión real. Evita el bucle index -> dashboard -> index.
+    if (sessionStorage.getItem('bygether_session_bounce') === '1') {
+      sessionStorage.removeItem('bygether_session_bounce');
+      window.__bygetherBounced = true;
+      return;
+    }
+
+    var raw = localStorage.getItem(KEY);
+    if (!raw) return; // sin sesión: la landing se muestra normal, al instante
+
+    var s = JSON.parse(raw);
+    if (!s || typeof s.refresh_token !== 'string' || !s.refresh_token) return;
+
+    // Hay una sesión plausible: ocultar la landing y entrar al muro.
+    document.documentElement.classList.add('bygether-entering');
+    window.location.replace('dashboard.html');
+  } catch (e) {
+    // Ante cualquier fallo, mostrar la landing normal.
+  }
+
+  // Si el navegador restaura esta página desde bfcache, volver a evaluar.
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) window.location.reload();
+  });
+})();
+</script>
   <link rel="icon" type="image/png" sizes="256x256" href="assets/favicon.png?v=2">
   <link rel="icon" type="image/x-icon" href="favicon.ico?v=2">
   <meta charset="UTF-8">
