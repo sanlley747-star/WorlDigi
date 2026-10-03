@@ -247,7 +247,9 @@
     <aside class="hidden lg:block">
       <div class="sticky top-0 bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 flex flex-col items-center justify-center" style="width: 300px; height: 600px;">
         <span class="text-xs text-gray-400 uppercase tracking-widest mb-2 text-gray-400">Publicidad</span>
-        <img src="assets/bygether-ad-300x600.svg" alt="Publicidad ByGether" class="w-full h-full rounded-lg object-cover" width="300" height="600">
+        <a id="advertisementLink" href="https://bygether.vercel.app/" target="_blank" rel="noopener noreferrer" class="block w-full h-full">
+          <img id="advertisementImage" src="assets/bygether-ad-300x600.svg" alt="Publicidad ByGether" class="w-full h-full rounded-lg object-cover" width="300" height="600">
+        </a>
       </div>
     </aside>
 
@@ -257,6 +259,46 @@
     const SUPABASE_URL = 'https://aiymadawznadvavzspxj.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_fL7vTXJ4NLhC2CJs9nPVAg_fvzWbfCY'; 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // ===== SISTEMA DE PUBLICIDAD =====
+    // Selecciona un anuncio activo por bloque horario y cambia automáticamente
+    // al comenzar la siguiente hora. Si Supabase falla, conserva el banner local.
+    let bygetherAdvertisements = [];
+    let bygetherAdTimer = null;
+
+    async function loadByGetherAdvertisement() {
+      const image = document.getElementById('advertisementImage');
+      const link = document.getElementById('advertisementLink');
+      if (!image || !link) return;
+
+      try {
+        const { data, error } = await supabaseClient
+          .from('advertisements')
+          .select('id, image_url, target_url')
+          .eq('activo', true)
+          .order('id', { ascending: true });
+
+        if (error) throw error;
+        bygetherAdvertisements = Array.isArray(data) ? data : [];
+
+        if (!bygetherAdvertisements.length) return;
+
+        const hourIndex = Math.floor(Date.now() / 3600000) % bygetherAdvertisements.length;
+        const ad = bygetherAdvertisements[hourIndex];
+
+        if (ad.image_url) image.src = ad.image_url;
+        if (ad.target_url) link.href = ad.target_url;
+        if (ad.image_url) image.alt = 'Publicidad ByGether';
+
+        if (bygetherAdTimer) clearTimeout(bygetherAdTimer);
+        const nextHour = 3600000 - (Date.now() % 3600000) + 1000;
+        bygetherAdTimer = setTimeout(loadByGetherAdvertisement, nextHour);
+      } catch (error) {
+        console.warn('No se pudo cargar la publicidad administrable:', error);
+      }
+    }
+
+    loadByGetherAdvertisement();
+
 
     // ===== BLOQUEO DE CONTENIDO POR SESIÓN (evita el "destello" del muro) =====
     // El body arranca oculto (ver <style> en el <head>, clase auth-pending).
