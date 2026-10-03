@@ -119,10 +119,17 @@ const email = emailField.value;
         modal.classList.add('hidden');
       }
     } else if (currentMode === 'signup') {
+      const TERMS_VERSION = "2026-10-02";
       const { data, error } = await supabaseClient.auth.signUp({
         email: email,
         password: password,
-        options: { data: { full_name: name } }
+        options: {
+          data: {
+            full_name: name,
+            terms_version: TERMS_VERSION,
+            terms_accepted_at: new Date().toISOString()
+          }
+        }
       });
 
       if (error) {
