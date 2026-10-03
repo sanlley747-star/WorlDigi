@@ -81,6 +81,29 @@ const closeModal = document.getElementById('closeModal');
 if (signupBtn) signupBtn.onclick = () => openModal('signup');
 if (heroSignup) heroSignup.onclick = () => openModal('signup');
 if (loginBtn) loginBtn.onclick = () => openModal('login');
+
+const googleSignupBtn = document.getElementById('googleSignupBtn');
+if (googleSignupBtn) {
+  googleSignupBtn.onclick = async () => {
+    googleSignupBtn.disabled = true;
+    try {
+      const { error } = await supabaseClient.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/dashboard.html'
+        }
+      });
+
+      if (error) {
+        alert('No se pudo iniciar el registro con Google: ' + error.message);
+        googleSignupBtn.disabled = false;
+      }
+    } catch (error) {
+      alert('No se pudo iniciar el registro con Google: ' + error.message);
+      googleSignupBtn.disabled = false;
+    }
+  };
+}
 if (heroLogin) heroLogin.onclick = () => openModal('login');
 if (closeModal) closeModal.onclick = () => modal.classList.add('hidden');
 
