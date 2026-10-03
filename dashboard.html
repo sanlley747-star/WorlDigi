@@ -76,6 +76,11 @@
   .dark #searchResults { background:#0f172a; color:#f8fafc; border-color:#334155; }
   #searchResults a { display:flex; align-items:center; gap:12px; padding:10px 12px; transition:background-color .15s; }
   #searchResults a:hover { background-color:rgba(148,163,184,.12); }
+  @media (min-width:1024px) {
+    main > aside:first-of-type { grid-column:1; grid-row:1; }
+    #searchWall, #feedScrollContainer { grid-column:2; grid-row:1; }
+    main > aside:last-of-type { grid-column:3; grid-row:1; }
+  }
   #searchWall.is-active { display:block; }
   @media (max-width:640px) {
     #searchTopWrap { max-width:100%; }
