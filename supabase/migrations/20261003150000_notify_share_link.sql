@@ -1,0 +1,38 @@
+alter table public.notifications drop constraint if exists notifications_type_check;
+alter table public.notifications add constraint notifications_type_check check (type = any (array['comment','like','quote','share','share_link','connection']::text[]));
+
+create or replace function public.notify_on_share_link(p_post_id bigint)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_owner text;
+  v_actor text := (auth.jwt() ->> 'email');
+  v_actor_name text;
+begin
+  if v_actor is null then return; end if;
+
+  select user_email into v_owner
+  from public.posts
+  where id = p_post_id;
+
+  if v_owner is null or lower(v_owner) = lower(v_actor) then
+    return;
+  end if;
+
+  select coalesce(user_name, split_part(v_actor, '@', 1))
+    into v_actor_name
+  from public.posts
+  where id = p_post_id;
+
+  insert into public.notifications
+    (recipient_email, actor_email, actor_name, type, post_id)
+  values
+    (v_owner, v_actor, v_actor_name, 'share_link', p_post_id);
+end;
+$$;
+
+revoke execute on function public.notify_on_share_link(bigint) from public, anon;
+grant execute on function public.notify_on_share_link(bigint) to authenticated;
