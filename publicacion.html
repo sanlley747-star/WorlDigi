@@ -319,7 +319,8 @@
             ${post.image_url && !ytOwnsImage(post.content, post.image_url) ? `<img src="${connEscape(post.image_url)}" class="w-full rounded-lg max-h-[32rem] object-cover" alt="Imagen de publicación">` : ''}
           </div>
 
-          <div class="publicacion-post-actions flex items-center space-x-5 border-t border-gray-100 dark:border-slate-800 pt-2 text-sm text-gray-600 dark:text-gray-400">
+          <div class="border-t border-gray-100 dark:border-slate-800 pt-2">
+            <div class="publicacion-post-actions ml-[60px] flex items-center space-x-5 text-sm text-gray-600 dark:text-gray-400">
 
             ${ccLikeButtonHtml(id, post.likes, v.isLiked, currentUser.email, currentName)}
 
@@ -349,6 +350,7 @@
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
             </button>
 
+            </div>
           </div>
         </div>
       `;
