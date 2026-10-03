@@ -71,7 +71,7 @@
     align-items: center;
     padding: 24px 0;
   }
-  #searchTopWrap { position:relative; }
+  #searchTopWrap { position:absolute; }
   #searchResults { position:absolute; left:16px; right:16px; top:calc(100% + 8px); max-height:360px; overflow-y:auto; background:#fff; color:#0f172a; border:1px solid rgba(148,163,184,.28); border-radius:12px; box-shadow:0 12px 30px rgba(0,0,0,.28); z-index:60; }
   .dark #searchResults { background:#0f172a; color:#f8fafc; border-color:#334155; }
   #searchResults a { display:flex; align-items:center; gap:12px; padding:10px 12px; transition:background-color .15s; }
@@ -606,8 +606,6 @@
       document.getElementById('feedScrollContainer')?.classList.add('hidden');
       document.getElementById('searchWall')?.classList.remove('hidden');
       document.getElementById('searchWall')?.classList.add('is-active');
-      document.querySelector('main > aside:first-of-type')?.classList.remove('hidden');
-      document.querySelector('main > aside:last-of-type')?.classList.remove('hidden');
       document.getElementById('searchTopWrap')?.classList.remove('hidden');
       document.getElementById('feedModeTabs')?.classList.add('hidden'); document.getElementById('feedModeTabs')?.style.setProperty('display', 'none', 'important'); document.getElementById('sidebarPublishButton')?.classList.add('hidden');
       document.getElementById('searchInput')?.focus();
