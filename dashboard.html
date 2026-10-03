@@ -606,6 +606,8 @@
       document.getElementById('feedScrollContainer')?.classList.add('hidden');
       document.getElementById('searchWall')?.classList.remove('hidden');
       document.getElementById('searchWall')?.classList.add('is-active');
+      document.querySelector('main > aside:first-of-type')?.classList.remove('hidden');
+      document.querySelector('main > aside:last-of-type')?.classList.remove('hidden');
       document.getElementById('searchTopWrap')?.classList.remove('hidden');
       document.getElementById('feedModeTabs')?.classList.add('hidden'); document.getElementById('feedModeTabs')?.style.setProperty('display', 'none', 'important'); document.getElementById('sidebarPublishButton')?.classList.add('hidden');
       document.getElementById('searchInput')?.focus();
