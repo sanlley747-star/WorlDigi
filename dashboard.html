@@ -848,20 +848,22 @@ let feedRestoringState = false;
           </div>
         </div>
 
-        ${displayPost.content ? `
-          <p class="text-gray-800 dark:text-gray-200 text-sm break-words cursor-pointer" onclick="openPostPage(${displayPost.id})">
-            ${linkifyContent(ytStripLink(displayPost.content))}
-          </p>
-          ${ytEmbedsFor(displayPost.content)}
-        ` : ''}
+        <div class="${post.quote_text ? 'ml-9' : 'ml-[52px]'} mt-2 space-y-3">
+          ${displayPost.content ? `
+            <p class="text-gray-800 dark:text-gray-200 text-sm break-words cursor-pointer" onclick="openPostPage(${displayPost.id})">
+              ${linkifyContent(ytStripLink(displayPost.content))}
+            </p>
+            ${ytEmbedsFor(displayPost.content)}
+          ` : ''}
 
-        ${displayPost.image_url && !ytOwnsImage(displayPost.content, displayPost.image_url) ? `
-          <img
-            src="${displayPost.image_url}"
-            class="w-full rounded-lg max-h-96 object-cover cursor-pointer"
-            alt="Imagen de publicación"
-            onclick="openPostViewer(${displayPost.id})">
-        ` : ''}
+          ${displayPost.image_url && !ytOwnsImage(displayPost.content, displayPost.image_url) ? `
+            <img
+              src="${displayPost.image_url}"
+              class="w-full rounded-lg max-h-96 object-cover cursor-pointer"
+              alt="Imagen de publicación"
+              onclick="openPostViewer(${displayPost.id})">
+          ` : ''}
+        </div>
 
         ${post.quote_text ? '</div>' : ''}
         </div>
@@ -1177,20 +1179,22 @@ let feedRestoringState = false;
           </div>
         </div>
 
-        ${displayPost.content ? `
-          <p class="text-gray-800 dark:text-gray-200 text-sm break-words cursor-pointer" onclick="openPostPage(${displayPost.id})">
-            ${linkifyContent(ytStripLink(displayPost.content))}
-          </p>
-          ${ytEmbedsFor(displayPost.content)}
-        ` : ''}
+        <div class="${post.quote_text ? 'ml-9' : 'ml-[52px]'} mt-2 space-y-3">
+          ${displayPost.content ? `
+            <p class="text-gray-800 dark:text-gray-200 text-sm break-words cursor-pointer" onclick="openPostPage(${displayPost.id})">
+              ${linkifyContent(ytStripLink(displayPost.content))}
+            </p>
+            ${ytEmbedsFor(displayPost.content)}
+          ` : ''}
 
-        ${displayPost.image_url && !ytOwnsImage(displayPost.content, displayPost.image_url) ? `
-          <img
-            src="${displayPost.image_url}"
-            class="w-full rounded-lg max-h-96 object-cover cursor-pointer"
-            alt="Imagen de publicación"
-            onclick="openPostViewer(${displayPost.id})">
-        ` : ''}
+          ${displayPost.image_url && !ytOwnsImage(displayPost.content, displayPost.image_url) ? `
+            <img
+              src="${displayPost.image_url}"
+              class="w-full rounded-lg max-h-96 object-cover cursor-pointer"
+              alt="Imagen de publicación"
+              onclick="openPostViewer(${displayPost.id})">
+          ` : ''}
+        </div>
 
         ${post.quote_text ? '</div>' : ''}
         </div>
