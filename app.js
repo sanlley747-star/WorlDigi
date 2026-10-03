@@ -46,7 +46,7 @@ function openModal(mode) {
   } else {
     title.textContent = signup ? 'Create your account' : 'Welcome back';
     subtitle.textContent = signup
-      ? 'Join WorlDigi and begin exploring.'
+      ? 'Join ByGether and begin exploring.'
       : 'Sign in to your ByGether account.';
   }
 
