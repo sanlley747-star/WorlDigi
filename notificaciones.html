@@ -35,6 +35,11 @@
     .publicacion-comment-actions > div > button:nth-child(2) { order:1; }
     .publicacion-comment-actions > div > div:nth-child(3) { order:2; }
     .publicacion-comment-actions > div > button:nth-child(4) { order:4; }
+    [data-conn-icon] { color:#9ca3af; }
+    [data-conn-icon][data-state="single"] { color:#2563eb; }
+    [data-conn-icon][data-state="mutual"] { color:#16a34a; }
+    html.dark [data-conn-icon][data-state="single"] { color:#60a5fa; }
+    html.dark [data-conn-icon][data-state="mutual"] { color:#4ade80; }
   </style>
 </head>
 <body class="bg-gray-100 dark:bg-slate-950 text-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-200">
@@ -314,6 +319,33 @@
         if (n.type === 'connection') {
           return `
             <div class="w-full p-4 flex items-center gap-3 transition ${unreadClass}">
+              <span
+                data-conn-icon
+                data-email="${connEscape(n.actor_email)}"
+                data-i-follow="${st.iFollow}"
+                data-follows-me="${st.followsMe}"
+                data-state="${st.iFollow && st.followsMe ? 'mutual' : (st.iFollow || st.followsMe ? 'single' : 'none')}"
+                class="w-6 h-7 flex-shrink-0"
+                title="${st.iFollow && st.followsMe ? 'Se conectaron mutuamente' : (st.iFollow || st.followsMe ? 'Solo una persona se ha conectado' : 'Sin conexión')}"
+                role="img"
+                aria-label="${st.iFollow && st.followsMe ? 'Se conectaron mutuamente' : (st.iFollow || st.followsMe ? 'Solo una persona se ha conectado' : 'Sin conexión')}">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 280" width="100%" height="100%" aria-hidden="true" focusable="false">
+                  <g fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round">
+                    <line x1="161.10" y1="49.80" x2="61.10" y2="124.80" />
+                    <line x1="168.90" y1="60.20" x2="68.90" y2="135.20" />
+                    <line x1="66.94" y1="123.82" x2="176.94" y2="158.82" />
+                    <line x1="63.06" y1="136.18" x2="173.06" y2="171.18" />
+                    <line x1="171.10" y1="159.80" x2="71.10" y2="234.80" />
+                    <line x1="178.90" y1="170.20" x2="78.90" y2="245.20" />
+                  </g>
+                  <g fill="currentColor">
+                    <circle cx="165" cy="55" r="22" />
+                    <circle cx="65" cy="130" r="22" />
+                    <circle cx="175" cy="165" r="22" />
+                    <circle cx="75" cy="240" r="22" />
+                  </g>
+                </svg>
+              </span>
               <a href="${connProfileUrl(actorName)}" class="flex items-start gap-3 flex-1 min-w-0 notif-comment-link">
                 <img src="${safeAvatarUrl}" class="w-11 h-11 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-slate-700" alt="${safeActorName}">
                 <div class="flex-1 min-w-0">
@@ -409,6 +441,24 @@
       refreshNotifCount();
     }
 
+    window.addEventListener('conn:changed', (event) => {
+      const { email, iFollow } = event.detail || {};
+      if (!email) return;
+
+      document.querySelectorAll('[data-conn-icon]').forEach(icon => {
+        if (icon.dataset.email !== email) return;
+
+        const nextIFollow = !!iFollow;
+        const followsMe = icon.dataset.followsMe === 'true';
+        const state = nextIFollow && followsMe ? 'mutual' : (nextIFollow || followsMe ? 'single' : 'none');
+        const label = state === 'mutual' ? 'Se conectaron mutuamente' : (state === 'single' ? 'Solo una persona se ha conectado' : 'Sin conexión');
+
+        icon.dataset.iFollow = String(nextIFollow);
+        icon.dataset.state = state;
+        icon.title = label;
+        icon.setAttribute('aria-label', label);
+      });
+    });
     window.onReplyToComment = async function (commentId) {
       const ctx = notifCommentContext.get(commentId);
       if (!ctx) return;
