@@ -35,7 +35,11 @@
     .publicacion-comment-actions > div > button:nth-child(2) { order:1; }
     .publicacion-comment-actions > div > div:nth-child(3) { order:2; }
     .publicacion-comment-actions > div > button:nth-child(4) { order:4; }
-    [data-conn-icon] { width:24px; height:28px; display:inline-flex; flex-shrink:0; color:#9ca3af; }
+    [data-notif-type-icon] { width:24px; height:24px; display:inline-flex; flex-shrink:0; align-self:center; }
+[data-notif-type-icon="share"] { color:#16a34a; }
+[data-notif-type-icon="like"] { color:#ef4444; }
+[data-notif-type-icon="quote"] { color:#2563eb; }
+[data-conn-icon] { width:24px; height:28px; display:inline-flex; flex-shrink:0; color:#9ca3af; }
     [data-conn-icon][data-state="single"] { color:#2563eb; }
     [data-conn-icon][data-state="mutual"] { color:#16a34a; }
     [data-conn-icon][data-state="none"] { color:#9ca3af; }
@@ -193,7 +197,27 @@
 
     function linkifyContent(text) { if (!text) return ''; const urlRegex = /(https?:\/\/[^\s]+)/g; return text.replace(urlRegex, (url) => { let domain; try { domain = new URL(url).hostname.replace('www.', ''); } catch (e) { domain = url; } return `<a href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 text-green-600 dark:text-green-400 font-semibold hover:underline align-middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 inline-block"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>${domain}</a>`; }); }
 
-    function connNotifState(st) {
+    function notifTypeIconHtml(type) {
+  const icons = {
+    share: {
+      label: 'Repost',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>'
+    },
+    like: {
+      label: 'Me gusta',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path data-heart-icon fill="none" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"></path></svg>'
+    },
+    quote: {
+      label: 'Cita',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>'
+    }
+  };
+  const config = icons[type];
+  if (!config) return '';
+  return '<span data-notif-type-icon="' + type + '" class="w-6 h-6 flex-shrink-0" role="img" title="' + config.label + '" aria-label="' + config.label + '">' + config.svg + '</span>';
+}
+
+function connNotifState(st) {
       const iFollow = !!(st && st.iFollow);
       const followsMe = !!(st && st.followsMe);
       if (iFollow && followsMe) return 'mutual';
