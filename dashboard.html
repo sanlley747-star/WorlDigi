@@ -71,6 +71,9 @@
     align-items: center;
     padding: 24px 0;
   }
+  #searchTopWrap { position:relative; }
+  #searchResults { position:absolute; left:16px; right:16px; top:calc(100% + 8px); max-height:360px; overflow-y:auto; background:#fff; color:#0f172a; border:1px solid rgba(148,163,184,.28); border-radius:12px; box-shadow:0 12px 30px rgba(0,0,0,.28); z-index:60; }
+  .dark #searchResults { background:#0f172a; color:#f8fafc; border-color:#334155; }
   #searchResults a { display:flex; align-items:center; gap:12px; padding:10px 12px; transition:background-color .15s; }
   #searchResults a:hover { background-color:rgba(148,163,184,.12); }
   #searchWall.is-active { display:block; }
@@ -125,6 +128,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-gray-400 flex-shrink-0" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
         <input id="searchInput" type="search" autocomplete="off" placeholder="Buscar" aria-label="Buscar" class="w-full bg-transparent text-white placeholder-gray-400 text-sm outline-none">
       </div>
+      <div id="searchResults" class="hidden"></div>
     </div>
     <div id="feedModeTabs" role="tablist" aria-label="Modo del muro">
       <button id="feedModeRecent" type="button" role="tab" aria-selected="true" class="is-active">Reciente</button>
@@ -186,11 +190,7 @@
     
     <!-- MURO DE BÚSQUEDA -->
     <section id="searchWall" class="hidden min-h-0 mt-5 lg:overflow-y-auto lg:h-full lg:pr-2">
-      <div class="min-h-full bg-white dark:bg-slate-900 rounded-xl shadow border border-gray-200 dark:border-slate-800 flex flex-col">
-        <div class="flex-1 flex items-center justify-center p-6">
-          <div id="searchResults" class="w-full max-w-xl"></div>
-        </div>
-      </div>
+      <div class="min-h-full bg-white dark:bg-slate-900 rounded-xl shadow border border-gray-200 dark:border-slate-800"></div>
     </section>
 
     <!-- COLUMNA CENTRAL: FEED -->
@@ -561,6 +561,7 @@
       const term = input.value.trim();
       if (!term) {
         results.innerHTML = '';
+        results.classList.add('hidden');
         return;
       }
 
@@ -573,11 +574,13 @@
 
       if (error) {
         results.innerHTML = '';
+        results.classList.add('hidden');
         return;
       }
 
       if (!data || !data.length) {
         results.innerHTML = '<div class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center">No se encontraron cuentas.</div>';
+        results.classList.remove('hidden');
         return;
       }
 
@@ -591,6 +594,7 @@
           </a>
         `;
       }).join('');
+      results.classList.remove('hidden');
     }
 
     function openSearchWall() {
@@ -611,7 +615,10 @@
       const input = document.getElementById('searchInput');
       if (input) input.value = '';
       const results = document.getElementById('searchResults');
-      if (results) results.innerHTML = '';
+      if (results) {
+        results.innerHTML = '';
+        results.classList.add('hidden');
+      }
     }
 
     let searchTimer = null;
