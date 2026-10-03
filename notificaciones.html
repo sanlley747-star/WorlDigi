@@ -22,6 +22,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="notifications.js"></script>
   <script src="connections.js"></script>
+  <script src="comment-counts.js"></script>
   <script src="user-card.js"></script>
   <style>
     html.auth-pending body { display: none; }
@@ -29,6 +30,11 @@
     ::-webkit-scrollbar{width:10px}
     ::-webkit-scrollbar-track{background:transparent}
     ::-webkit-scrollbar-thumb{background-color:#050b18;border-radius:9999px}
+    .publicacion-comment-actions > div { width:100%; justify-content:space-between; gap:0; }
+    .publicacion-comment-actions > div > div:nth-child(1) { order:3; }
+    .publicacion-comment-actions > div > button:nth-child(2) { order:1; }
+    .publicacion-comment-actions > div > div:nth-child(3) { order:2; }
+    .publicacion-comment-actions > div > button:nth-child(4) { order:4; }
   </style>
 </head>
 <body class="bg-gray-100 dark:bg-slate-950 text-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-200">
@@ -219,6 +225,8 @@
       await loadNotifWall();
     }
 
+    const notifCommentContext = new Map();
+
     async function loadNotifWall() {
       const wall = document.getElementById('notifWall');
 
@@ -237,48 +245,134 @@
         return;
       }
 
-      // Buscamos el avatar de cada persona que interactuó, usando su correo
-      const actorEmails = [...new Set(notifs.map(n => n.actor_email))];
-      const { data: profiles } = await supabaseClient
-        .from('profiles')
-        .select('user_email, avatar_url')
-        .in('user_email', actorEmails);
+      // Datos comunes de las notificaciones.
+      const actorEmails = [...new Set(notifs.map(n => n.actor_email).filter(Boolean))];
+      const connActorEmails = notifs.filter(n => n.type === 'connection').map(n => n.actor_email).filter(Boolean);
+      const commentNotifs = notifs.filter(n => n.type === 'comment' && n.comment_id);
+      const commentIds = [...new Set(commentNotifs.map(n => n.comment_id))];
+      const postIds = [...new Set(notifs.map(n => n.post_id).filter(Boolean))];
+
+      // Una sola consulta por conjunto: comentarios, padres, dueños de posts y perfiles.
+      const { data: comments } = commentIds.length
+        ? await supabaseClient.from('comments').select('id,post_id,user_email,user_name,content,created_at,reply_to').in('id', commentIds)
+        : { data: [] };
+
+      const parentIds = [...new Set((comments || []).map(c => c.reply_to).filter(Boolean))];
+      const [parentRes, postRes, profileRes, connStates] = await Promise.all([
+        parentIds.length
+          ? supabaseClient.from('comments').select('id,user_email,user_name').in('id', parentIds)
+          : Promise.resolve({ data: [] }),
+        postIds.length
+          ? supabaseClient.from('posts').select('id,user_name,user_email').in('id', postIds)
+          : Promise.resolve({ data: [] }),
+        actorEmails.length
+          ? supabaseClient.from('profiles').select('user_email,avatar_url').in('user_email', actorEmails)
+          : Promise.resolve({ data: [] }),
+        connActorEmails.length
+          ? connFetchStates(currentUser.email, [...new Set(connActorEmails)])
+          : Promise.resolve({})
+      ]);
+
+      const commentById = {};
+      (comments || []).forEach(c => { commentById[c.id] = c; });
+
+      const parentById = {};
+      (parentRes.data || []).forEach(c => { parentById[c.id] = c; });
+
+      const postById = {};
+      (postRes.data || []).forEach(p => { postById[p.id] = p; });
 
       const avatarByEmail = {};
-      (profiles || []).forEach(p => { avatarByEmail[p.user_email] = p.avatar_url; });
+      (profileRes.data || []).forEach(p => { avatarByEmail[p.user_email] = p.avatar_url; });
 
-      // Para las notificaciones de conexión: ¿ya sigo yo a esa persona? ¿me sigue ella a mí?
-      const connActorEmails = notifs.filter(n => n.type === 'connection').map(n => n.actor_email);
-      const connStates = connActorEmails.length
-        ? await connFetchStates(currentUser.email, connActorEmails)
-        : {};
+      // Datos de los botones de cada comentario, cargados en lote.
+      const [likeCounts, replyCounts, repostCounts, myCommentLikes, myCommentReposts] = commentIds.length
+        ? await Promise.all([
+            ccFetchCommentLikeCounts(commentIds),
+            ccFetchCommentReplyCounts(commentIds),
+            ccFetchCommentRepostCounts(commentIds),
+            ccFetchMyCommentLikes(commentIds, currentUser.email),
+            ccFetchMyCommentReposts(commentIds, currentUser.email)
+          ])
+        : [{}, {}, {}, new Set(), new Set()];
 
-      const typeText = {};
+      notifCommentContext.clear();
+      (comments || []).forEach(c => {
+        notifCommentContext.set(c.id, {
+          postId: c.post_id,
+          replyTo: c.reply_to || null
+        });
+      });
+
       wall.innerHTML = notifs.map(n => {
-        const actorName = n.actor_name || n.actor_email.split('@')[0];
-        const avatarUrl = avatarByEmail[n.actor_email] ||
-          `https://ui-avatars.com/api/?name=${encodeURIComponent(actorName)}&background=random`;
-        const texts = notifTypeText(actorName);
-        const message = texts[n.type] || `<strong data-user-card="${connEscape(actorName)}">${connEscape(actorName)}</strong> interactuó con tu publicación`;
+        const actorName = n.actor_name || (n.actor_email ? n.actor_email.split('@')[0] : 'Usuario');
+        const safeActorName = connEscape(actorName);
+        const avatarUrl = avatarByEmail[n.actor_email] || connAvatarFallback(actorName);
+        const safeAvatarUrl = connEscape(avatarUrl);
+        const unreadClass = n.is_read ? '' : 'bg-blue-50 dark:bg-slate-800/70';
 
         if (n.type === 'connection') {
           return `
-            <div class="w-full p-4 flex items-center gap-3 transition ${n.is_read ? '' : 'bg-blue-50 dark:bg-slate-800/70'}">
-              <a href="${connProfileUrl(actorName)}" class="flex items-start gap-3 flex-1 min-w-0">
-                <img src="${connEscape(avatarUrl)}" class="w-11 h-11 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-slate-700" alt="${connEscape(actorName)}">
+            <div class="w-full p-4 flex items-center gap-3 transition ${unreadClass}">
+              <a href="${connProfileUrl(actorName)}" class="flex items-start gap-3 flex-1 min-w-0 notif-comment-link">
+                <img src="${safeAvatarUrl}" class="w-11 h-11 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-slate-700" alt="${safeActorName}">
                 <div class="flex-1 min-w-0">
-                  <p class="text-sm text-gray-800 dark:text-gray-100"><strong data-user-card="${connEscape(actorName)}">${connEscape(actorName)}</strong> estableció conexión</p>
+                  <p class="text-sm text-gray-800 dark:text-gray-100"><strong data-user-card="${safeActorName}">${safeActorName}</strong> estableció conexión</p>
                   <p class="text-xs text-gray-400 mt-1">${formatCompactTime(n.created_at)}</p>
                 </div>
               </a>
-              <div class="flex-shrink-0" data-conn-slot data-email="${connEscape(n.actor_email)}" data-name="${connEscape(actorName)}"></div>
+              <div class="flex-shrink-0" data-conn-slot data-email="${connEscape(n.actor_email)}" data-name="${safeActorName}"></div>
             </div>
           `;
         }
 
+        const texts = notifTypeText(actorName);
+        const message = texts[n.type] || `<strong data-user-card="${safeActorName}">${safeActorName}</strong> interactuó con tu publicación`;
+
+        if (n.type === 'comment' && n.comment_id) {
+          const c = commentById[n.comment_id];
+
+          // Si el comentario fue eliminado, se conserva la fila antigua como respaldo.
+          if (c) {
+            const post = postById[c.post_id] || postById[n.post_id] || {};
+            const parent = c.reply_to ? parentById[c.reply_to] : null;
+            const recipientName = parent?.user_name || post.user_name || (n.recipient_email || currentUser.email).split('@')[0];
+            const safeRecipientName = connEscape(recipientName);
+            const recipientHref = `perfil.html?user=${encodeURIComponent(recipientName)}`;
+            const actions = ccCommentActionsHtml(c, {
+              likes: likeCounts[c.id] || 0,
+              replies: replyCounts[c.id] || 0,
+              reposts: repostCounts[c.id] || 0,
+              isLiked: myCommentLikes.has(c.id),
+              isReposted: myCommentReposts.has(c.id),
+              userEmail: currentUser.email,
+              userName: currentUser.user_metadata?.full_name || currentUser.email.split('@')[0],
+              postId: c.post_id
+            });
+
+            return `
+              <div class="w-full text-left p-4 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition ${unreadClass}" onclick="handleNotifClick(${c.post_id}, ${n.id})">
+                <a href="${connProfileUrl(actorName)}" class="flex-shrink-0 notif-comment-link">
+                  <img src="${safeAvatarUrl}" class="w-11 h-11 rounded-full object-cover border border-gray-200 dark:border-slate-700 hover:opacity-80 transition" alt="${safeActorName}">
+                </a>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2">
+                    <a href="${connProfileUrl(actorName)}" data-user-card="${safeActorName}" class="font-bold text-sm text-gray-900 dark:text-white hover:underline notif-comment-link">${safeActorName}</a>
+                    <span class="text-gray-400 text-sm">·</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">${formatCompactTime(c.created_at)}</span>
+                  </div>
+                  <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Comentó a <a href="${recipientHref}" data-user-card="${safeRecipientName}" class="text-green-500 hover:underline notif-comment-link">${safeRecipientName}</a></p>
+                  <p class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line mt-1">${linkifyContent(connEscape(c.content || ''))}</p>
+                  <div class="publicacion-comment-actions">${actions}</div>
+                </div>
+              </div>
+            `;
+          }
+        }
+
         return `
-          <button onclick="handleNotifClick(${n.post_id}, ${n.id})" class="w-full text-left p-4 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition ${n.is_read ? '' : 'bg-blue-50 dark:bg-slate-800/70'}">
-            <img src="${avatarUrl}" class="w-11 h-11 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-slate-700" alt="${actorName}">
+          <button onclick="handleNotifClick(${n.post_id}, ${n.id})" class="w-full text-left p-4 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition ${unreadClass}">
+            <img src="${safeAvatarUrl}" class="w-11 h-11 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-slate-700" alt="${safeActorName}">
             <div class="flex-1 min-w-0">
               <p class="text-sm text-gray-800 dark:text-gray-100">${message}</p>
               <p class="text-xs text-gray-400 mt-1">${formatCompactTime(n.created_at)}</p>
@@ -286,6 +380,10 @@
           </button>
         `;
       }).join('');
+
+      wall.querySelectorAll('.notif-comment-link, .publicacion-comment-actions').forEach(el => {
+        el.addEventListener('click', event => event.stopPropagation());
+      });
 
       wall.querySelectorAll('[data-conn-slot]').forEach(slot => {
         const email = slot.dataset.email;
@@ -302,7 +400,7 @@
         }));
       });
 
-      // Al entrar a su mural, el usuario ya las está viendo: se marcan como leídas
+      // Al entrar a su mural, el usuario ya las está viendo: se marcan como leídas.
       await supabaseClient
         .from('notifications')
         .update({ is_read: true })
@@ -310,6 +408,72 @@
         .eq('is_read', false);
       refreshNotifCount();
     }
+
+    window.onReplyToComment = async function (commentId) {
+      const ctx = notifCommentContext.get(commentId);
+      if (!ctx) return;
+
+      const replyText = prompt('Escribe una respuesta:');
+      if (replyText === null) return;
+
+      const content = replyText.trim();
+      if (!content || content.length > 280) return;
+
+      const authorName = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
+      const { error } = await supabaseClient.from('comments').insert({
+        post_id: ctx.postId,
+        user_email: currentUser.email,
+        user_name: authorName,
+        content,
+        reply_to: commentId
+      });
+
+      if (error) {
+        alert('Error al responder: ' + error.message);
+        return;
+      }
+
+      await loadNotifWall();
+    };
+
+    window.onRepostComment = async function (commentId, quoteText) {
+      const ctx = notifCommentContext.get(commentId);
+      if (!ctx) return;
+
+      const authorName = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
+      const { error } = await supabaseClient.from('posts').insert({
+        user_email: currentUser.email,
+        user_name: authorName,
+        content: null,
+        image_url: null,
+        likes: 0,
+        repost_of_comment_id: commentId,
+        quote_text: quoteText || null
+      });
+
+      if (error) {
+        alert('Error al repostear: ' + error.message);
+        return;
+      }
+
+      await loadNotifWall();
+    };
+
+    window.onUndoCommentRepost = async function (commentId) {
+      const { error } = await supabaseClient
+        .from('posts')
+        .delete()
+        .eq('repost_of_comment_id', commentId)
+        .eq('user_email', currentUser.email)
+        .is('quote_text', null);
+
+      if (error) {
+        alert('Error al deshacer el repost: ' + error.message);
+        return;
+      }
+
+      await loadNotifWall();
+    };
 
     function handleNotifClick(postId, notifId) {
       if (postId) openPostViewer(postId);
