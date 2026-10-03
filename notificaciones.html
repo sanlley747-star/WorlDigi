@@ -39,6 +39,7 @@
 [data-notif-type-icon="share"] { color:#16a34a; }
 [data-notif-type-icon="like"] { color:#ef4444; }
 [data-notif-type-icon="quote"] { color:#2563eb; }
+[data-notif-type-icon="share_link"] { color:#2563eb; }
 [data-conn-icon] { width:24px; height:28px; display:inline-flex; flex-shrink:0; color:#9ca3af; }
     [data-conn-icon][data-state="single"] { color:#2563eb; }
     [data-conn-icon][data-state="mutual"] { color:#16a34a; }
@@ -210,6 +211,10 @@
     quote: {
       label: 'Cita',
       svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>'
+    },
+    share_link: {
+      label: 'Compartir',
+      svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>'
     }
   };
   const config = icons[type];
@@ -252,6 +257,7 @@ function connNotifState(st) {
         like: `<strong data-user-card="${connEscape(actorName)}">${connEscape(actorName)}</strong> le dio me gusta a tu publicación`,
         quote: `<strong data-user-card="${connEscape(actorName)}">${connEscape(actorName)}</strong> citó tu publicación`,
         share: `<strong data-user-card="${connEscape(actorName)}">${connEscape(actorName)}</strong> reposteo tu publicación`,
+        share_link: `<strong data-user-card="${connEscape(actorName)}">${connEscape(actorName)}</strong> compartió tu publicación`,
         connection: `<strong data-user-card="${connEscape(actorName)}">${connEscape(actorName)}</strong> estableció conexión`
       };
     }
