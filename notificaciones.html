@@ -438,6 +438,7 @@ function connNotifState(st) {
 
         return `
           <button onclick="handleNotifClick(${n.post_id}, ${n.id})" class="w-full text-left p-4 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition ${unreadClass}">
+            ${notifTypeIconHtml(n.type)}
             <img src="${safeAvatarUrl}" class="w-11 h-11 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-slate-700" alt="${safeActorName}">
             <div class="flex-1 min-w-0">
               <p class="text-sm text-gray-800 dark:text-gray-100">${message}</p>
