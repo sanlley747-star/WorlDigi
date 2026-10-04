@@ -23,6 +23,7 @@
   <script src="user-card.js"></script>
   <script src="comment-modal.js"></script>
   <script src="youtube-embed.js"></script>
+  <script src="readmore.js?v=1"></script>
   <style>
     html{scrollbar-width:thin;scrollbar-color:#050b18 transparent}
     ::-webkit-scrollbar{width:10px}
@@ -624,7 +625,7 @@
             </div>
 
             <div class="ml-[52px] space-y-3">
-              ${displayPost.content ? `<p class="text-gray-800 dark:text-gray-200 text-sm cursor-pointer whitespace-pre-line break-words" onclick="openPostPage(${displayPost.id})">${linkifyContent(ytStripLink(displayPost.content))}</p>${ytEmbedsFor(displayPost.content)}` : ''}
+              ${displayPost.content ? `<p data-readmore class="text-gray-800 dark:text-gray-200 text-sm cursor-pointer whitespace-pre-line break-words" onclick="openPostPage(${displayPost.id})">${linkifyContent(ytStripLink(displayPost.content))}</p>${ytEmbedsFor(displayPost.content)}` : ''}
               ${displayPost.image_url && !ytOwnsImage(displayPost.content, displayPost.image_url) ? `<img src="${displayPost.image_url}" class="w-full rounded-lg max-h-96 object-cover cursor-pointer" onclick="openPostViewer(${displayPost.id})">` : ''}
             </div>
             
