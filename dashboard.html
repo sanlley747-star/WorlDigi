@@ -2111,6 +2111,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
         let currentFile = null;
         let noticeTimer = null;
         let previousModalState = modal.classList.contains('hidden');
+        let dragDepth = 0;
 
         function removePreviewImage() {
           const existingImage = document.getElementById('imgmodal-preview-image');
@@ -2132,6 +2133,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
 
         function imgmodalClear() {
           window.clearTimeout(noticeTimer);
+          imgmodalResetDrag();
           if (previewObjectUrl) {
             URL.revokeObjectURL(previewObjectUrl);
             previewObjectUrl = null;
@@ -2202,13 +2204,16 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
           imgmodalClear();
         });
 
+        function imgmodalResetDrag() {
+          dragDepth = 0;
+          composer.classList.remove('imgmodal-drag-active');
+        }
+
+        window.imgmodalResetDrag = imgmodalResetDrag;
+
         if (!composer.dataset.imgmodalBound) {
-          let dragDepth = 0;
           const highlight = () => composer.classList.add('imgmodal-drag-active');
-          const clearHighlight = () => {
-            dragDepth = 0;
-            composer.classList.remove('imgmodal-drag-active');
-          };
+          const clearHighlight = () => imgmodalResetDrag();
 
           composer.addEventListener('dragenter', (event) => {
             event.preventDefault();
@@ -2233,7 +2238,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
           composer.addEventListener('drop', (event) => {
             event.preventDefault();
             event.stopPropagation();
-            clearHighlight();
+            imgmodalResetDrag();
 
             const files = Array.from(event.dataTransfer?.files || []);
             const imageFile = files.find(file => file.type && file.type.startsWith('image/'));
@@ -2260,18 +2265,16 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
           event.preventDefault();
         });
 
-        const modalObserver = new MutationObserver(() => {
-          const isHidden = modal.classList.contains('hidden');
-          if (!isHidden && previousModalState) {
-            imgmodalClear();
-          }
-          if (isHidden && !previousModalState) {
-            imgmodalClear();
-          }
-          previousModalState = isHidden;
-        });
+        if (!modal.dataset.imgmodalObserverBound) {
+          const modalObserver = new MutationObserver(() => {
+            const isHidden = modal.classList.contains('hidden');
+            imgmodalResetDrag();
+            previousModalState = isHidden;
+          });
 
-        modalObserver.observe(modal, { attributes: true, attributeFilter: ['class'] });
+          modalObserver.observe(modal, { attributes: true, attributeFilter: ['class'] });
+          modal.dataset.imgmodalObserverBound = 'true';
+        }
 
         window.addEventListener('beforeunload', imgmodalClear);
       } catch (error) {

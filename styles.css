@@ -44,3 +44,7 @@ input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(18,207,227,.12)}
 /* Vista previa del modal de publicar */
 .imgmodal-modal-body{max-height:calc(100dvh - 2rem);overflow-y:auto}
 #imgmodal-preview-image{max-width:100%;max-height:min(16rem,35dvh);height:auto}
+
+
+/* Resaltado de arrastre del modal de publicar */
+.imgmodal-drag-active{outline:2px solid rgba(59,130,246,.55);outline-offset:2px;background-color:rgba(59,130,246,.06)}
