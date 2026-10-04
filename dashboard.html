@@ -2230,10 +2230,21 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
           assignImageFile(file);
         });
 
-        composer.addEventListener('paste', (event) => {
-          const file = findImageFile(event.clipboardData);
-          if (!file) return;
-          if (assignImageFile(file)) event.preventDefault();
+        content.addEventListener('paste', (event) => {
+          const items = Array.from(event.clipboardData?.items || []);
+          let imageFile = null;
+
+          for (const item of items) {
+            if (item.kind === 'file' && item.type && item.type.startsWith('image/')) {
+              imageFile = item.getAsFile();
+              if (imageFile) break;
+            }
+          }
+
+          if (!imageFile) return;
+
+          imgdropSetFile(imageFile);
+          event.preventDefault();
         });
 
         window.addEventListener('beforeunload', imgdropClear);
