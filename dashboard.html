@@ -638,6 +638,38 @@
       closeSearchWall();
     });
 
+    function setupExpandablePostTexts(root = document) {
+      requestAnimationFrame(() => {
+        root.querySelectorAll('[data-expandable-post-text]').forEach((textEl) => {
+          if (textEl.dataset.overflowChecked === '1') return;
+          textEl.dataset.overflowChecked = '1';
+          const button = document.getElementById(textEl.dataset.readMoreTarget);
+          if (!button) return;
+          button.classList.toggle('hidden', !(textEl.scrollHeight > textEl.clientHeight + 1));
+        });
+      });
+    }
+
+    function togglePostText(button) {
+      const textEl = document.getElementById(button.dataset.readMoreTarget);
+      if (!textEl) return;
+      const expanded = button.dataset.expanded === 'true';
+      if (expanded) {
+        textEl.style.display = '-webkit-box';
+        textEl.style.webkitBoxOrient = 'vertical';
+        textEl.style.webkitLineClamp = '3';
+        textEl.style.maxHeight = '4.5em';
+        button.textContent = 'Ver más...';
+        button.dataset.expanded = 'false';
+      } else {
+        textEl.style.display = 'block';
+        textEl.style.webkitBoxOrient = '';
+        textEl.style.webkitLineClamp = 'unset';
+        textEl.style.maxHeight = 'none';
+        button.textContent = 'Ver menos';
+        button.dataset.expanded = 'true';
+      }
+    }
     function linkifyContent(text) { if (!text) return ''; const urlRegex = /(https?:\/\/[^\s]+)/g; return text.replace(urlRegex, (url) => { let domain; try { domain = new URL(url).hostname.replace('www.', ''); } catch (e) { domain = url; } return `<a href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 text-green-600 dark:text-green-400 font-semibold hover:underline align-middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 inline-block"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>${domain}</a>`; }); }
 let feedOffset = 0;
 const feedPageSize = 20;
@@ -850,12 +882,20 @@ let feedRestoringState = false;
 
         <div class="${post.quote_text ? 'ml-9' : 'ml-[52px]'} mt-2 space-y-3">
           ${displayPost.content ? `
-            <p class="text-gray-800 dark:text-gray-200 text-sm break-words cursor-pointer" onclick="openPostPage(${displayPost.id})">
-              ${linkifyContent(ytStripLink(displayPost.content))}
-            </p>
+            <div>
+              <p id="post-text-${displayPost.id}" data-expandable-post-text data-read-more-target="post-read-more-${displayPost.id}"
+                class="text-gray-800 dark:text-gray-200 text-sm break-words cursor-pointer"
+                style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;max-height:4.5em;overflow:hidden;"
+                onclick="openPostPage(${displayPost.id})">
+                ${linkifyContent(ytStripLink(displayPost.content))}
+              </p>
+              <button id="post-read-more-${displayPost.id}" type="button"
+                data-read-more-target="post-text-${displayPost.id}" data-expanded="false"
+                class="hidden mt-1 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                onclick="event.stopPropagation();togglePostText(this)">Ver más...</button>
+            </div>
             ${ytEmbedsFor(displayPost.content)}
           ` : ''}
-
           ${displayPost.image_url && !ytOwnsImage(displayPost.content, displayPost.image_url) ? `
             <img
               src="${displayPost.image_url}"
@@ -949,6 +989,7 @@ let feedRestoringState = false;
   } else {
     feed.innerHTML = pageHtml;
   }
+  setupExpandablePostTexts(feed);
 }
    async function loadFeaturedPosts(isLoadMore = false) {
   const requestGeneration = feedRequestGeneration;
@@ -1183,12 +1224,20 @@ let feedRestoringState = false;
 
         <div class="${post.quote_text ? 'ml-9' : 'ml-[52px]'} mt-2 space-y-3">
           ${displayPost.content ? `
-            <p class="text-gray-800 dark:text-gray-200 text-sm break-words cursor-pointer" onclick="openPostPage(${displayPost.id})">
-              ${linkifyContent(ytStripLink(displayPost.content))}
-            </p>
+            <div>
+              <p id="post-text-${displayPost.id}" data-expandable-post-text data-read-more-target="post-read-more-${displayPost.id}"
+                class="text-gray-800 dark:text-gray-200 text-sm break-words cursor-pointer"
+                style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;max-height:4.5em;overflow:hidden;"
+                onclick="openPostPage(${displayPost.id})">
+                ${linkifyContent(ytStripLink(displayPost.content))}
+              </p>
+              <button id="post-read-more-${displayPost.id}" type="button"
+                data-read-more-target="post-text-${displayPost.id}" data-expanded="false"
+                class="hidden mt-1 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                onclick="event.stopPropagation();togglePostText(this)">Ver más...</button>
+            </div>
             ${ytEmbedsFor(displayPost.content)}
           ` : ''}
-
           ${displayPost.image_url && !ytOwnsImage(displayPost.content, displayPost.image_url) ? `
             <img
               src="${displayPost.image_url}"
@@ -1282,6 +1331,7 @@ let feedRestoringState = false;
   } else {
     feed.innerHTML = pageHtml;
   }
+  setupExpandablePostTexts(feed);
 }
 
 
