@@ -2017,9 +2017,18 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
 
       <h2 class="text-lg font-bold mb-3 text-gray-900 dark:text-white pr-8">Crear Publicación</h2>
 
-      <div class="flex items-start gap-3">
-        <img id="composerAvatarModal" class="avatar-image w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700 flex-shrink-0">
-        <textarea id="postContentModal" maxlength="280" oninput="updatePublishState('postContentModal','btnPublishModal')" class="flex-1 w-full p-3 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="¿Qué estás pensando?"></textarea>
+      <div id="imgmodal-composer" class="rounded-lg transition-colors duration-150">
+        <div class="flex items-start gap-3">
+          <img id="composerAvatarModal" class="avatar-image w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700 flex-shrink-0">
+          <textarea id="postContentModal" maxlength="280" oninput="updatePublishState('postContentModal','btnPublishModal')" class="flex-1 w-full p-3 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="¿Qué estás pensando?"></textarea>
+        </div>
+
+        <div id="imgmodal-preview" class="hidden mt-2 ml-[52px] max-w-[280px] sm:max-w-[340px]">
+          <div class="relative overflow-hidden rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
+            <button id="imgmodal-clear" type="button" class="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/65 hover:bg-black/80 text-white text-lg leading-none flex items-center justify-center" aria-label="Quitar imagen">&times;</button>
+          </div>
+          <div id="imgmodal-preview-name" class="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate"></div>
+        </div>
       </div>
 
       <div class="flex items-center justify-between mt-3">
@@ -2080,6 +2089,196 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
   <script src="composer-autogrow.js"></script>
   <script src="composer-counter.js"></script>
   <script src="mobile-nav.js"></script>
+
+  <!-- Pegado/arrastre de imágenes: aislado del modal de publicar -->
+  <script>
+    (function initImgmodalComposer() {
+      try {
+        const modal = document.getElementById('composerModal');
+        const composer = document.getElementById('imgmodal-composer');
+        const content = document.getElementById('postContentModal');
+        const input = document.getElementById('postImageModal');
+        const preview = document.getElementById('imgmodal-preview');
+        const previewName = document.getElementById('imgmodal-preview-name');
+        const clearButton = document.getElementById('imgmodal-clear');
+
+        if (!modal || !composer || !content || !input || !preview || !previewName || !clearButton) return;
+
+        const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+        const maxFileSize = 5 * 1024 * 1024;
+        const previewFrame = clearButton.parentElement;
+        let previewObjectUrl = null;
+        let currentFile = null;
+        let noticeTimer = null;
+        let previousModalState = modal.classList.contains('hidden');
+
+        function removePreviewImage() {
+          const existingImage = document.getElementById('imgmodal-preview-image');
+          if (existingImage) existingImage.remove();
+        }
+
+        function setNotice(message) {
+          window.clearTimeout(noticeTimer);
+          previewName.textContent = message;
+          preview.classList.remove('hidden');
+          noticeTimer = window.setTimeout(() => {
+            if (currentFile) {
+              previewName.textContent = currentFile.name || 'Imagen';
+            } else {
+              imgmodalClear();
+            }
+          }, 2500);
+        }
+
+        function imgmodalClear() {
+          window.clearTimeout(noticeTimer);
+          if (previewObjectUrl) {
+            URL.revokeObjectURL(previewObjectUrl);
+            previewObjectUrl = null;
+          }
+          currentFile = null;
+          input.value = '';
+          removePreviewImage();
+          previewName.textContent = '';
+          preview.classList.add('hidden');
+          if (typeof updateFileNamePreview === 'function') {
+            updateFileNamePreview('postImageModal', 'postImagePreviewModal');
+          }
+        }
+
+        function imgmodalSetFile(file) {
+          if (!(file instanceof File)) return false;
+
+          if (!allowedTypes.has(file.type) || file.size > maxFileSize) {
+            input.value = '';
+            imgmodalClear();
+            setNotice(file.size > maxFileSize ? 'La imagen supera 5 MB.' : 'Formato no permitido.');
+            return false;
+          }
+
+          window.clearTimeout(noticeTimer);
+          if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+          removePreviewImage();
+
+          const image = document.createElement('img');
+          image.id = 'imgmodal-preview-image';
+          image.src = URL.createObjectURL(file);
+          image.alt = 'Vista previa de la imagen';
+          image.className = 'block w-full max-h-64 object-contain';
+          previewFrame.insertBefore(image, clearButton);
+
+          previewObjectUrl = image.src;
+          currentFile = file;
+
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(file);
+          input.files = dataTransfer.files;
+
+          previewName.textContent = file.name || 'Imagen';
+          preview.classList.remove('hidden');
+
+          if (typeof updateFileNamePreview === 'function') {
+            updateFileNamePreview('postImageModal', 'postImagePreviewModal');
+          }
+          return true;
+        }
+
+        function imgmodalAssignFile(file) {
+          return imgmodalSetFile(file);
+        }
+
+        window.imgmodalSetFile = imgmodalSetFile;
+        window.imgmodalClear = imgmodalClear;
+
+        input.addEventListener('change', () => {
+          const file = input.files && input.files[0];
+          if (file) imgmodalSetFile(file);
+          else imgmodalClear();
+        });
+
+        clearButton.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          imgmodalClear();
+        });
+
+        if (!composer.dataset.imgmodalBound) {
+          let dragDepth = 0;
+          const highlight = () => composer.classList.add('imgmodal-drag-active');
+          const clearHighlight = () => {
+            dragDepth = 0;
+            composer.classList.remove('imgmodal-drag-active');
+          };
+
+          composer.addEventListener('dragenter', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            dragDepth += 1;
+            highlight();
+          });
+
+          composer.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            event.dataTransfer.dropEffect = 'copy';
+          });
+
+          composer.addEventListener('dragleave', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            dragDepth = Math.max(0, dragDepth - 1);
+            if (dragDepth === 0) clearHighlight();
+          });
+
+          composer.addEventListener('drop', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            clearHighlight();
+
+            const files = Array.from(event.dataTransfer?.files || []);
+            const imageFile = files.find(file => file.type && file.type.startsWith('image/'));
+            if (imageFile) imgmodalAssignFile(imageFile);
+          });
+
+          composer.dataset.imgmodalBound = 'true';
+        }
+
+        content.addEventListener('paste', (event) => {
+          const items = Array.from(event.clipboardData?.items || []);
+          let imageFile = null;
+
+          for (const item of items) {
+            if (item.kind === 'file' && item.type && item.type.startsWith('image/')) {
+              imageFile = item.getAsFile();
+              if (imageFile) break;
+            }
+          }
+
+          if (!imageFile) return;
+
+          imgmodalSetFile(imageFile);
+          event.preventDefault();
+        });
+
+        const modalObserver = new MutationObserver(() => {
+          const isHidden = modal.classList.contains('hidden');
+          if (!isHidden && previousModalState) {
+            imgmodalClear();
+          }
+          if (isHidden && !previousModalState) {
+            imgmodalClear();
+          }
+          previousModalState = isHidden;
+        });
+
+        modalObserver.observe(modal, { attributes: true, attributeFilter: ['class'] });
+
+        window.addEventListener('beforeunload', imgmodalClear);
+      } catch (error) {
+        console.warn('Imagen pegada/arrastrada del modal no inicializada:', error);
+      }
+    })();
+  </script>
 
   <!-- Pegado/arrastre de imágenes: aislado del publicador existente -->
   <script>
