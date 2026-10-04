@@ -205,9 +205,19 @@
       <!-- Formulario para publicar -->
       <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800">
         <h2 class="text-lg font-bold mb-3 text-gray-900 dark:text-white">Crear Publicación</h2>
-        <div class="flex items-start gap-3">
-          <img id="composerAvatar" class="avatar-image w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700 flex-shrink-0">
-          <textarea id="postContent" maxlength="280" oninput="updatePublishState('postContent','btnPublish')" class="flex-1 w-full p-3 border-0 resize-none bg-transparent text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none" placeholder="¿Qué estás pensando?"></textarea>
+        <div id="imgdrop-composer" class="rounded-lg transition-colors duration-150">
+          <div class="flex items-start gap-3">
+            <img id="composerAvatar" class="avatar-image w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700 flex-shrink-0">
+            <textarea id="postContent" maxlength="280" oninput="updatePublishState('postContent','btnPublish')" class="flex-1 w-full p-3 border-0 resize-none bg-transparent text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none" placeholder="¿Qué estás pensando?"></textarea>
+          </div>
+
+          <div id="imgdrop-preview" class="hidden mt-2 ml-[52px] max-w-[280px] sm:max-w-[340px]">
+            <div class="relative overflow-hidden rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
+              <img id="imgdrop-preview-image" src="" alt="Vista previa de la imagen" class="block w-full max-h-64 object-contain">
+              <button id="imgdrop-clear" type="button" class="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/65 hover:bg-black/80 text-white text-lg leading-none flex items-center justify-center" aria-label="Quitar imagen">&times;</button>
+            </div>
+            <div id="imgdrop-preview-name" class="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate"></div>
+          </div>
         </div>
 
         <div class="flex items-center justify-between mt-3">
@@ -2070,5 +2080,119 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
   <script src="composer-autogrow.js"></script>
   <script src="composer-counter.js"></script>
   <script src="mobile-nav.js"></script>
+
+  <!-- Pegado/arrastre de imágenes: aislado del publicador existente -->
+  <script>
+    (function initImgDropComposer() {
+      try {
+        const composer = document.getElementById('imgdrop-composer');
+        const content = document.getElementById('postContent');
+        const input = document.getElementById('postImage');
+        const preview = document.getElementById('imgdrop-preview');
+        const previewImage = document.getElementById('imgdrop-preview-image');
+        const previewName = document.getElementById('imgdrop-preview-name');
+        const clearButton = document.getElementById('imgdrop-clear');
+
+        if (!composer || !content || !input || !preview || !previewImage || !previewName || !clearButton) return;
+
+        let previewObjectUrl = null;
+
+        function clearPreview() {
+          if (previewObjectUrl) {
+            URL.revokeObjectURL(previewObjectUrl);
+            previewObjectUrl = null;
+          }
+          previewImage.removeAttribute('src');
+          previewName.textContent = '';
+          preview.classList.add('hidden');
+        }
+
+        function showPreview(file) {
+          if (!file || !file.type || !file.type.startsWith('image/')) return false;
+
+          if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+          previewObjectUrl = URL.createObjectURL(file);
+          previewImage.src = previewObjectUrl;
+          previewName.textContent = file.name || 'Imagen pegada';
+          preview.classList.remove('hidden');
+          return true;
+        }
+
+        function assignImageFile(file) {
+          if (!file || !file.type || !file.type.startsWith('image/')) return false;
+          if (typeof DataTransfer === 'undefined') return false;
+
+          const transfer = new DataTransfer();
+          transfer.items.add(file);
+          input.files = transfer.files;
+
+          if (typeof updateFileNamePreview === 'function') {
+            updateFileNamePreview('postImage', 'postImagePreview');
+          }
+          showPreview(file);
+          return true;
+        }
+
+        function findImageFile(dataTransfer) {
+          if (!dataTransfer) return null;
+          const items = Array.from(dataTransfer.items || []);
+          const imageItem = items.find(item => item.kind === 'file' && item.type && item.type.startsWith('image/'));
+          return imageItem ? imageItem.getAsFile() : null;
+        }
+
+        input.addEventListener('change', () => {
+          const file = input.files && input.files[0];
+          if (file) showPreview(file);
+          else clearPreview();
+        });
+
+        clearButton.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          input.value = '';
+          if (typeof updateFileNamePreview === 'function') {
+            updateFileNamePreview('postImage', 'postImagePreview');
+          }
+          clearPreview();
+        });
+
+        composer.addEventListener('dragenter', (event) => {
+          if (!findImageFile(event.dataTransfer)) return;
+          event.preventDefault();
+          composer.classList.add('ring-2', 'ring-blue-500', 'bg-blue-50', 'dark:bg-blue-950/20');
+        });
+
+        composer.addEventListener('dragover', (event) => {
+          if (!findImageFile(event.dataTransfer)) return;
+          event.preventDefault();
+          event.dataTransfer.dropEffect = 'copy';
+          composer.classList.add('ring-2', 'ring-blue-500', 'bg-blue-50', 'dark:bg-blue-950/20');
+        });
+
+        composer.addEventListener('dragleave', (event) => {
+          if (composer.contains(event.relatedTarget)) return;
+          composer.classList.remove('ring-2', 'ring-blue-500', 'bg-blue-50', 'dark:bg-blue-950/20');
+        });
+
+        composer.addEventListener('drop', (event) => {
+          const file = findImageFile(event.dataTransfer);
+          composer.classList.remove('ring-2', 'ring-blue-500', 'bg-blue-50', 'dark:bg-blue-950/20');
+          if (!file) return;
+          event.preventDefault();
+          assignImageFile(file);
+        });
+
+        composer.addEventListener('paste', (event) => {
+          const file = findImageFile(event.clipboardData);
+          if (!file) return;
+          if (assignImageFile(file)) event.preventDefault();
+        });
+
+        window.addEventListener('beforeunload', clearPreview);
+      } catch (error) {
+        console.warn('Imagen pegada/arrastrada no inicializada:', error);
+      }
+    })();
+  </script>
 </body>
 </html>
