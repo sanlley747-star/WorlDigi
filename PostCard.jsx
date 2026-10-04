@@ -4,6 +4,7 @@ function ReadMoreText({ children, className = '' }) {
     const textRef = useRef(null);
     const [isExpanded, setIsExpanded] = useState(false);
     const [hasOverflow, setHasOverflow] = useState(false);
+    const hasOverflowRef = useRef(false);
 
     useEffect(() => {
         const element = textRef.current;
@@ -15,7 +16,14 @@ function ReadMoreText({ children, className = '' }) {
                 return;
             }
 
-            setHasOverflow(element.scrollHeight > element.clientHeight + 1);
+            const overflowing = element.scrollHeight > element.clientHeight + 1;
+
+            if (!isExpanded) {
+                hasOverflowRef.current = overflowing;
+                setHasOverflow(overflowing);
+            } else {
+                setHasOverflow(hasOverflowRef.current);
+            }
         };
 
         checkOverflow();
@@ -28,7 +36,7 @@ function ReadMoreText({ children, className = '' }) {
             resizeObserver.disconnect();
             window.removeEventListener('resize', checkOverflow);
         };
-    }, [children]);
+    }, [children, isExpanded]);
 
     return (
         <div>
