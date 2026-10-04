@@ -28,6 +28,9 @@
     'html.dark .cm-num{color:#94a3b8}',
     '.cm-lim.cm-warn .cm-num{opacity:1}',
     '.cm-lim.cm-end .cm-num,html.dark .cm-lim.cm-end .cm-num{color:#ef4444}',
+    '.rm-btn{color:#00B341;font-weight:600;font-size:.875rem;margin-top:.25rem}',
+    '.rm-btn:hover{text-decoration:underline}',
+    '.dark .rm-btn{color:#39FF14}',
     '.cm-input{display:block;width:100%;padding:.5rem .25rem;border:0;outline:none;box-shadow:none;resize:none;overflow-y:hidden;',
     '  background:transparent;color:inherit;font:inherit;font-size:1rem;line-height:1.5rem;min-height:3.5rem}'
   ].join('\n');
@@ -46,6 +49,12 @@
 
   function build() {
     if (els) return els;
+    if (!document.getElementById('rm-btn-style')) {
+      var rmStyle = document.createElement('style');
+      rmStyle.id = 'rm-btn-style';
+      rmStyle.textContent = '.rm-btn{color:#00B341;font-weight:600;font-size:.875rem;margin-top:.25rem}.rm-btn:hover{text-decoration:underline}.dark .rm-btn{color:#39FF14}';
+      document.head.appendChild(rmStyle);
+    }
     var style = document.createElement('style');
     style.id = 'commentModalStyles';
     style.textContent = css;
@@ -202,8 +211,9 @@
           '<span class="text-sm text-gray-500 dark:text-gray-400 flex-shrink-0">' + esc(timeText(post.created_at)) + '</span>' +
         '</div>' +
       '</div>' +
-      (post.content ? '<p data-readmore class="mt-3 text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line">' + esc(post.content) + '</p>' : '') +
+      (post.content ? '<p data-cm-clamp class="mt-3 text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line" style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;max-height:4.5em;overflow:hidden;">' + esc(post.content) + '</p><button type="button" data-cm-btn data-expanded="false" class="rm-btn hidden" onclick="window.cmToggleReadMore(this)">Ver más...</button>' : '') +
       (post.image_url ? '<img src="' + esc(post.image_url) + '" alt="Imagen de publicación" class="mt-3 w-full rounded-lg max-h-60 object-cover">' : '');
+    requestAnimationFrame(function () { window.cmCheckReadMore(els.post); });
   }
 
   async function send() {
@@ -234,6 +244,36 @@
     }
     if (typeof showToast === 'function') showToast('Tu comentario se envió');
   }
+
+  window.cmToggleReadMore = function (btn) {
+    var textEl = btn.previousElementSibling;
+    if (!textEl) return;
+    if (btn.dataset.expanded === 'true') {
+      textEl.style.display = '-webkit-box';
+      textEl.style.webkitBoxOrient = 'vertical';
+      textEl.style.webkitLineClamp = '3';
+      textEl.style.maxHeight = '4.5em';
+      btn.textContent = 'Ver más...';
+      btn.dataset.expanded = 'false';
+      window.cmCheckReadMore(btn.parentElement);
+    } else {
+      textEl.style.display = 'block';
+      textEl.style.webkitBoxOrient = '';
+      textEl.style.webkitLineClamp = 'unset';
+      textEl.style.maxHeight = 'none';
+      btn.textContent = 'Ver menos';
+      btn.dataset.expanded = 'true';
+    }
+  };
+
+  window.cmCheckReadMore = function (root) {
+    if (!root) return;
+    root.querySelectorAll('[data-cm-clamp]').forEach(function (textEl) {
+      var btn = textEl.nextElementSibling;
+      if (!btn || !btn.hasAttribute('data-cm-btn') || btn.dataset.expanded === 'true') return;
+      btn.classList.toggle('hidden', !(textEl.scrollHeight > textEl.clientHeight + 1));
+    });
+  };
 
   window.openCommentModal = open;
 })();
