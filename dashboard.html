@@ -1537,6 +1537,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
       }
 
       if (typeof imgdropClear === 'function') imgdropClear();
+      if (typeof imgmodalClear === 'function') imgmodalClear();
       loadPosts(); // Refresca de fondo silenciosamente
       if (isModal) closeComposerModal();
       showToast('Tu mensaje se envió');
@@ -2268,8 +2269,11 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
         if (!modal.dataset.imgmodalObserverBound) {
           const modalObserver = new MutationObserver(() => {
             const isHidden = modal.classList.contains('hidden');
-            imgmodalResetDrag();
-            previousModalState = isHidden;
+            if (isHidden !== previousModalState) {
+              imgmodalResetDrag();
+              if (isHidden && typeof imgmodalClear === 'function') imgmodalClear();
+              previousModalState = isHidden;
+            }
           });
 
           modalObserver.observe(modal, { attributes: true, attributeFilter: ['class'] });
