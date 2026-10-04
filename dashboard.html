@@ -213,7 +213,6 @@
 
           <div id="imgdrop-preview" class="hidden mt-2 ml-[52px] max-w-[280px] sm:max-w-[340px]">
             <div class="relative overflow-hidden rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
-              <img id="imgdrop-preview-image" src="" alt="Vista previa de la imagen" class="block w-full max-h-64 object-contain">
               <button id="imgdrop-clear" type="button" class="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/65 hover:bg-black/80 text-white text-lg leading-none flex items-center justify-center" aria-label="Quitar imagen">&times;</button>
             </div>
             <div id="imgdrop-preview-name" class="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate"></div>
@@ -2089,37 +2088,89 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
         const content = document.getElementById('postContent');
         const input = document.getElementById('postImage');
         const preview = document.getElementById('imgdrop-preview');
-        const previewImage = document.getElementById('imgdrop-preview-image');
         const previewName = document.getElementById('imgdrop-preview-name');
         const clearButton = document.getElementById('imgdrop-clear');
 
-        if (!composer || !content || !input || !preview || !previewImage || !previewName || !clearButton) return;
+        if (!composer || !content || !input || !preview || !previewName || !clearButton) return;
 
+        const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+        const maxFileSize = 5 * 1024 * 1024;
+        const previewFrame = clearButton.parentElement;
         let previewObjectUrl = null;
+        let currentFile = null;
+        let noticeTimer = null;
 
-        function clearPreview() {
+        function setNotice(message) {
+          window.clearTimeout(noticeTimer);
+          previewName.textContent = message;
+          preview.classList.remove('hidden');
+          noticeTimer = window.setTimeout(() => {
+            if (currentFile) {
+              previewName.textContent = currentFile.name || 'Imagen';
+            } else {
+              imgdropClear();
+            }
+          }, 2500);
+        }
+
+        function removePreviewImage() {
+          const existingImage = document.getElementById('imgdrop-preview-image');
+          if (existingImage) existingImage.remove();
+        }
+
+        function imgdropClear() {
+          window.clearTimeout(noticeTimer);
           if (previewObjectUrl) {
             URL.revokeObjectURL(previewObjectUrl);
             previewObjectUrl = null;
           }
-          previewImage.removeAttribute('src');
+          currentFile = null;
+          input.value = '';
+          removePreviewImage();
           previewName.textContent = '';
           preview.classList.add('hidden');
+          if (typeof updateFileNamePreview === 'function') {
+            updateFileNamePreview('postImage', 'postImagePreview');
+          }
         }
 
-        function showPreview(file) {
-          if (!file || !file.type || !file.type.startsWith('image/')) return false;
+        function imgdropSetFile(file) {
+          if (!(file instanceof File)) return false;
 
+          if (!allowedTypes.has(file.type) || file.size > maxFileSize) {
+            input.value = '';
+            imgdropClear();
+            setNotice(file.size > maxFileSize ? 'La imagen supera 5 MB.' : 'Formato no permitido.');
+            return false;
+          }
+
+          window.clearTimeout(noticeTimer);
           if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
-          previewObjectUrl = URL.createObjectURL(file);
-          previewImage.src = previewObjectUrl;
-          previewName.textContent = file.name || 'Imagen pegada';
+          removePreviewImage();
+
+          const image = document.createElement('img');
+          image.id = 'imgdrop-preview-image';
+          image.src = URL.createObjectURL(file);
+          image.alt = 'Vista previa de la imagen';
+          image.className = 'block w-full max-h-64 object-contain';
+          previewFrame.insertBefore(image, clearButton);
+
+          previewObjectUrl = image.src;
+          currentFile = file;
+          previewName.textContent = file.name || 'Imagen';
           preview.classList.remove('hidden');
+
+          if (typeof updateFileNamePreview === 'function') {
+            updateFileNamePreview('postImage', 'postImagePreview');
+          }
           return true;
         }
 
+        window.imgdropSetFile = imgdropSetFile;
+        window.imgdropClear = imgdropClear;
+
         function assignImageFile(file) {
-          if (!file || !file.type || !file.type.startsWith('image/')) return false;
+          if (!imgdropSetFile(file)) return false;
           if (typeof DataTransfer === 'undefined') return false;
 
           const transfer = new DataTransfer();
@@ -2129,31 +2180,28 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
           if (typeof updateFileNamePreview === 'function') {
             updateFileNamePreview('postImage', 'postImagePreview');
           }
-          showPreview(file);
           return true;
         }
 
         function findImageFile(dataTransfer) {
           if (!dataTransfer) return null;
           const items = Array.from(dataTransfer.items || []);
-          const imageItem = items.find(item => item.kind === 'file' && item.type && item.type.startsWith('image/'));
+          const imageItem = items.find(item => item.kind === 'file' && item.type);
           return imageItem ? imageItem.getAsFile() : null;
         }
 
         input.addEventListener('change', () => {
           const file = input.files && input.files[0];
-          if (file) showPreview(file);
-          else clearPreview();
+          if (file) imgdropSetFile(file);
+          else imgdropClear();
         });
 
+        clearButton.type = 'button';
+        clearButton.setAttribute('aria-label', 'Quitar imagen');
         clearButton.addEventListener('click', (event) => {
           event.preventDefault();
           event.stopPropagation();
-          input.value = '';
-          if (typeof updateFileNamePreview === 'function') {
-            updateFileNamePreview('postImage', 'postImagePreview');
-          }
-          clearPreview();
+          imgdropClear();
         });
 
         composer.addEventListener('dragenter', (event) => {
@@ -2188,7 +2236,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
           if (assignImageFile(file)) event.preventDefault();
         });
 
-        window.addEventListener('beforeunload', clearPreview);
+        window.addEventListener('beforeunload', imgdropClear);
       } catch (error) {
         console.warn('Imagen pegada/arrastrada no inicializada:', error);
       }
