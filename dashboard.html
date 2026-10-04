@@ -841,7 +841,7 @@ let feedRestoringState = false;
             </a>
             <div class="min-w-0 flex-1">
               <a href="perfil.html?user=${encodeURIComponent(author)}" data-user-card="${connEscape(author)}" class="font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(author)}</a>
-              <p class="mt-1 text-gray-800 dark:text-gray-200 text-sm break-words whitespace-pre-line">${connEscape(post.quote_text)}</p>
+              <p class="mt-1 text-gray-800 dark:text-gray-200 text-sm break-words whitespace-pre-line" data-readmore>${connEscape(post.quote_text)}</p>
             </div>
             </div>
           </div>
@@ -1183,7 +1183,7 @@ let feedRestoringState = false;
             </a>
             <div class="min-w-0 flex-1">
               <a href="perfil.html?user=${encodeURIComponent(author)}" data-user-card="${connEscape(author)}" class="font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(author)}</a>
-              <p class="mt-1 text-gray-800 dark:text-gray-200 text-sm break-words whitespace-pre-line">${connEscape(post.quote_text)}</p>
+              <p class="mt-1 text-gray-800 dark:text-gray-200 text-sm break-words whitespace-pre-line" data-readmore>${connEscape(post.quote_text)}</p>
             </div>
             </div>
           </div>
@@ -1739,7 +1739,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
               <div class="text-xs text-gray-400">${formatCompactTime(post.created_at)}</div>
             </div>
           </div>
-          ${post.content ? `<p class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line">${linkifyContent(ytStripLink(post.content))}</p>` : ''}
+          ${post.content ? `<p class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line" data-readmore>${linkifyContent(ytStripLink(post.content))}</p>` : ''}
           ${ytEmbedsFor(post.content || '')}
           ${post.image_url && !ytOwnsImage(post.content || '', post.image_url) ? `<img src="${connEscape(post.image_url)}" class="w-full rounded-lg max-h-72 object-cover mt-3" alt="Imagen de publicación">` : ''}
         </div>

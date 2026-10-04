@@ -202,7 +202,7 @@
           '<span class="text-sm text-gray-500 dark:text-gray-400 flex-shrink-0">' + esc(timeText(post.created_at)) + '</span>' +
         '</div>' +
       '</div>' +
-      (post.content ? '<p class="mt-3 text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line">' + esc(post.content) + '</p>' : '') +
+      (post.content ? '<p data-readmore class="mt-3 text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line">' + esc(post.content) + '</p>' : '') +
       (post.image_url ? '<img src="' + esc(post.image_url) + '" alt="Imagen de publicación" class="mt-3 w-full rounded-lg max-h-60 object-cover">' : '');
   }
 
