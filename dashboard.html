@@ -40,6 +40,7 @@
   <script src="user-card.js"></script>
   <script src="comment-modal.js"></script>
   <script src="youtube-embed.js"></script>
+  <script src="readmore.js?v=1"></script>
   <style>
     /* Mientras la sesión no se haya verificado, el contenido queda oculto.
        Esto es clave para que, si el navegador restaura esta página desde su
@@ -883,7 +884,7 @@ let feedRestoringState = false;
         <div class="${post.quote_text ? 'ml-9' : 'ml-[52px]'} mt-2 space-y-3">
           ${displayPost.content ? `
             <div>
-              <p id="post-text-${displayPost.id}" data-expandable-post-text data-read-more-target="post-read-more-${displayPost.id}"
+              <p id="post-text-${displayPost.id}" data-expandable-post-text data-read-more-target="post-read-more-${displayPost.id}" data-readmore
                 class="text-gray-800 dark:text-gray-200 text-sm break-words cursor-pointer"
                 style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;max-height:4.5em;overflow:hidden;"
                 onclick="openPostPage(${displayPost.id})">
@@ -1225,7 +1226,7 @@ let feedRestoringState = false;
         <div class="${post.quote_text ? 'ml-9' : 'ml-[52px]'} mt-2 space-y-3">
           ${displayPost.content ? `
             <div>
-              <p id="post-text-${displayPost.id}" data-expandable-post-text data-read-more-target="post-read-more-${displayPost.id}"
+              <p id="post-text-${displayPost.id}" data-expandable-post-text data-read-more-target="post-read-more-${displayPost.id}" data-readmore
                 class="text-gray-800 dark:text-gray-200 text-sm break-words cursor-pointer"
                 style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;max-height:4.5em;overflow:hidden;"
                 onclick="openPostPage(${displayPost.id})">
