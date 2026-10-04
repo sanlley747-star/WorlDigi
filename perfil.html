@@ -23,8 +23,10 @@
   <script src="user-card.js"></script>
   <script src="comment-modal.js"></script>
   <script src="youtube-embed.js"></script>
-  <script src="readmore.js?v=1"></script>
   <style>
+    .rm-btn{color:#00B341;font-weight:600;font-size:.875rem;margin-top:.25rem}
+    .rm-btn:hover{text-decoration:underline}
+    .dark .rm-btn{color:#39FF14}
     html{scrollbar-width:thin;scrollbar-color:#050b18 transparent}
     ::-webkit-scrollbar{width:10px}
     ::-webkit-scrollbar-track{background:transparent}
@@ -203,6 +205,38 @@
       }
     }
 
+    function setupExpandablePostTexts(root = document) {
+      requestAnimationFrame(() => {
+        root.querySelectorAll('[data-expandable-post-text]').forEach((textEl) => {
+          const button = textEl.nextElementSibling;
+          if (!button || !button.hasAttribute('data-rm-btn') || button.dataset.expanded === 'true') return;
+          if (textEl.clientHeight === 0) return;
+          button.classList.toggle('hidden', !(textEl.scrollHeight > textEl.clientHeight + 1));
+        });
+      });
+    }
+    function togglePostText(button) {
+      const textEl = button.previousElementSibling;
+      if (!textEl) return;
+      if (button.dataset.expanded === 'true') {
+        textEl.style.display = '-webkit-box';
+        textEl.style.webkitBoxOrient = 'vertical';
+        textEl.style.webkitLineClamp = '3';
+        textEl.style.maxHeight = '4.5em';
+        button.textContent = 'Ver más...';
+        button.dataset.expanded = 'false';
+      } else {
+        textEl.style.display = 'block';
+        textEl.style.webkitBoxOrient = '';
+        textEl.style.webkitLineClamp = 'unset';
+        textEl.style.maxHeight = 'none';
+        button.textContent = 'Ver menos';
+        button.dataset.expanded = 'true';
+      }
+    }
+    window.addEventListener('resize', () => setupExpandablePostTexts());
+    window.addEventListener('load', () => setupExpandablePostTexts());
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => setupExpandablePostTexts());
     function linkifyContent(text) { if (!text) return ''; const urlRegex = /(https?:\/\/[^\s]+)/g; return text.replace(urlRegex, (url) => { let domain; try { domain = new URL(url).hostname.replace('www.', ''); } catch (e) { domain = url; } return `<a href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 text-green-600 dark:text-green-400 font-semibold hover:underline align-middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 inline-block"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>${domain}</a>`; }); }
 
     function formatCompactTime(dateString) {
@@ -552,7 +586,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0 text-green-600"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
                 <span data-user-card="${connEscape(author)}" class="hover:underline">${connEscape(author)}</span> ${post.quote_text ? 'citó un comentario' : 'reposteó un comentario'}
               </div>
-              ${post.quote_text ? `<p class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line">${linkifyContent(post.quote_text)}</p>` : ''}
+              ${post.quote_text ? `<div>\n  <p data-expandable-post-text class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line"\n     style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;max-height:4.5em;overflow:hidden;">${linkifyContent(post.quote_text)}</p>\n  <button type="button" data-rm-btn data-expanded="false" class="rm-btn hidden"\n     onclick="event.stopPropagation();togglePostText(this)">Ver más...</button>\n</div>` : ''}
               <a href="publicacion.html?id=${c.post_id}#comentario-${c.id}" class="block border border-gray-200 dark:border-slate-700 rounded-xl p-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition">
                 <div class="flex items-center gap-2 mb-1">
                   <img src="${connEscape(cAvatar)}" class="w-6 h-6 rounded-full object-cover flex-shrink-0" alt="${connEscape(cAuthor)}">
@@ -625,7 +659,7 @@
             </div>
 
             <div class="ml-[52px] space-y-3">
-              ${displayPost.content ? `<p data-readmore class="text-gray-800 dark:text-gray-200 text-sm cursor-pointer whitespace-pre-line break-words" onclick="openPostPage(${displayPost.id})">${linkifyContent(ytStripLink(displayPost.content))}</p>${ytEmbedsFor(displayPost.content)}` : ''}
+              ${displayPost.content ? `<div>\n  <p data-expandable-post-text class="text-gray-800 dark:text-gray-200 text-sm cursor-pointer whitespace-pre-line break-words"\n     style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;max-height:4.5em;overflow:hidden;"\n     onclick="openPostPage(${displayPost.id})">${linkifyContent(ytStripLink(displayPost.content))}</p>\n  <button type="button" data-rm-btn data-expanded="false" class="rm-btn hidden"\n     onclick="event.stopPropagation();togglePostText(this)">Ver más...</button>\n</div>${ytEmbedsFor(displayPost.content)}` : ''}
               ${displayPost.image_url && !ytOwnsImage(displayPost.content, displayPost.image_url) ? `<img src="${displayPost.image_url}" class="w-full rounded-lg max-h-96 object-cover cursor-pointer" onclick="openPostViewer(${displayPost.id})">` : ''}
             </div>
             
@@ -704,6 +738,7 @@
           </div>
         `;
       }).join('');
+      setupExpandablePostTexts(feed);
     }
 
     // ===== MENÚ DE 3 PUNTOS: eliminar publicación (solo el dueño, en su propio perfil) =====
