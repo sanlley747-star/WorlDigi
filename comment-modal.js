@@ -28,9 +28,6 @@
     'html.dark .cm-num{color:#94a3b8}',
     '.cm-lim.cm-warn .cm-num{opacity:1}',
     '.cm-lim.cm-end .cm-num,html.dark .cm-lim.cm-end .cm-num{color:#ef4444}',
-    '.rm-btn{color:#00B341;font-weight:600;font-size:.875rem;margin-top:.25rem}',
-    '.rm-btn:hover{text-decoration:underline}',
-    '.dark .rm-btn{color:#39FF14}',
     '.cm-input{display:block;width:100%;padding:.5rem .25rem;border:0;outline:none;box-shadow:none;resize:none;overflow-y:hidden;',
     '  background:transparent;color:inherit;font:inherit;font-size:1rem;line-height:1.5rem;min-height:3.5rem}'
   ].join('\n');
