@@ -852,7 +852,12 @@ let feedRestoringState = false;
             </a>
             <div class="min-w-0 flex-1">
               <a href="perfil.html?user=${encodeURIComponent(author)}" data-user-card="${connEscape(author)}" class="font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(author)}</a>
-              <p class="mt-1 text-gray-800 dark:text-gray-200 text-sm break-words whitespace-pre-line">${connEscape(post.quote_text)}</p>
+              <div>
+  <p data-expandable-post-text class="mt-1 text-gray-800 dark:text-gray-200 text-sm break-words whitespace-pre-line"
+     style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;max-height:4.5em;overflow:hidden;">${connEscape(post.quote_text)}</p>
+  <button type="button" data-rm-btn data-expanded="false" class="rm-btn hidden"
+     onclick="event.stopPropagation();togglePostText(this)">Ver más...</button>
+</div>
             </div>
             </div>
           </div>
@@ -1191,7 +1196,12 @@ let feedRestoringState = false;
             </a>
             <div class="min-w-0 flex-1">
               <a href="perfil.html?user=${encodeURIComponent(author)}" data-user-card="${connEscape(author)}" class="font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(author)}</a>
-              <p class="mt-1 text-gray-800 dark:text-gray-200 text-sm break-words whitespace-pre-line">${connEscape(post.quote_text)}</p>
+              <div>
+  <p data-expandable-post-text class="mt-1 text-gray-800 dark:text-gray-200 text-sm break-words whitespace-pre-line"
+     style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;max-height:4.5em;overflow:hidden;">${connEscape(post.quote_text)}</p>
+  <button type="button" data-rm-btn data-expanded="false" class="rm-btn hidden"
+     onclick="event.stopPropagation();togglePostText(this)">Ver más...</button>
+</div>
             </div>
             </div>
           </div>
