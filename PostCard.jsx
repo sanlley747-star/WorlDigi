@@ -1,4 +1,57 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+
+function ReadMoreText({ children, className = '' }) {
+    const textRef = useRef(null);
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [hasOverflow, setHasOverflow] = useState(false);
+
+    useEffect(() => {
+        const element = textRef.current;
+        if (!element) return;
+
+        const checkOverflow = () => {
+            if (window.innerWidth >= 768) {
+                setHasOverflow(false);
+                return;
+            }
+
+            setHasOverflow(element.scrollHeight > element.clientHeight + 1);
+        };
+
+        checkOverflow();
+
+        const resizeObserver = new ResizeObserver(checkOverflow);
+        resizeObserver.observe(element);
+        window.addEventListener('resize', checkOverflow);
+
+        return () => {
+            resizeObserver.disconnect();
+            window.removeEventListener('resize', checkOverflow);
+        };
+    }, [children]);
+
+    return (
+        <div>
+            <p
+                ref={textRef}
+                className={`${className} ${!isExpanded ? 'line-clamp-3' : ''} md:line-clamp-none`}
+            >
+                {children}
+            </p>
+
+            {hasOverflow && (
+                <button
+                    type="button"
+                    onClick={() => setIsExpanded((expanded) => !expanded)}
+                    className="md:hidden mt-1 text-sm font-medium text-blue-400 hover:text-blue-300 transition"
+                    aria-expanded={isExpanded}
+                >
+                    {isExpanded ? 'Ver menos' : 'Ver más...'}
+                </button>
+            )}
+        </div>
+    );
+}
 
 export default function PostCard({ post, currentUserId, onLike, onRepost, onQuote }) {
     const [showRepostMenu, setShowRepostMenu] = useState(false);
@@ -21,9 +74,9 @@ export default function PostCard({ post, currentUserId, onLike, onRepost, onQuot
             </div>
 
             {/* Cuerpo del Post */}
-            <p className="text-sm text-gray-200 mb-4 leading-relaxed">
+            <ReadMoreText className="text-sm text-gray-200 mb-4 leading-relaxed">
                 {post.content}
-            </p>
+            </ReadMoreText>
 
             {post.image_url && (
                 <img src={post.image_url} alt={post.metadata?.og_title || 'Imagen de la publicación'}
@@ -154,7 +207,9 @@ export default function PostCard({ post, currentUserId, onLike, onRepost, onQuot
                                             <span className="text-xs text-gray-400">@{post.authorHandle || 'sanylley'} · {post.timeAgo || '10m'}</span>
                                         </div>
                                     </div>
-                                    <p className="text-sm text-gray-200 leading-relaxed">{post.content}</p>
+                                    <ReadMoreText className="text-sm text-gray-200 leading-relaxed">
+                                        {post.content}
+                                    </ReadMoreText>
                                     {post.image_url && (
                                         <img src={post.image_url} alt={post.metadata?.og_title || 'Imagen de la publicación'}
                                             className="w-full rounded-xl mt-3 max-h-[260px] object-cover" loading="lazy" />
