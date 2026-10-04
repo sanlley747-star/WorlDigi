@@ -797,7 +797,12 @@ let feedRestoringState = false;
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0 text-green-600"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
             <span data-user-card="${connEscape(author)}" class="hover:underline">${connEscape(author)}</span> ${post.quote_text ? 'citó un comentario' : 'reposteó un comentario'}
           </div>
-          ${post.quote_text ? `<p class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line">${linkifyContent(post.quote_text)}</p>` : ''}
+          ${post.quote_text ? `<div>
+  <p data-expandable-post-text class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line"
+     style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;max-height:4.5em;overflow:hidden;">${linkifyContent(post.quote_text)}</p>
+  <button type="button" data-rm-btn data-expanded="false" class="rm-btn hidden"
+     onclick="event.stopPropagation();togglePostText(this)">Ver más...</button>
+</div>` : ''}
           <a href="publicacion.html?id=${c.post_id}#comentario-${c.id}" class="block border border-gray-200 dark:border-slate-700 rounded-xl p-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition">
             <div class="flex items-center gap-2 mb-1">
               <img src="${connEscape(cAvatar)}" class="w-6 h-6 rounded-full object-cover flex-shrink-0" alt="${connEscape(cAuthor)}">
@@ -1141,7 +1146,12 @@ let feedRestoringState = false;
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0 text-green-600"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
             <span data-user-card="${connEscape(author)}" class="hover:underline">${connEscape(author)}</span> ${post.quote_text ? 'citó un comentario' : 'reposteó un comentario'}
           </div>
-          ${post.quote_text ? `<p class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line">${linkifyContent(post.quote_text)}</p>` : ''}
+          ${post.quote_text ? `<div>
+  <p data-expandable-post-text class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line"
+     style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;max-height:4.5em;overflow:hidden;">${linkifyContent(post.quote_text)}</p>
+  <button type="button" data-rm-btn data-expanded="false" class="rm-btn hidden"
+     onclick="event.stopPropagation();togglePostText(this)">Ver más...</button>
+</div>` : ''}
           <a href="publicacion.html?id=${c.post_id}#comentario-${c.id}" class="block border border-gray-200 dark:border-slate-700 rounded-xl p-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition">
             <div class="flex items-center gap-2 mb-1">
               <img src="${connEscape(cAvatar)}" class="w-6 h-6 rounded-full object-cover flex-shrink-0" alt="${connEscape(cAuthor)}">
@@ -1756,11 +1766,17 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
               <div class="text-xs text-gray-400">${formatCompactTime(post.created_at)}</div>
             </div>
           </div>
-          ${post.content ? `<p class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line">${linkifyContent(ytStripLink(post.content))}</p>` : ''}
+          ${post.content ? `<div>
+            <p data-expandable-post-text class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line"
+               style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;max-height:4.5em;overflow:hidden;">${linkifyContent(ytStripLink(post.content))}</p>
+            <button type="button" data-rm-btn data-expanded="false" class="rm-btn hidden"
+               onclick="event.stopPropagation();togglePostText(this)">Ver más...</button>
+          </div>` : ''}
           ${ytEmbedsFor(post.content || '')}
           ${post.image_url && !ytOwnsImage(post.content || '', post.image_url) ? `<img src="${connEscape(post.image_url)}" class="w-full rounded-lg max-h-72 object-cover mt-3" alt="Imagen de publicación">` : ''}
         </div>
       `;
+      setupExpandablePostTexts(body);
     }
 
     async function submitQuote() {
