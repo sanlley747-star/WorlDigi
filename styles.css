@@ -39,3 +39,8 @@ input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(18,207,227,.12)}
 
 .forgot-password-link{display:block;text-align:right;font-size:13px;color:var(--blue);text-decoration:none;margin:-8px 0 14px}
 .forgot-password-link:hover{text-decoration:underline}
+
+
+/* Vista previa del modal de publicar */
+.imgmodal-modal-body{max-height:calc(100dvh - 2rem);overflow-y:auto}
+#imgmodal-preview-image{max-width:100%;max-height:min(16rem,35dvh);height:auto}
