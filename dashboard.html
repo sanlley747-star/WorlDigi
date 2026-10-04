@@ -2204,31 +2204,46 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
           imgdropClear();
         });
 
-        composer.addEventListener('dragenter', (event) => {
-          if (!findImageFile(event.dataTransfer)) return;
-          event.preventDefault();
-          composer.classList.add('ring-2', 'ring-blue-500', 'bg-blue-50', 'dark:bg-blue-950/20');
-        });
+        if (!composer.dataset.imgdropBound) {
+          let dragDepth = 0;
+          const highlight = () => composer.classList.add('ring-2', 'ring-blue-500', 'bg-blue-50', 'dark:bg-blue-950/20');
+          const clearHighlight = () => {
+            dragDepth = 0;
+            composer.classList.remove('ring-2', 'ring-blue-500', 'bg-blue-50', 'dark:bg-blue-950/20');
+          };
 
-        composer.addEventListener('dragover', (event) => {
-          if (!findImageFile(event.dataTransfer)) return;
-          event.preventDefault();
-          event.dataTransfer.dropEffect = 'copy';
-          composer.classList.add('ring-2', 'ring-blue-500', 'bg-blue-50', 'dark:bg-blue-950/20');
-        });
+          composer.addEventListener('dragenter', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            dragDepth += 1;
+            highlight();
+          });
 
-        composer.addEventListener('dragleave', (event) => {
-          if (composer.contains(event.relatedTarget)) return;
-          composer.classList.remove('ring-2', 'ring-blue-500', 'bg-blue-50', 'dark:bg-blue-950/20');
-        });
+          composer.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            event.dataTransfer.dropEffect = 'copy';
+          });
 
-        composer.addEventListener('drop', (event) => {
-          const file = findImageFile(event.dataTransfer);
-          composer.classList.remove('ring-2', 'ring-blue-500', 'bg-blue-50', 'dark:bg-blue-950/20');
-          if (!file) return;
-          event.preventDefault();
-          assignImageFile(file);
-        });
+          composer.addEventListener('dragleave', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            dragDepth = Math.max(0, dragDepth - 1);
+            if (dragDepth === 0) composer.classList.remove('ring-2', 'ring-blue-500', 'bg-blue-50', 'dark:bg-blue-950/20');
+          });
+
+          composer.addEventListener('drop', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            clearHighlight();
+
+            const files = Array.from(event.dataTransfer?.files || []);
+            const imageFile = files.find(file => file.type && file.type.startsWith('image/'));
+            if (imageFile) assignImageFile(imageFile);
+          });
+
+          composer.dataset.imgdropBound = 'true';
+        }
 
         content.addEventListener('paste', (event) => {
           const items = Array.from(event.clipboardData?.items || []);
