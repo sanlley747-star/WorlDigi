@@ -40,7 +40,6 @@
   <script src="user-card.js"></script>
   <script src="comment-modal.js"></script>
   <script src="youtube-embed.js"></script>
-  <script src="readmore.js?v=1"></script>
   <style>
     /* Mientras la sesión no se haya verificado, el contenido queda oculto.
        Esto es clave para que, si el navegador restaura esta página desde su
@@ -48,6 +47,9 @@
        ni un instante el muro antes de redirigir al login.
        La regla html.auth-pending body { display: none; } ahora vive en #bygether-boot-screen. */
     .avatar-image { visibility: hidden; }
+    .rm-btn{color:#00B341;font-weight:600;font-size:.875rem;margin-top:.25rem}
+    .rm-btn:hover{text-decoration:underline}
+    .dark .rm-btn{color:#39FF14}
     .avatar-image.is-loaded { visibility: visible; }
     @keyframes bygetherSheetIn { from { transform: translateY(100%); } to { transform: translateY(0); } }
     .bygether-sheet-in { animation: bygetherSheetIn .22s ease-out; }
@@ -651,20 +653,17 @@
     function setupExpandablePostTexts(root = document) {
       requestAnimationFrame(() => {
         root.querySelectorAll('[data-expandable-post-text]').forEach((textEl) => {
-          if (textEl.dataset.overflowChecked === '1') return;
-          textEl.dataset.overflowChecked = '1';
-          const button = document.getElementById(textEl.dataset.readMoreTarget);
-          if (!button) return;
+          const button = textEl.nextElementSibling;
+          if (!button || !button.hasAttribute('data-rm-btn') || button.dataset.expanded === 'true') return;
+          if (textEl.clientHeight === 0) return;
           button.classList.toggle('hidden', !(textEl.scrollHeight > textEl.clientHeight + 1));
         });
       });
     }
-
     function togglePostText(button) {
-      const textEl = document.getElementById(button.dataset.readMoreTarget);
+      const textEl = button.previousElementSibling;
       if (!textEl) return;
-      const expanded = button.dataset.expanded === 'true';
-      if (expanded) {
+      if (button.dataset.expanded === 'true') {
         textEl.style.display = '-webkit-box';
         textEl.style.webkitBoxOrient = 'vertical';
         textEl.style.webkitLineClamp = '3';
@@ -680,6 +679,9 @@
         button.dataset.expanded = 'true';
       }
     }
+    window.addEventListener('resize', () => setupExpandablePostTexts());
+    window.addEventListener('load', () => setupExpandablePostTexts());
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => setupExpandablePostTexts());
     function linkifyContent(text) { if (!text) return ''; const urlRegex = /(https?:\/\/[^\s]+)/g; return text.replace(urlRegex, (url) => { let domain; try { domain = new URL(url).hostname.replace('www.', ''); } catch (e) { domain = url; } return `<a href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 text-green-600 dark:text-green-400 font-semibold hover:underline align-middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 inline-block"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>${domain}</a>`; }); }
 let feedOffset = 0;
 const feedPageSize = 20;
@@ -850,7 +852,7 @@ let feedRestoringState = false;
             </a>
             <div class="min-w-0 flex-1">
               <a href="perfil.html?user=${encodeURIComponent(author)}" data-user-card="${connEscape(author)}" class="font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(author)}</a>
-              <p class="mt-1 text-gray-800 dark:text-gray-200 text-sm break-words whitespace-pre-line" data-readmore>${connEscape(post.quote_text)}</p>
+              <p class="mt-1 text-gray-800 dark:text-gray-200 text-sm break-words whitespace-pre-line">${connEscape(post.quote_text)}</p>
             </div>
             </div>
           </div>
@@ -893,15 +895,12 @@ let feedRestoringState = false;
         <div class="${post.quote_text ? 'ml-9' : 'ml-[52px]'} mt-2 space-y-3">
           ${displayPost.content ? `
             <div>
-              <p id="post-text-${displayPost.id}" data-expandable-post-text data-read-more-target="post-read-more-${displayPost.id}" data-readmore
-                class="text-gray-800 dark:text-gray-200 text-sm break-words cursor-pointer"
+              <p data-expandable-post-text class="text-gray-800 dark:text-gray-200 text-sm break-words cursor-pointer"
                 style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;max-height:4.5em;overflow:hidden;"
                 onclick="openPostPage(${displayPost.id})">
                 ${linkifyContent(ytStripLink(displayPost.content))}
               </p>
-              <button id="post-read-more-${displayPost.id}" type="button"
-                data-read-more-target="post-text-${displayPost.id}" data-expanded="false"
-                class="hidden mt-1 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+              <button type="button" data-rm-btn data-expanded="false" class="rm-btn hidden"
                 onclick="event.stopPropagation();togglePostText(this)">Ver más...</button>
             </div>
             ${ytEmbedsFor(displayPost.content)}
@@ -1192,7 +1191,7 @@ let feedRestoringState = false;
             </a>
             <div class="min-w-0 flex-1">
               <a href="perfil.html?user=${encodeURIComponent(author)}" data-user-card="${connEscape(author)}" class="font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(author)}</a>
-              <p class="mt-1 text-gray-800 dark:text-gray-200 text-sm break-words whitespace-pre-line" data-readmore>${connEscape(post.quote_text)}</p>
+              <p class="mt-1 text-gray-800 dark:text-gray-200 text-sm break-words whitespace-pre-line">${connEscape(post.quote_text)}</p>
             </div>
             </div>
           </div>
@@ -1235,15 +1234,12 @@ let feedRestoringState = false;
         <div class="${post.quote_text ? 'ml-9' : 'ml-[52px]'} mt-2 space-y-3">
           ${displayPost.content ? `
             <div>
-              <p id="post-text-${displayPost.id}" data-expandable-post-text data-read-more-target="post-read-more-${displayPost.id}" data-readmore
-                class="text-gray-800 dark:text-gray-200 text-sm break-words cursor-pointer"
+              <p data-expandable-post-text class="text-gray-800 dark:text-gray-200 text-sm break-words cursor-pointer"
                 style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;max-height:4.5em;overflow:hidden;"
                 onclick="openPostPage(${displayPost.id})">
                 ${linkifyContent(ytStripLink(displayPost.content))}
               </p>
-              <button id="post-read-more-${displayPost.id}" type="button"
-                data-read-more-target="post-text-${displayPost.id}" data-expanded="false"
-                class="hidden mt-1 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+              <button type="button" data-rm-btn data-expanded="false" class="rm-btn hidden"
                 onclick="event.stopPropagation();togglePostText(this)">Ver más...</button>
             </div>
             ${ytEmbedsFor(displayPost.content)}
@@ -1750,7 +1746,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
               <div class="text-xs text-gray-400">${formatCompactTime(post.created_at)}</div>
             </div>
           </div>
-          ${post.content ? `<p class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line" data-readmore>${linkifyContent(ytStripLink(post.content))}</p>` : ''}
+          ${post.content ? `<p class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line">${linkifyContent(ytStripLink(post.content))}</p>` : ''}
           ${ytEmbedsFor(post.content || '')}
           ${post.image_url && !ytOwnsImage(post.content || '', post.image_url) ? `<img src="${connEscape(post.image_url)}" class="w-full rounded-lg max-h-72 object-cover mt-3" alt="Imagen de publicación">` : ''}
         </div>
