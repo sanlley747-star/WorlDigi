@@ -1536,6 +1536,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
         return;
       }
 
+      if (typeof imgdropClear === 'function') imgdropClear();
       loadPosts(); // Refresca de fondo silenciosamente
       if (isModal) closeComposerModal();
       showToast('Tu mensaje se envió');
@@ -2157,6 +2158,9 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
 
           previewObjectUrl = image.src;
           currentFile = file;
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(file);
+          input.files = dataTransfer.files;
           previewName.textContent = file.name || 'Imagen';
           preview.classList.remove('hidden');
 
@@ -2171,11 +2175,6 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
 
         function assignImageFile(file) {
           if (!imgdropSetFile(file)) return false;
-          if (typeof DataTransfer === 'undefined') return false;
-
-          const transfer = new DataTransfer();
-          transfer.items.add(file);
-          input.files = transfer.files;
 
           if (typeof updateFileNamePreview === 'function') {
             updateFileNamePreview('postImage', 'postImagePreview');
