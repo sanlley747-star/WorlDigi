@@ -198,7 +198,11 @@
     
     <!-- MURO DE BÚSQUEDA -->
     <section id="searchWall" class="hidden min-h-0 mt-5 lg:overflow-y-auto lg:h-full lg:pr-2">
-      <div class="min-h-full bg-white dark:bg-slate-900 rounded-xl shadow border border-gray-200 dark:border-slate-800"></div>
+      <div class="min-h-full bg-white dark:bg-slate-900 rounded-xl shadow border border-gray-200 dark:border-slate-800">
+        <button type="button" data-search-origin-back class="hidden m-4 w-10 h-10 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-200 items-center justify-center" aria-label="Volver">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="m15 18-6-6 6-6"></path></svg>
+        </button>
+      </div>
     </section>
 
     <!-- COLUMNA CENTRAL: FEED -->
@@ -569,6 +573,10 @@
         feedRestoringState = false;
         loadPosts();
       }
+
+      requestAnimationFrame(() => {
+        openSearchFromUrlIfRequested();
+      });
     }
     async function searchAccounts() {
       const input = document.getElementById('searchInput');
@@ -620,6 +628,14 @@
       document.getElementById('searchWall')?.classList.add('is-active');
       document.getElementById('searchTopWrap')?.classList.remove('hidden');
       document.getElementById('feedModeTabs')?.classList.add('hidden'); document.getElementById('feedModeTabs')?.style.setProperty('display', 'none', 'important'); document.getElementById('sidebarPublishButton')?.classList.add('hidden');
+      const searchOriginBack = document.querySelector('[data-search-origin-back]');
+      if (searchOriginBack) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const origin = urlParams.get('origen');
+        const validOrigins = new Set(['perfil', 'notificaciones', 'conexiones', 'settings']);
+        searchOriginBack.classList.toggle('hidden', !validOrigins.has(origin));
+        searchOriginBack.classList.toggle('flex', validOrigins.has(origin));
+      }
       document.getElementById('searchInput')?.focus();
     }
 
@@ -637,6 +653,33 @@
         results.classList.add('hidden');
       }
     }
+
+    const searchOriginPages = {
+      perfil: 'perfil.html',
+      notificaciones: 'notificaciones.html',
+      conexiones: 'conexiones.html',
+      settings: 'settings.html'
+    };
+
+    function openSearchFromUrlIfRequested() {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('buscar') !== '1') return;
+
+      const origin = urlParams.get('origen');
+      openSearchWall();
+    }
+
+    document.querySelector('[data-search-origin-back]')?.addEventListener('click', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const origin = urlParams.get('origen');
+      if (!Object.prototype.hasOwnProperty.call(searchOriginPages, origin)) return;
+
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.href = searchOriginPages[origin];
+      }
+    });
 
     let searchTimer = null;
     document.getElementById('searchButton')?.addEventListener('click', openSearchWall);
