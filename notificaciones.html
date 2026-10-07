@@ -743,7 +743,7 @@ function connNotifState(st) {
       });
 
       if (error) {
-        alert('Error al comentar: ' + error.message);
+        console.error('Error al comentar:', error.message);
         return;
       }
 
