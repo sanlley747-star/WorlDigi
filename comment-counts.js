@@ -423,6 +423,6 @@ function ccShareComment(commentId, postId) {
   } else {
     navigator.clipboard.writeText(url);
     if (typeof showToast === 'function') showToast('Enlace del comentario copiado');
-    else alert('¡Enlace copiado!');
+    else console.info('Enlace del comentario copiado');
   }
 }
