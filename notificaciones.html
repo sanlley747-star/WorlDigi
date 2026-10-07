@@ -573,27 +573,9 @@ function connNotifState(st) {
       const ctx = notifCommentContext.get(commentId);
       if (!ctx) return;
 
-      const replyText = prompt('Escribe una respuesta:');
-      if (replyText === null) return;
-
-      const content = replyText.trim();
-      if (!content || content.length > 280) return;
-
-      const authorName = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
-      const { error } = await supabaseClient.from('comments').insert({
-        post_id: ctx.postId,
-        user_email: currentUser.email,
-        user_name: authorName,
-        content,
-        reply_to: commentId
-      });
-
-      if (error) {
-        alert('Error al responder: ' + error.message);
-        return;
-      }
-
-      await loadNotifWall();
+      // La respuesta se hace desde el mismo visor de publicación del dashboard.
+      // Así se conserva el hilo original y la misma caja de comentario.
+      await openPostViewer(ctx.postId);
     };
 
     window.onRepostComment = async function (commentId, quoteText) {
