@@ -443,7 +443,7 @@ function connNotifState(st) {
                   </div>
                   <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Comentó a <a href="${recipientHref}" data-user-card="${safeRecipientName}" class="text-green-500 hover:underline notif-comment-link">${safeRecipientName}</a></p>
                   <p class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line mt-1">${linkifyContent(connEscape(c.content || ''))}</p>
-                  <div class="publicacion-comment-actions">${actions}</div>
+                  <div class="publicacion-comment-actions" data-comment-action-root data-comment-id="${c.id}" data-post-id="${c.post_id}">${actions}</div>
                 </div>
               </div>
             `;
@@ -464,6 +464,62 @@ function connNotifState(st) {
 
       wall.querySelectorAll('.notif-comment-link, .publicacion-comment-actions').forEach(el => {
         el.addEventListener('click', event => event.stopPropagation());
+      });
+
+      // Las acciones del comentario usan exactamente las funciones compartidas con el dashboard.
+      // En Notificaciones se cablean con listeners para que no dependan del onclick inline del HTML.
+      wall.querySelectorAll('[data-comment-action-root]').forEach(root => {
+        root.addEventListener('click', async (event) => {
+          const button = event.target.closest('button');
+          if (!button || !root.contains(button)) return;
+
+          event.preventDefault();
+          event.stopImmediatePropagation();
+
+          const commentId = Number(root.dataset.commentId);
+          const postId = root.dataset.postId;
+
+          if (button.matches('[data-like-btn]')) {
+            const likes = Number(document.getElementById(`c-likes-count-${commentId}`)?.textContent || 0);
+            const isLiked = button.getAttribute('data-liked') === 'true';
+            await ccToggleCommentLike(
+              button,
+              commentId,
+              likes,
+              isLiked,
+              currentUser.email,
+              currentUser.user_metadata?.full_name || currentUser.email.split('@')[0]
+            );
+            return;
+          }
+
+          if (button.hasAttribute('data-repost-toggle')) {
+            ccToggleCommentRepostMenu(commentId);
+            return;
+          }
+
+          const menu = button.closest('[id^="c-repost-menu-"]');
+          if (menu) {
+            const label = button.textContent.trim().toLowerCase();
+            if (label.includes('deshacer')) {
+              await ccUndoCommentRepost(commentId);
+            } else if (label.includes('citar')) {
+              await ccQuoteComment(commentId);
+            } else {
+              await ccRepostComment(commentId);
+            }
+            return;
+          }
+
+          if (button.getAttribute('title') === 'Responder') {
+            ccReplyToComment(commentId);
+            return;
+          }
+
+          if (button.getAttribute('title') === 'Compartir') {
+            ccShareComment(commentId, postId);
+          }
+        }, true);
       });
 
       wall.querySelectorAll('[data-conn-slot]').forEach(slot => {
