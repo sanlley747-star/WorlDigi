@@ -594,7 +594,7 @@ function connNotifState(st) {
       });
 
       if (error) {
-        alert('Error al repostear: ' + error.message);
+        console.error('Error al repostear:', error.message);
         return;
       }
 
@@ -610,7 +610,7 @@ function connNotifState(st) {
         .is('quote_text', null);
 
       if (error) {
-        alert('Error al deshacer el repost: ' + error.message);
+        console.error('Error al deshacer el repost:', error.message);
         return;
       }
 
