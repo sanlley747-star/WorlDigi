@@ -575,7 +575,7 @@
       }
 
       const sharedPostId = new URLSearchParams(window.location.search).get('post');
-      if (sharedPostId && /^\\d+$/.test(sharedPostId)) {
+      if (sharedPostId && /^\d+$/.test(sharedPostId)) {
         try {
           await openPostViewer(Number(sharedPostId));
         } catch (error) {
