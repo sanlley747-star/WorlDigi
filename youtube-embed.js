@@ -139,6 +139,11 @@
   // queda menos de la mitad visible, se pausa (no se reanuda solo al volver).
   const YT_ORIGIN = 'https://www.youtube-nocookie.com';
   const VISIBLE_MIN = 0.5;
+  const AUTOPLAY_VISIBLE_MIN = 0.6;
+  const AUTOPLAY_DELAY_MS = 400;
+  const observedFrames = new WeakSet();
+  const visibilityRatios = new WeakMap();
+  const autoplayTimers = new WeakMap();
 
   function pauseFrame(frame) {
     const iframe = frame.querySelector('iframe');
@@ -148,28 +153,79 @@
     } catch (e) { /* el reproductor aún no cargó: no hay nada que pausar */ }
   }
 
+  function pauseOtherFrames(activeFrame) {
+    document.querySelectorAll('.yt-frame').forEach(function (frame) {
+      if (frame !== activeFrame) pauseFrame(frame);
+    });
+  }
+
+  function scheduleAutoplay(frame) {
+    if (frame.querySelector('iframe') || autoplayTimers.has(frame)) return;
+    const timer = setTimeout(function () {
+      autoplayTimers.delete(frame);
+      if (frame.isConnected &&
+          (visibilityRatios.get(frame) || 0) >= AUTOPLAY_VISIBLE_MIN &&
+          !frame.querySelector('iframe')) {
+        pauseOtherFrames(frame);
+        loadPlayer(frame.closest('.yt-embed'), true, true);
+      }
+    }, AUTOPLAY_DELAY_MS);
+    autoplayTimers.set(frame, timer);
+  }
+
+  function observeBox(box) {
+    const frame = box.querySelector('.yt-frame');
+    if (!frame || observedFrames.has(frame)) return;
+    observedFrames.add(frame);
+    if (visibilityObserver) visibilityObserver.observe(frame);
+  }
+
   const visibilityObserver = ('IntersectionObserver' in window)
     ? new IntersectionObserver(function (entries) {
         entries.forEach(function (en) {
-          if (en.intersectionRatio < VISIBLE_MIN) pauseFrame(en.target);
+          visibilityRatios.set(en.target, en.intersectionRatio);
+          if (en.intersectionRatio < VISIBLE_MIN) {
+            const timer = autoplayTimers.get(en.target);
+            if (timer) { clearTimeout(timer); autoplayTimers.delete(en.target); }
+            pauseFrame(en.target);
+          } else if (en.intersectionRatio >= AUTOPLAY_VISIBLE_MIN) {
+            scheduleAutoplay(en.target);
+          }
         });
-      }, { threshold: [0, VISIBLE_MIN] })
+      }, { threshold: [0, VISIBLE_MIN, AUTOPLAY_VISIBLE_MIN] })
     : null;
 
-  function loadPlayer(box, autoplay) {
+  // Detecta fachadas insertadas por carga inicial, refresco, cambio de pestaña o carga incremental.
+  function observePendingBoxes(root) {
+    if (root.matches && root.matches('.yt-embed')) observeBox(root);
+    if (root.querySelectorAll) root.querySelectorAll('.yt-embed').forEach(observeBox);
+  }
+  observePendingBoxes(document);
+  if ('MutationObserver' in window && document.documentElement) {
+    new MutationObserver(function (mutations) {
+      mutations.forEach(function (mutation) {
+        mutation.addedNodes.forEach(function (node) {
+          if (node.nodeType === 1) observePendingBoxes(node);
+        });
+      });
+    }).observe(document.documentElement, { childList: true, subtree: true });
+  }
+
+  function loadPlayer(box, autoplay, muted) {
+    if (!box) return;
     const frame = box.querySelector('.yt-frame');
     if (frame.querySelector('iframe')) return;
     const id = box.dataset.ytId;
     const start = parseInt(box.dataset.ytStart, 10) || 0;
     const iframe = document.createElement('iframe');
-    iframe.src = `https://www.youtube-nocookie.com/embed/${id}?rel=0&playsinline=1&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}${autoplay ? '&autoplay=1' : ''}${start ? '&start=' + start : ''}`;
+    iframe.src = `https://www.youtube-nocookie.com/embed/${id}?rel=0&playsinline=1&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}${autoplay ? '&autoplay=1' : ''}${muted ? '&mute=1' : ''}${start ? '&start=' + start : ''}`;
     iframe.title = 'Reproductor de YouTube';
     iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen';
     iframe.allowFullscreen = true;
     iframe.referrerPolicy = 'strict-origin-when-cross-origin';
     iframe.loading = 'lazy';
     frame.querySelector('.yt-play').replaceWith(iframe);
-    if (visibilityObserver) visibilityObserver.observe(frame);
+    if (visibilityObserver && !observedFrames.has(frame)) observeBox(box);
   }
 
   function isFullscreen() { return document.fullscreenElement || document.webkitFullscreenElement; }
@@ -181,7 +237,8 @@
 
   function toggleExpand(box) {
     const frame = box.querySelector('.yt-frame');
-    loadPlayer(box, true);
+    pauseOtherFrames(frame);
+    loadPlayer(box, true, false);
     if (frame.classList.contains('yt-theater')) { exitTheater(frame); return; }
     if (isFullscreen()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
     const req = frame.requestFullscreen || frame.webkitRequestFullscreen;
@@ -199,7 +256,7 @@
     const box = e.target.closest && e.target.closest('.yt-embed');
     if (!box) return;
     e.stopPropagation();
-    if (e.target.closest('.yt-play')) { loadPlayer(box, true); }
+    if (e.target.closest('.yt-play')) { pauseOtherFrames(box.querySelector('.yt-frame')); loadPlayer(box, true, false); }
     else if (e.target.closest('.yt-expand')) { toggleExpand(box); }
   }, true);
 
