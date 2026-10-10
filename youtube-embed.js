@@ -154,11 +154,20 @@
     if (typeof data === 'string') {
       try { data = JSON.parse(data); } catch (e) { return; }
     }
-    if (!data || data.event !== 'infoDelivery' || !data.info || data.info.muted !== false) return;
+    if (!data || data.event !== 'infoDelivery' || !data.info) return;
     document.querySelectorAll('.yt-frame iframe').forEach(function (iframe) {
       if (iframe.contentWindow !== event.source) return;
       const box = iframe.closest('.yt-embed');
-      if (box) box.dataset.ytUserAudio = '1';
+      if (!box) return;
+      if (data.info.muted === false) {
+        box.dataset.ytUserAudio = '1';
+        iframe.dataset.ytTryingAudio = '0';
+      } else if (data.info.muted === true && iframe.dataset.ytTryingAudio === '1') {
+        // Si el navegador impide recuperar el audio, mantener la reproducción en silencio.
+        iframe.dataset.ytTryingAudio = '0';
+        postPlayerCommand(box.querySelector('.yt-frame'), 'mute');
+        postPlayerCommand(box.querySelector('.yt-frame'), 'playVideo');
+      }
     });
   });
 
@@ -187,6 +196,7 @@
     iframe.dataset.ytPendingMuted = muted === false ? '0' : '1';
     if (iframe.dataset.ytLoaded !== '1') return;
     iframe.dataset.ytPendingPlay = '0';
+    iframe.dataset.ytTryingAudio = muted === false ? '1' : '0';
     postPlayerCommand(frame, muted === false ? 'unMute' : 'mute');
     postPlayerCommand(frame, 'playVideo');
   }
