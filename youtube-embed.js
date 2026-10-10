@@ -135,22 +135,26 @@
     return urls.some((u) => parseYouTube(trimUrl(u)));
   };
 
-  // Auto-pausa: si el video se está reproduciendo y el usuario hace scroll de modo que
-  // queda menos de la mitad visible, se pausa (no se reanuda solo al volver).
+  // Precarga cercana, reproducción al entrar y pausa/reanudación por visibilidad.
   const YT_ORIGIN = 'https://www.youtube-nocookie.com';
   const VISIBLE_MIN = 0.5;
-  const AUTOPLAY_VISIBLE_MIN = 0.6;
-  const AUTOPLAY_DELAY_MS = 400;
+  const PLAY_DELAY_MS = 150;
+  const MAX_PRELOADS = 3;
   const observedFrames = new WeakSet();
   const visibilityRatios = new WeakMap();
-  const autoplayTimers = new WeakMap();
+  const playTimers = new WeakMap();
+  const preloadedFrames = new Set();
 
-  function pauseFrame(frame) {
-    const iframe = frame.querySelector('iframe');
+  function postPlayerCommand(frame, func) {
+    const iframe = frame && frame.querySelector('iframe');
     if (!iframe || !iframe.contentWindow) return;
     try {
-      iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), YT_ORIGIN);
-    } catch (e) { /* el reproductor aún no cargó: no hay nada que pausar */ }
+      iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args: [] }), YT_ORIGIN);
+    } catch (e) { /* el reproductor aún no está listo */ }
+  }
+
+  function pauseFrame(frame) {
+    postPlayerCommand(frame, 'pauseVideo');
   }
 
   function pauseOtherFrames(activeFrame) {
@@ -159,18 +163,32 @@
     });
   }
 
-  function scheduleAutoplay(frame) {
-    if (frame.querySelector('iframe') || autoplayTimers.has(frame)) return;
+  function playFrame(frame) {
+    const iframe = frame && frame.querySelector('iframe');
+    if (!iframe) return;
+    iframe.dataset.ytPendingPlay = '1';
+    if (iframe.dataset.ytLoaded !== '1') return;
+    iframe.dataset.ytPendingPlay = '0';
+    postPlayerCommand(frame, 'mute');
+    postPlayerCommand(frame, 'playVideo');
+  }
+
+  function schedulePlay(frame) {
+    if (playTimers.has(frame)) return;
     const timer = setTimeout(function () {
-      autoplayTimers.delete(frame);
-      if (frame.isConnected &&
-          (visibilityRatios.get(frame) || 0) >= AUTOPLAY_VISIBLE_MIN &&
-          !frame.querySelector('iframe')) {
-        pauseOtherFrames(frame);
-        loadPlayer(frame.closest('.yt-embed'), true, true);
-      }
-    }, AUTOPLAY_DELAY_MS);
-    autoplayTimers.set(frame, timer);
+      playTimers.delete(frame);
+      if (!frame.isConnected || (visibilityRatios.get(frame) || 0) < VISIBLE_MIN) return;
+      pauseOtherFrames(frame);
+      playFrame(frame);
+    }, PLAY_DELAY_MS);
+    playTimers.set(frame, timer);
+  }
+
+  function preloadBox(box) {
+    const frame = box.querySelector('.yt-frame');
+    if (!frame || frame.querySelector('iframe') || preloadedFrames.size >= MAX_PRELOADS) return;
+    preloadedFrames.add(frame);
+    loadPlayer(box, false, true, true);
   }
 
   function observeBox(box) {
@@ -178,24 +196,41 @@
     if (!frame || observedFrames.has(frame)) return;
     observedFrames.add(frame);
     if (visibilityObserver) visibilityObserver.observe(frame);
+    if (preloadObserver) preloadObserver.observe(frame);
   }
 
   const visibilityObserver = ('IntersectionObserver' in window)
     ? new IntersectionObserver(function (entries) {
         entries.forEach(function (en) {
-          visibilityRatios.set(en.target, en.intersectionRatio);
+          const frame = en.target;
+          visibilityRatios.set(frame, en.intersectionRatio);
           if (en.intersectionRatio < VISIBLE_MIN) {
-            const timer = autoplayTimers.get(en.target);
-            if (timer) { clearTimeout(timer); autoplayTimers.delete(en.target); }
-            pauseFrame(en.target);
-          } else if (en.intersectionRatio >= AUTOPLAY_VISIBLE_MIN) {
-            scheduleAutoplay(en.target);
+            const timer = playTimers.get(frame);
+            if (timer) { clearTimeout(timer); playTimers.delete(frame); }
+            pauseFrame(frame);
+          } else {
+            // Al salir de la zona de precarga, deja libre el cupo para fachadas futuras.
+            preloadedFrames.delete(frame);
+            schedulePlay(frame);
           }
         });
-      }, { threshold: [0, VISIBLE_MIN, AUTOPLAY_VISIBLE_MIN] })
+      }, { threshold: [0, VISIBLE_MIN] })
     : null;
 
-  // Detecta fachadas insertadas por carga inicial, refresco, cambio de pestaña o carga incremental.
+  const preloadObserver = ('IntersectionObserver' in window)
+    ? new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          if (en.isIntersecting) {
+            const box = en.target.closest('.yt-embed');
+            if (box) preloadBox(box);
+          } else {
+            preloadedFrames.delete(en.target);
+          }
+        });
+      }, { rootMargin: '0px 0px 100% 0px', threshold: 0 })
+    : null;
+
+  // Detecta fachadas añadidas dinámicamente sin duplicar observadores.
   function observePendingBoxes(root) {
     if (root.matches && root.matches('.yt-embed')) observeBox(root);
     if (root.querySelectorAll) root.querySelectorAll('.yt-embed').forEach(observeBox);
@@ -211,20 +246,36 @@
     }).observe(document.documentElement, { childList: true, subtree: true });
   }
 
-  function loadPlayer(box, autoplay, muted) {
+  function loadPlayer(box, autoplay, muted, preload) {
     if (!box) return;
     const frame = box.querySelector('.yt-frame');
-    if (frame.querySelector('iframe')) return;
+    let iframe = frame.querySelector('iframe');
+    if (iframe) {
+      if (autoplay) {
+        pauseOtherFrames(frame);
+        schedulePlay(frame);
+      }
+      return;
+    }
     const id = box.dataset.ytId;
     const start = parseInt(box.dataset.ytStart, 10) || 0;
-    const iframe = document.createElement('iframe');
-    iframe.src = `https://www.youtube-nocookie.com/embed/${id}?rel=0&playsinline=1&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}${autoplay ? '&autoplay=1' : ''}${muted ? '&mute=1' : ''}${start ? '&start=' + start : ''}`;
+    iframe = document.createElement('iframe');
+    iframe.src = `https://www.youtube-nocookie.com/embed/${id}?rel=0&playsinline=1&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}${autoplay ? '&autoplay=0' : ''}${muted ? '&mute=1' : ''}${start ? '&start=' + start : ''}`;
     iframe.title = 'Reproductor de YouTube';
     iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen';
     iframe.allowFullscreen = true;
     iframe.referrerPolicy = 'strict-origin-when-cross-origin';
-    iframe.loading = 'lazy';
+    iframe.loading = preload ? 'eager' : 'lazy';
+    iframe.addEventListener('load', function () {
+      iframe.dataset.ytLoaded = '1';
+      if (iframe.dataset.ytPendingPlay === '1' &&
+          (visibilityRatios.get(frame) || 0) >= VISIBLE_MIN) {
+        pauseOtherFrames(frame);
+        playFrame(frame);
+      }
+    });
     frame.querySelector('.yt-play').replaceWith(iframe);
+    if (autoplay) schedulePlay(frame);
     if (visibilityObserver && !observedFrames.has(frame)) observeBox(box);
   }
 
@@ -256,7 +307,7 @@
     const box = e.target.closest && e.target.closest('.yt-embed');
     if (!box) return;
     e.stopPropagation();
-    if (e.target.closest('.yt-play')) { pauseOtherFrames(box.querySelector('.yt-frame')); loadPlayer(box, true, false); }
+    if (e.target.closest('.yt-play')) { pauseOtherFrames(box.querySelector('.yt-frame')); loadPlayer(box, true, false); playFrame(box.querySelector('.yt-frame')); }
     else if (e.target.closest('.yt-expand')) { toggleExpand(box); }
   }, true);
 
