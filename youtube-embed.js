@@ -206,7 +206,8 @@
     iframe.dataset.ytTryingAudio = muted === false ? '1' : '0';
     const desired = muted === false ? 'unmuted' : 'muted';
     const actual = iframe.dataset.ytActualAudio || 'muted';
-    if (actual !== desired && !(desired === 'unmuted' && iframe.dataset.ytFirstAutoplay !== '0')) {
+    // El estado inicial se asume muted; solo se cambia si difiere de la preferencia guardada.
+    if (actual !== desired) {
       postPlayerCommand(frame, desired === 'unmuted' ? 'unMute' : 'mute');
     }
     iframe.dataset.ytFirstAutoplay = '0';
