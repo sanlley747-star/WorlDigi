@@ -163,13 +163,14 @@
     });
   }
 
-  function playFrame(frame) {
+  function playFrame(frame, muted) {
     const iframe = frame && frame.querySelector('iframe');
     if (!iframe) return;
     iframe.dataset.ytPendingPlay = '1';
+    iframe.dataset.ytPendingMuted = muted === false ? '0' : '1';
     if (iframe.dataset.ytLoaded !== '1') return;
     iframe.dataset.ytPendingPlay = '0';
-    postPlayerCommand(frame, 'mute');
+    postPlayerCommand(frame, muted === false ? 'unMute' : 'mute');
     postPlayerCommand(frame, 'playVideo');
   }
 
@@ -183,7 +184,7 @@
         const box = frame.closest('.yt-embed');
         if (box) loadPlayer(box, true, true);
       }
-      playFrame(frame);
+      playFrame(frame, true);
     }, PLAY_DELAY_MS);
     playTimers.set(frame, timer);
   }
@@ -257,7 +258,7 @@
     if (iframe) {
       if (autoplay) {
         pauseOtherFrames(frame);
-        schedulePlay(frame);
+        playFrame(frame, muted);
       }
       return;
     }
@@ -275,11 +276,10 @@
       if (iframe.dataset.ytPendingPlay === '1' &&
           (visibilityRatios.get(frame) || 0) >= VISIBLE_MIN) {
         pauseOtherFrames(frame);
-        playFrame(frame);
+        playFrame(frame, iframe.dataset.ytPendingMuted !== '0');
       }
     });
     frame.querySelector('.yt-play').replaceWith(iframe);
-    if (autoplay) schedulePlay(frame);
     if (visibilityObserver && !observedFrames.has(frame)) observeBox(box);
   }
 
@@ -294,6 +294,7 @@
     const frame = box.querySelector('.yt-frame');
     pauseOtherFrames(frame);
     loadPlayer(box, true, false);
+    playFrame(frame, false);
     if (frame.classList.contains('yt-theater')) { exitTheater(frame); return; }
     if (isFullscreen()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
     const req = frame.requestFullscreen || frame.webkitRequestFullscreen;
@@ -311,7 +312,7 @@
     const box = e.target.closest && e.target.closest('.yt-embed');
     if (!box) return;
     e.stopPropagation();
-    if (e.target.closest('.yt-play')) { pauseOtherFrames(box.querySelector('.yt-frame')); loadPlayer(box, true, false); playFrame(box.querySelector('.yt-frame')); }
+    if (e.target.closest('.yt-play')) { pauseOtherFrames(box.querySelector('.yt-frame')); loadPlayer(box, true, false); playFrame(box.querySelector('.yt-frame'), false); }
     else if (e.target.closest('.yt-expand')) { toggleExpand(box); }
   }, true);
 
