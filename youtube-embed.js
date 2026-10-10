@@ -160,11 +160,13 @@
       const box = iframe.closest('.yt-embed');
       if (!box) return;
       if (typeof data.info.muted === 'boolean') {
-        // Cada publicación conserva su último estado, por defecto en silencio.
-        box.dataset.audio = data.info.muted ? 'muted' : 'unmuted';
+        // Estado real siempre actualizado; los reportes recientes de nuestros comandos no son elección del usuario.
+        iframe.dataset.ytActualAudio = data.info.muted ? 'muted' : 'unmuted';
+        const ignoring = Date.now() < (Number(iframe.dataset.ytIgnoreUntil) || 0);
+        if (!ignoring) box.dataset.audio = iframe.dataset.ytActualAudio;
         if (data.info.muted === false) {
           iframe.dataset.ytTryingAudio = '0';
-        } else if (iframe.dataset.ytTryingAudio === '1') {
+        } else if (!ignoring && iframe.dataset.ytTryingAudio === '1') {
           // Si el navegador impide recuperar el audio, continuar en silencio.
           iframe.dataset.ytTryingAudio = '0';
           postPlayerCommand(box.querySelector('.yt-frame'), 'mute');
@@ -177,6 +179,8 @@
   function postPlayerCommand(frame, func) {
     const iframe = frame && frame.querySelector('iframe');
     if (!iframe || !iframe.contentWindow) return;
+    // Ignora durante 800 ms los reportes provocados por comandos propios.
+    iframe.dataset.ytIgnoreUntil = String(Date.now() + 800);
     try {
       iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args: [] }), YT_ORIGIN);
     } catch (e) { /* el reproductor aún no está listo */ }
@@ -200,7 +204,12 @@
     if (iframe.dataset.ytLoaded !== '1') return;
     iframe.dataset.ytPendingPlay = '0';
     iframe.dataset.ytTryingAudio = muted === false ? '1' : '0';
-    postPlayerCommand(frame, muted === false ? 'unMute' : 'mute');
+    const desired = muted === false ? 'unmuted' : 'muted';
+    const actual = iframe.dataset.ytActualAudio || 'muted';
+    if (actual !== desired && !(desired === 'unmuted' && iframe.dataset.ytFirstAutoplay !== '0')) {
+      postPlayerCommand(frame, desired === 'unmuted' ? 'unMute' : 'mute');
+    }
+    iframe.dataset.ytFirstAutoplay = '0';
     postPlayerCommand(frame, 'playVideo');
   }
 
@@ -297,6 +306,9 @@
     const start = parseInt(box.dataset.ytStart, 10) || 0;
     iframe = document.createElement('iframe');
     iframe.id = 'yt-player-' + nextIframeId++;
+    iframe.dataset.ytActualAudio = 'muted';
+    iframe.dataset.ytFirstAutoplay = '1';
+    iframe.dataset.ytIgnoreUntil = String(Date.now() + 1500);
     iframe.src = `https://www.youtube-nocookie.com/embed/${id}?rel=0&autoplay=0&mute=${muted ? '1' : '0'}&playsinline=1&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}${start ? '&start=' + start : ''}`;
     iframe.title = 'Reproductor de YouTube';
     iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen';
@@ -305,6 +317,7 @@
     iframe.loading = preload ? 'eager' : 'lazy';
     iframe.addEventListener('load', function () {
       iframe.dataset.ytLoaded = '1';
+      iframe.dataset.ytIgnoreUntil = String(Date.now() + 1500);
       // Suscribe el iframe para recibir infoDelivery (incluido el estado mute).
       try {
         iframe.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: iframe.id }), YT_ORIGIN);
@@ -330,6 +343,7 @@
   function toggleExpand(box) {
     const frame = box.querySelector('.yt-frame');
     pauseOtherFrames(frame);
+    box.dataset.audio = 'unmuted';
     loadPlayer(box, true, false);
     playFrame(frame, false);
     if (frame.classList.contains('yt-theater')) { exitTheater(frame); return; }
@@ -349,7 +363,7 @@
     const box = e.target.closest && e.target.closest('.yt-embed');
     if (!box) return;
     e.stopPropagation();
-    if (e.target.closest('.yt-play')) { pauseOtherFrames(box.querySelector('.yt-frame')); loadPlayer(box, true, false); playFrame(box.querySelector('.yt-frame'), false); }
+    if (e.target.closest('.yt-play')) { box.dataset.audio = 'unmuted'; pauseOtherFrames(box.querySelector('.yt-frame')); loadPlayer(box, true, false); playFrame(box.querySelector('.yt-frame'), false); }
     else if (e.target.closest('.yt-expand')) { toggleExpand(box); }
   }, true);
 
