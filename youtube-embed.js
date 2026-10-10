@@ -179,6 +179,10 @@
       playTimers.delete(frame);
       if (!frame.isConnected || (visibilityRatios.get(frame) || 0) < VISIBLE_MIN) return;
       pauseOtherFrames(frame);
+      if (!frame.querySelector('iframe')) {
+        const box = frame.closest('.yt-embed');
+        if (box) loadPlayer(box, true, true);
+      }
       playFrame(frame);
     }, PLAY_DELAY_MS);
     playTimers.set(frame, timer);
@@ -260,7 +264,7 @@
     const id = box.dataset.ytId;
     const start = parseInt(box.dataset.ytStart, 10) || 0;
     iframe = document.createElement('iframe');
-    iframe.src = `https://www.youtube-nocookie.com/embed/${id}?rel=0&playsinline=1&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}${autoplay ? '&autoplay=0' : ''}${muted ? '&mute=1' : ''}${start ? '&start=' + start : ''}`;
+    iframe.src = `https://www.youtube-nocookie.com/embed/${id}?rel=0&autoplay=0&mute=${muted ? '1' : '0'}&playsinline=1&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}${start ? '&start=' + start : ''}`;
     iframe.title = 'Reproductor de YouTube';
     iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen';
     iframe.allowFullscreen = true;
