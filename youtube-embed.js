@@ -147,46 +147,48 @@
 
   let nextIframeId = 1;
 
-  // YouTube informa cambios del reproductor, incluido el estado de silencio.
+  // Registra solo estados confirmados y cambios de audio realizados durante reproducción estable.
   window.addEventListener('message', function (event) {
     if (event.origin !== YT_ORIGIN && event.origin !== 'https://www.youtube.com') return;
     let data = event.data;
     if (typeof data === 'string') {
       try { data = JSON.parse(data); } catch (e) { return; }
     }
-    if (!data || data.event !== 'infoDelivery' || !data.info) return;
+    if (!data || !data.event) return;
     document.querySelectorAll('.yt-frame iframe').forEach(function (iframe) {
       if (iframe.contentWindow !== event.source) return;
       const box = iframe.closest('.yt-embed');
       if (!box) return;
-      if (typeof data.info.muted === 'boolean') {
-        // Estado real siempre actualizado; los reportes recientes de nuestros comandos no son elección del usuario.
-        iframe.dataset.ytActualAudio = data.info.muted ? 'muted' : 'unmuted';
-        const ignoring = Date.now() < (Number(iframe.dataset.ytIgnoreUntil) || 0);
-        if (!ignoring) box.dataset.audio = iframe.dataset.ytActualAudio;
-        if (data.info.muted === false) {
-          iframe.dataset.ytTryingAudio = '0';
-        } else if (!ignoring && iframe.dataset.ytTryingAudio === '1') {
-          // Si el navegador impide recuperar el audio, continuar en silencio.
-          iframe.dataset.ytTryingAudio = '0';
-          postPlayerCommand(box.querySelector('.yt-frame'), 'mute');
-          postPlayerCommand(box.querySelector('.yt-frame'), 'playVideo');
-        }
+
+      if (data.event === 'onStateChange' && Number(data.info) === 1) {
+        iframe.dataset.ytSettled = '1';
+        return;
       }
+
+      if (data.event !== 'infoDelivery' || !data.info ||
+          typeof data.info.muted !== 'boolean') return;
+
+      const unmuteAt = Number(iframe.dataset.ytUnmuteAt);
+      if (iframe.dataset.ytSettled !== '1' ||
+          !Number.isFinite(unmuteAt) ||
+          Date.now() - unmuteAt <= 1000) return;
+
+      const reported = data.info.muted ? 'muted' : 'unmuted';
+      if (reported !== box.dataset.audio) box.dataset.audio = reported;
     });
   });
 
   function postPlayerCommand(frame, func) {
     const iframe = frame && frame.querySelector('iframe');
     if (!iframe || !iframe.contentWindow) return;
-    // Ignora durante 800 ms los reportes provocados por comandos propios.
-    iframe.dataset.ytIgnoreUntil = String(Date.now() + 800);
     try {
       iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args: [] }), YT_ORIGIN);
     } catch (e) { /* el reproductor aún no está listo */ }
   }
 
   function pauseFrame(frame) {
+    const iframe = frame && frame.querySelector('iframe');
+    if (iframe) iframe.dataset.ytSettled = '0';
     postPlayerCommand(frame, 'pauseVideo');
   }
 
@@ -196,21 +198,18 @@
     });
   }
 
-  function playFrame(frame, muted) {
+  function playFrame(frame) {
     const iframe = frame && frame.querySelector('iframe');
     if (!iframe) return;
     iframe.dataset.ytPendingPlay = '1';
-    iframe.dataset.ytPendingMuted = muted === false ? '0' : '1';
     if (iframe.dataset.ytLoaded !== '1') return;
+
     iframe.dataset.ytPendingPlay = '0';
-    iframe.dataset.ytTryingAudio = muted === false ? '1' : '0';
-    const desired = muted === false ? 'unmuted' : 'muted';
-    const actual = iframe.dataset.ytActualAudio || 'muted';
-    // El estado inicial se asume muted; solo se cambia si difiere de la preferencia guardada.
-    if (actual !== desired) {
-      postPlayerCommand(frame, desired === 'unmuted' ? 'unMute' : 'mute');
+    const box = frame.closest('.yt-embed');
+    if (box && box.dataset.audio === 'unmuted') {
+      postPlayerCommand(frame, 'unMute');
+      iframe.dataset.ytUnmuteAt = String(Date.now());
     }
-    iframe.dataset.ytFirstAutoplay = '0';
     postPlayerCommand(frame, 'playVideo');
   }
 
@@ -221,11 +220,10 @@
       if (!frame.isConnected || (visibilityRatios.get(frame) || 0) < VISIBLE_MIN) return;
       pauseOtherFrames(frame);
       const box = frame.closest('.yt-embed');
-      const shouldMute = !box || box.dataset.audio !== 'unmuted';
       if (!frame.querySelector('iframe') && box) {
-        loadPlayer(box, true, shouldMute);
+        loadPlayer(box, true, true);
       }
-      playFrame(frame, shouldMute);
+      playFrame(frame);
     }, PLAY_DELAY_MS);
     playTimers.set(frame, timer);
   }
@@ -307,10 +305,8 @@
     const start = parseInt(box.dataset.ytStart, 10) || 0;
     iframe = document.createElement('iframe');
     iframe.id = 'yt-player-' + nextIframeId++;
-    iframe.dataset.ytActualAudio = 'muted';
-    iframe.dataset.ytFirstAutoplay = '1';
-    iframe.dataset.ytIgnoreUntil = String(Date.now() + 1500);
-    iframe.src = `https://www.youtube-nocookie.com/embed/${id}?rel=0&autoplay=0&mute=${muted ? '1' : '0'}&playsinline=1&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}${start ? '&start=' + start : ''}`;
+    iframe.dataset.ytSettled = '0';
+    iframe.src = `https://www.youtube-nocookie.com/embed/${id}?rel=0&autoplay=0&mute=1&playsinline=1&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}${start ? '&start=' + start : ''}`;
     iframe.title = 'Reproductor de YouTube';
     iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen';
     iframe.allowFullscreen = true;
@@ -318,7 +314,6 @@
     iframe.loading = preload ? 'eager' : 'lazy';
     iframe.addEventListener('load', function () {
       iframe.dataset.ytLoaded = '1';
-      iframe.dataset.ytIgnoreUntil = String(Date.now() + 1500);
       // Suscribe el iframe para recibir infoDelivery (incluido el estado mute).
       try {
         iframe.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: iframe.id }), YT_ORIGIN);
@@ -327,7 +322,7 @@
       if (iframe.dataset.ytPendingPlay === '1' &&
           (visibilityRatios.get(frame) || 0) >= VISIBLE_MIN) {
         pauseOtherFrames(frame);
-        playFrame(frame, iframe.dataset.ytPendingMuted !== '0');
+        playFrame(frame);
       }
     });
     frame.querySelector('.yt-play').replaceWith(iframe);
@@ -345,8 +340,8 @@
     const frame = box.querySelector('.yt-frame');
     pauseOtherFrames(frame);
     box.dataset.audio = 'unmuted';
-    loadPlayer(box, true, false);
-    playFrame(frame, false);
+    loadPlayer(box, true, true);
+    playFrame(frame);
     if (frame.classList.contains('yt-theater')) { exitTheater(frame); return; }
     if (isFullscreen()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
     const req = frame.requestFullscreen || frame.webkitRequestFullscreen;
@@ -364,7 +359,7 @@
     const box = e.target.closest && e.target.closest('.yt-embed');
     if (!box) return;
     e.stopPropagation();
-    if (e.target.closest('.yt-play')) { box.dataset.audio = 'unmuted'; pauseOtherFrames(box.querySelector('.yt-frame')); loadPlayer(box, true, false); playFrame(box.querySelector('.yt-frame'), false); }
+    if (e.target.closest('.yt-play')) { box.dataset.audio = 'unmuted'; pauseOtherFrames(box.querySelector('.yt-frame')); loadPlayer(box, true, true); playFrame(box.querySelector('.yt-frame')); }
     else if (e.target.closest('.yt-expand')) { toggleExpand(box); }
   }, true);
 
