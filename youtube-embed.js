@@ -62,7 +62,7 @@
   function renderEmbed(v) {
     const thumb = `https://i.ytimg.com/vi/${v.id}/hqdefault.jpg`;
     const watch = `https://www.youtube.com/watch?v=${v.id}${v.start ? '&t=' + v.start + 's' : ''}`;
-    return `<div class="yt-embed" data-yt-id="${v.id}" data-yt-start="${v.start}">
+    return `<div class="yt-embed" data-yt-id="${v.id}" data-yt-start="${v.start}" data-audio="muted">
       <div class="yt-frame${v.short ? ' yt-short' : ''}">
         <button type="button" class="yt-play" style="background-image:url('${thumb}')" aria-label="Reproducir video"></button>
         <button type="button" class="yt-expand" aria-label="Pantalla completa" title="Pantalla completa">${ICON_EXPAND}</button>
@@ -159,14 +159,17 @@
       if (iframe.contentWindow !== event.source) return;
       const box = iframe.closest('.yt-embed');
       if (!box) return;
-      if (data.info.muted === false) {
-        box.dataset.ytUserAudio = '1';
-        iframe.dataset.ytTryingAudio = '0';
-      } else if (data.info.muted === true && iframe.dataset.ytTryingAudio === '1') {
-        // Si el navegador impide recuperar el audio, mantener la reproducción en silencio.
-        iframe.dataset.ytTryingAudio = '0';
-        postPlayerCommand(box.querySelector('.yt-frame'), 'mute');
-        postPlayerCommand(box.querySelector('.yt-frame'), 'playVideo');
+      if (typeof data.info.muted === 'boolean') {
+        // Cada publicación conserva su último estado, por defecto en silencio.
+        box.dataset.audio = data.info.muted ? 'muted' : 'unmuted';
+        if (data.info.muted === false) {
+          iframe.dataset.ytTryingAudio = '0';
+        } else if (iframe.dataset.ytTryingAudio === '1') {
+          // Si el navegador impide recuperar el audio, continuar en silencio.
+          iframe.dataset.ytTryingAudio = '0';
+          postPlayerCommand(box.querySelector('.yt-frame'), 'mute');
+          postPlayerCommand(box.querySelector('.yt-frame'), 'playVideo');
+        }
       }
     });
   });
@@ -208,11 +211,11 @@
       if (!frame.isConnected || (visibilityRatios.get(frame) || 0) < VISIBLE_MIN) return;
       pauseOtherFrames(frame);
       const box = frame.closest('.yt-embed');
-      const userEnabledAudio = box && box.dataset.ytUserAudio === '1';
+      const shouldMute = !box || box.dataset.audio !== 'unmuted';
       if (!frame.querySelector('iframe') && box) {
-        loadPlayer(box, true, !userEnabledAudio);
+        loadPlayer(box, true, shouldMute);
       }
-      playFrame(frame, !userEnabledAudio);
+      playFrame(frame, shouldMute);
     }, PLAY_DELAY_MS);
     playTimers.set(frame, timer);
   }
