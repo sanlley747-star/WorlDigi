@@ -145,6 +145,23 @@
   const playTimers = new WeakMap();
   const preloadedFrames = new Set();
 
+  let nextIframeId = 1;
+
+  // YouTube informa cambios del reproductor, incluido el estado de silencio.
+  window.addEventListener('message', function (event) {
+    if (event.origin !== YT_ORIGIN && event.origin !== 'https://www.youtube.com') return;
+    let data = event.data;
+    if (typeof data === 'string') {
+      try { data = JSON.parse(data); } catch (e) { return; }
+    }
+    if (!data || data.event !== 'infoDelivery' || !data.info || data.info.muted !== false) return;
+    document.querySelectorAll('.yt-frame iframe').forEach(function (iframe) {
+      if (iframe.contentWindow !== event.source) return;
+      const box = iframe.closest('.yt-embed');
+      if (box) box.dataset.ytUserAudio = '1';
+    });
+  });
+
   function postPlayerCommand(frame, func) {
     const iframe = frame && frame.querySelector('iframe');
     if (!iframe || !iframe.contentWindow) return;
@@ -180,11 +197,12 @@
       playTimers.delete(frame);
       if (!frame.isConnected || (visibilityRatios.get(frame) || 0) < VISIBLE_MIN) return;
       pauseOtherFrames(frame);
-      if (!frame.querySelector('iframe')) {
-        const box = frame.closest('.yt-embed');
-        if (box) loadPlayer(box, true, true);
+      const box = frame.closest('.yt-embed');
+      const userEnabledAudio = box && box.dataset.ytUserAudio === '1';
+      if (!frame.querySelector('iframe') && box) {
+        loadPlayer(box, true, !userEnabledAudio);
       }
-      playFrame(frame, true);
+      playFrame(frame, !userEnabledAudio);
     }, PLAY_DELAY_MS);
     playTimers.set(frame, timer);
   }
@@ -265,6 +283,7 @@
     const id = box.dataset.ytId;
     const start = parseInt(box.dataset.ytStart, 10) || 0;
     iframe = document.createElement('iframe');
+    iframe.id = 'yt-player-' + nextIframeId++;
     iframe.src = `https://www.youtube-nocookie.com/embed/${id}?rel=0&autoplay=0&mute=${muted ? '1' : '0'}&playsinline=1&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}${start ? '&start=' + start : ''}`;
     iframe.title = 'Reproductor de YouTube';
     iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen';
@@ -273,6 +292,11 @@
     iframe.loading = preload ? 'eager' : 'lazy';
     iframe.addEventListener('load', function () {
       iframe.dataset.ytLoaded = '1';
+      // Suscribe el iframe para recibir infoDelivery (incluido el estado mute).
+      try {
+        iframe.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: iframe.id }), YT_ORIGIN);
+        iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'addEventListener', args: ['onStateChange'] }), YT_ORIGIN);
+      } catch (e) { /* el reproductor puede no aceptar mensajes en este navegador */ }
       if (iframe.dataset.ytPendingPlay === '1' &&
           (visibilityRatios.get(frame) || 0) >= VISIBLE_MIN) {
         pauseOtherFrames(frame);
