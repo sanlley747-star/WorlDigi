@@ -147,7 +147,7 @@
 
   let nextIframeId = 1;
 
-  // Registra solo estados confirmados y cambios de audio realizados durante reproducción estable.
+  // Guarda la preferencia de audio solo cuando YouTube informa un cambio durante reproducción.
   window.addEventListener('message', function (event) {
     if (event.origin !== YT_ORIGIN && event.origin !== 'https://www.youtube.com') return;
     let data = event.data;
@@ -160,21 +160,16 @@
       const box = iframe.closest('.yt-embed');
       if (!box) return;
 
-      if (data.event === 'onStateChange' && Number(data.info) === 1) {
-        iframe.dataset.ytSettled = '1';
+      if (data.event === 'onStateChange') {
+        iframe.dataset.ytPlaying = Number(data.info) === 1 ? '1' : '0';
         return;
       }
 
       if (data.event !== 'infoDelivery' || !data.info ||
-          typeof data.info.muted !== 'boolean') return;
+          typeof data.info.muted !== 'boolean' ||
+          iframe.dataset.ytPlaying !== '1') return;
 
-      const unmuteAt = Number(iframe.dataset.ytUnmuteAt);
-      if (iframe.dataset.ytSettled !== '1' ||
-          !Number.isFinite(unmuteAt) ||
-          Date.now() - unmuteAt <= 1000) return;
-
-      const reported = data.info.muted ? 'muted' : 'unmuted';
-      if (reported !== box.dataset.audio) box.dataset.audio = reported;
+      box.dataset.audio = data.info.muted ? 'muted' : 'unmuted';
     });
   });
 
@@ -187,8 +182,6 @@
   }
 
   function pauseFrame(frame) {
-    const iframe = frame && frame.querySelector('iframe');
-    if (iframe) iframe.dataset.ytSettled = '0';
     postPlayerCommand(frame, 'pauseVideo');
   }
 
@@ -206,10 +199,7 @@
 
     iframe.dataset.ytPendingPlay = '0';
     const box = frame.closest('.yt-embed');
-    if (box && box.dataset.audio === 'unmuted') {
-      postPlayerCommand(frame, 'unMute');
-      iframe.dataset.ytUnmuteAt = String(Date.now());
-    }
+    if (box && box.dataset.audio === 'unmuted') postPlayerCommand(frame, 'unMute');
     postPlayerCommand(frame, 'playVideo');
   }
 
@@ -305,7 +295,6 @@
     const start = parseInt(box.dataset.ytStart, 10) || 0;
     iframe = document.createElement('iframe');
     iframe.id = 'yt-player-' + nextIframeId++;
-    iframe.dataset.ytSettled = '0';
     iframe.src = `https://www.youtube-nocookie.com/embed/${id}?rel=0&autoplay=0&mute=1&playsinline=1&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}${start ? '&start=' + start : ''}`;
     iframe.title = 'Reproductor de YouTube';
     iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen';
