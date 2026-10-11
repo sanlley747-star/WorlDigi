@@ -101,7 +101,7 @@
           window.location.replace('dashboard.html');
           return;
         }
-        errorBox.textContent = 'Registro iniciado. Revisa tu correo y confirma la cuenta para poder entrar.';
+        errorBox.textContent = 'Revisa tu correo para confirmar tu cuenta';
       } else {
         await window.byGetherAuthReady;
         const { error } = await window.ByGetherAuth.signIn(supabaseClient, { email, password });
