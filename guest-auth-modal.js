@@ -48,6 +48,7 @@
     if (!modal) return;
     const signup = mode === 'signup';
     modal.querySelector('[data-auth-title]').textContent = signup ? 'Regístrate' : 'Inicia sesión';
+    modal.querySelector('[data-auth-title]').classList.remove('pl-8');
     modal.querySelector('[data-auth-google]').classList.remove('hidden');
     modal.querySelector('[data-auth-terms]').classList.remove('hidden');
     modal.querySelector('[data-auth-step1]').classList.toggle('hidden', !signup);
@@ -116,6 +117,7 @@
     if (!modal) return;
     modal.querySelector('[data-auth-title]').textContent =
       step === 1 ? 'Regístrate' : step === 2 ? 'Crea tu nombre de usuario y contraseña' : 'Verifica tu correo';
+    modal.querySelector('[data-auth-title]').classList.toggle('pl-8', step === 2);
     modal.querySelector('[data-auth-google]').classList.toggle('hidden', step !== 1);
     modal.querySelector('[data-auth-terms]').classList.toggle('hidden', step !== 1);
     modal.querySelector('[data-auth-divider]').classList.toggle('hidden', step !== 1);
