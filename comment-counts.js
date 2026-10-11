@@ -108,6 +108,7 @@ function ccLikeHover(wrapper, show) {
 // btn: el <button> pulsado. id: id del post. currentLikes: contador actual mostrado. isLiked: si ya tenía like.
 // userEmail/userName: identidad de quien da el like.
 async function ccToggleLike(btn) {
+  if (window.byGetherGuestMode) return;
   if (window.matchMedia && window.matchMedia('(max-width: 1023px)').matches) {
     if (navigator.vibrate) navigator.vibrate(10);
     const rect = btn.getBoundingClientRect();
@@ -348,6 +349,7 @@ function ccToggleCommentRepostMenu(commentId) {
 
 // Alterna el "me gusta" de un comentario (mismo mecanismo que ccToggleLike, sobre comment_likes).
 async function ccToggleCommentLike(btn, id, currentLikes, isLiked, userEmail, userName) {
+  if (window.byGetherGuestMode) return;
   if (!userEmail) return;
 
   const counterElement = document.getElementById(`c-likes-count-${id}`);
@@ -400,16 +402,19 @@ function ccReplyToComment(commentId) {
 }
 
 async function ccRepostComment(commentId) {
+  if (window.byGetherGuestMode) return;
   if (typeof window.onRepostComment === 'function') await window.onRepostComment(commentId, null);
   ccToggleCommentRepostMenu(commentId);
 }
 
 async function ccUndoCommentRepost(commentId) {
+  if (window.byGetherGuestMode) return;
   if (typeof window.onUndoCommentRepost === 'function') await window.onUndoCommentRepost(commentId);
   ccToggleCommentRepostMenu(commentId);
 }
 
 async function ccQuoteComment(commentId) {
+  if (window.byGetherGuestMode) return;
   const quoteText = prompt('Escribe tu cita para este repost:');
   ccToggleCommentRepostMenu(commentId);
   if (quoteText === null) return;
