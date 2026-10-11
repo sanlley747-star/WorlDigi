@@ -54,7 +54,7 @@
     modal.querySelector('[data-auth-step2]').classList.add('hidden');
     modal.querySelector('[data-auth-step3]').classList.add('hidden');
     modal.querySelector('[data-auth-login-fields]').classList.toggle('hidden', signup);
-    modal.querySelector('[data-auth-divider]').classList.add('hidden');
+    modal.querySelector('[data-auth-divider]').classList.remove('hidden');
     modal.querySelector('[data-auth-back]').classList.add('hidden');
     modal.querySelector('[data-auth-switch]').classList.remove('hidden');
     modal.querySelector('[data-auth-switch]').innerHTML = signup
