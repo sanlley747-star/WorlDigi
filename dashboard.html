@@ -428,8 +428,8 @@
       revealApp();
     });
 
-    // Punto único de control del modo invitado; el bloque final podrá cambiar este valor predeterminado.
-    const guestModeRequested = new URLSearchParams(window.location.search).get('invitado') === '1';
+    // Punto único: cualquier visitante sin sesión ve el muro público; la sesión autenticada conserva el flujo normal.
+    const guestModeRequested = true; // El muro público es la entrada por defecto; ?invitado=1 ya no es necesario.
     let isGuestMode = false;
     let currentUser = null;
     let myAvatarUrl = null;

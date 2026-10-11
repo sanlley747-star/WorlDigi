@@ -14,7 +14,7 @@ window.byGetherAuthReady = new Promise((resolve, reject) => {
 });
 
 // Respaldo: si ya existe una sesión activa, entrar directamente al muro.
-// El pre-chequeo síncrono del <head> de index.html cubre el caso normal;
+// El pre-chequeo síncrono del <head> de acerca.html cubre el caso normal;
 // esto cubre sesiones que ese pre-chequeo no detecte.
 supabaseClient.auth.getSession().then(({ data }) => {
   if (data.session && !window.__bygetherBounced) window.location.replace('dashboard.html');
