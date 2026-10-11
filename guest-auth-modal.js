@@ -4,6 +4,7 @@
   'use strict';
 
   const ALLOWED_GUEST_INTERACTIONS = Object.freeze([
+    '#guestAuthGoogle',
     '#guestAuthLogin',
     '#guestAuthSignup',
     '#guestAuthModal',
@@ -119,14 +120,16 @@
   }
 
   async function googleAuth() {
-    const errorBox = getModal().querySelector('[data-auth-error]');
-    errorBox.textContent = '';
+    const errorBox = getModal()?.querySelector('[data-auth-error]');
+    if (errorBox) errorBox.textContent = '';
     try {
       await window.byGetherAuthReady;
       const { error } = await window.ByGetherAuth.google(supabaseClient, window.location.origin + '/dashboard.html');
       if (error) throw error;
     } catch (error) {
-      errorBox.textContent = error && error.message ? error.message : 'No se pudo iniciar sesión con Google.';
+      const message = error && error.message ? error.message : 'No se pudo iniciar sesión con Google.';
+      if (errorBox) errorBox.textContent = message;
+      else window.alert(message);
     }
   }
 
@@ -213,8 +216,17 @@
   function attachHeaderButtons() {
     const actions = document.getElementById('guestAuthActions');
     if (!actions) return;
+    const google = actions.querySelector('#guestAuthGoogle');
     const login = actions.querySelector('#guestAuthLogin');
     const signup = actions.querySelector('#guestAuthSignup');
+    if (google) {
+      google.href = '#';
+      google.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        googleAuth();
+      });
+    }
     if (login) login.href = '#';
     if (signup) signup.href = '#';
   }
