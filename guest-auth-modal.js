@@ -4,7 +4,8 @@
   'use strict';
 
   const ALLOWED_GUEST_INTERACTIONS = Object.freeze([
-    '#guestAuthGoogle',\n    '#guestAuthLogin',
+    '#guestAuthGoogle',
+    '#guestAuthLogin',
     '#guestAuthSignup',
     '#guestAuthModal',
     '#guestAuthModal *'
