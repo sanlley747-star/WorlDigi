@@ -49,7 +49,7 @@
     const signup = mode === 'signup';
     modal.querySelector('[data-auth-title]').textContent = signup ? 'Regístrate' : 'Inicia sesión';
     modal.querySelector('[data-auth-google]').classList.remove('hidden');
-    modal.querySelector('[data-auth-terms]').classList.toggle('hidden', !signup);
+    modal.querySelector('[data-auth-terms]').classList.remove('hidden');
     modal.querySelector('[data-auth-step1]').classList.toggle('hidden', !signup);
     modal.querySelector('[data-auth-step2]').classList.add('hidden');
     modal.querySelector('[data-auth-step3]').classList.add('hidden');
