@@ -48,13 +48,13 @@
     if (!modal) return;
     const signup = mode === 'signup';
     modal.querySelector('[data-auth-title]').textContent = signup ? 'Regístrate' : 'Inicia sesión';
-    modal.querySelector('[data-auth-google]').classList.toggle('hidden', !signup);
+    modal.querySelector('[data-auth-google]').classList.remove('hidden');
     modal.querySelector('[data-auth-terms]').classList.toggle('hidden', !signup);
     modal.querySelector('[data-auth-step1]').classList.toggle('hidden', !signup);
     modal.querySelector('[data-auth-step2]').classList.add('hidden');
     modal.querySelector('[data-auth-step3]').classList.add('hidden');
     modal.querySelector('[data-auth-login-fields]').classList.toggle('hidden', signup);
-    modal.querySelector('[data-auth-divider]').classList.toggle('hidden', !signup);
+    modal.querySelector('[data-auth-divider]').classList.add('hidden');
     modal.querySelector('[data-auth-back]').classList.add('hidden');
     modal.querySelector('[data-auth-switch]').classList.remove('hidden');
     modal.querySelector('[data-auth-switch]').innerHTML = signup
@@ -62,6 +62,8 @@
       : '¿No tienes cuenta? <button type="button" data-switch-auth="signup" class="font-semibold text-blue-400 hover:text-blue-300 underline underline-offset-2">Regístrate</button>';
     modal.querySelector('[data-auth-error]').textContent = '';
     modal.querySelector('[data-auth-login-error]').textContent = '';
+    modal.querySelector('#guestAuthLoginEmail').required = !signup;
+    modal.querySelector('#guestAuthLoginPassword').required = !signup;
     modal.querySelector('#guestAuthLoginPassword').autocomplete = 'current-password';
     modal.querySelector('[data-auth-submit]').textContent = 'Iniciar sesión';
     updateSignupButtons();
@@ -123,6 +125,7 @@
     modal.querySelector('[data-auth-back]').classList.toggle('hidden', step !== 2);
     modal.querySelector('[data-auth-switch]').classList.toggle('hidden', step === 3);
     modal.querySelector('[data-auth-error]').textContent = '';
+    modal.querySelector('[data-auth-step2-error]').textContent = '';
     updateSignupButtons();
     if (step === 2) modal.querySelector('#guestAuthName').focus({preventScroll:true});
   }
@@ -137,7 +140,7 @@
     const submit = mode === 'signup'
       ? modal.querySelector(signupStep === 1 ? '[data-auth-step1-submit]' : '[data-auth-step2-submit]')
       : modal.querySelector('[data-auth-submit]');
-    const errorBox = modal.querySelector(mode === 'login' ? '[data-auth-login-error]' : '[data-auth-error]');
+    const errorBox = modal.querySelector(mode === 'login' ? '[data-auth-login-error]' : (signupStep === 2 ? '[data-auth-step2-error]' : '[data-auth-error]'));
     errorBox.textContent = '';
 
     if (mode === 'signup' && signupStep === 1) {
@@ -265,14 +268,14 @@
         <div data-auth-divider class="my-4 flex items-center gap-3 text-xs font-semibold uppercase tracking-widest text-slate-500"><span class="h-px flex-1 bg-slate-800"></span><span>o</span><span class="h-px flex-1 bg-slate-800"></span></div>
         <form data-auth-form class="space-y-3">
           <div data-auth-step1>
-            <label class="block"><span class="mb-1.5 block text-sm text-slate-300">Correo electrónico</span><input id="guestAuthEmail" type="email" autocomplete="email" required class="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-base text-white outline-none transition placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" placeholder="Correo electrónico"></label>
+            <label class="block"><span class="mb-1.5 block text-sm text-slate-300">Correo electrónico</span><input id="guestAuthEmail" type="email" autocomplete="email" class="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-base text-white outline-none transition placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" placeholder="Correo electrónico"></label>
             <p data-auth-error role="alert" aria-live="polite" class="mt-1 min-h-0 text-sm text-red-400"></p>
             <button data-auth-step1-submit type="button" class="mt-3 w-full rounded-xl bg-emerald-600 px-4 py-3 font-bold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40">Continuar</button>
           </div>
           <div data-auth-step2 class="hidden space-y-3">
             <label class="block"><span class="mb-1.5 block text-sm text-slate-300">Nombre de usuario</span><input id="guestAuthName" type="text" autocomplete="username" class="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-base text-white outline-none transition placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" placeholder="Nombre de usuario"></label>
-            <label class="block"><span class="mb-1.5 block text-sm text-slate-300">Contraseña</span><span class="relative block"><input id="guestAuthPassword" type="password" autocomplete="new-password" minlength="6" class="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 pr-12 text-base text-white outline-none transition placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" placeholder="Contraseña"><button type="button" data-auth-toggle-password aria-label="Mostrar contraseña" class="absolute inset-y-0 right-2 flex items-center justify-center rounded-md px-2 text-slate-400 hover:text-white"><svg data-eye-open class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><svg data-eye-closed class="hidden h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m3 3 18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.2A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.1 3.8M6.2 6.2C3.5 8 2 12 2 12s3.5 7 10 7c1.5 0 2.8-.4 4-1"/></svg></button></span></label>
-            <p data-auth-error role="alert" aria-live="polite" class="min-h-0 text-sm text-red-400"></p>
+            <label class="block"><span class="mb-1.5 block text-sm text-slate-300">Contraseña</span><span class="relative block"><input id="guestAuthPassword" type="password" autocomplete="new-password" class="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 pr-12 text-base text-white outline-none transition placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" placeholder="Contraseña"><button type="button" data-auth-toggle-password aria-label="Mostrar contraseña" class="absolute inset-y-0 right-2 flex items-center justify-center rounded-md px-2 text-slate-400 hover:text-white"><svg data-eye-open class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><svg data-eye-closed class="hidden h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m3 3 18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.2A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.1 3.8M6.2 6.2C3.5 8 2 12 2 12s3.5 7 10 7c1.5 0 2.8-.4 4-1"/></svg></button></span></label>
+            <p data-auth-step2-error role="alert" aria-live="polite" class="min-h-0 text-sm text-red-400"></p>
             <button data-auth-step2-submit type="submit" class="w-full rounded-xl bg-emerald-600 px-4 py-3 font-bold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40">Continuar</button>
           </div>
           <div data-auth-step3 class="hidden"><p data-auth-confirm-email class="mt-3 text-sm leading-6 text-slate-300"></p></div>
@@ -307,6 +310,7 @@
     ['#guestAuthEmail','#guestAuthName','#guestAuthPassword'].forEach(selector => {
       modal.querySelector(selector).addEventListener('input', () => {
         modal.querySelector('[data-auth-error]').textContent = '';
+        modal.querySelector('[data-auth-step2-error]').textContent = '';
         updateSignupButtons();
       });
     });
