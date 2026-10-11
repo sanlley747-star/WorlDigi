@@ -5,6 +5,14 @@ const SUPABASE_ANON_KEY = 'sb_publishable_fL7vTXJ4NLhC2CJs9nPVAg_fvzWbfCY'; // <
 // Inicializar el cliente de Supabase
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+window.byGetherAuthReady = new Promise((resolve, reject) => {
+  const script = document.createElement('script');
+  script.src = 'auth-shared.js';
+  script.onload = resolve;
+  script.onerror = () => reject(new Error('No se pudo cargar el módulo de autenticación.'));
+  document.head.appendChild(script);
+});
+
 // Respaldo: si ya existe una sesión activa, entrar directamente al muro.
 // El pre-chequeo síncrono del <head> de index.html cubre el caso normal;
 // esto cubre sesiones que ese pre-chequeo no detecte.
@@ -87,12 +95,8 @@ if (googleSignupBtn) {
   googleSignupBtn.onclick = async () => {
     googleSignupBtn.disabled = true;
     try {
-      const { error } = await supabaseClient.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin + '/dashboard.html'
-        }
-      });
+      await window.byGetherAuthReady;
+      const { error } = await window.ByGetherAuth.google(supabaseClient, window.location.origin + '/dashboard.html');
 
       if (error) {
         alert('No se pudo iniciar el registro con Google: ' + error.message);
@@ -131,7 +135,9 @@ const email = emailField.value;
 
   try {
     if (currentMode === 'recover') {
-      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+      await window.byGetherAuthReady;
+      const { error } = await window.ByGetherAuth.recover(supabaseClient, {
+        email,
         redirectTo: window.location.origin + '/reset-password.html'
       });
 
@@ -142,17 +148,12 @@ const email = emailField.value;
         modal.classList.add('hidden');
       }
     } else if (currentMode === 'signup') {
-      const TERMS_VERSION = "2026-10-02";
-      const { data, error } = await supabaseClient.auth.signUp({
-        email: email,
-        password: password,
-        options: {
-          data: {
-            full_name: name,
-            terms_version: TERMS_VERSION,
-            terms_accepted_at: new Date().toISOString()
-          }
-        }
+      await window.byGetherAuthReady;
+      const { data, error } = await window.ByGetherAuth.signUp(supabaseClient, {
+        name,
+        email,
+        password,
+        redirectTo: window.location.origin + '/dashboard.html'
       });
 
       if (error) {
@@ -163,10 +164,8 @@ const email = emailField.value;
       }
     } else {
       // Iniciar Sesión
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email: email,
-        password: password
-      });
+      await window.byGetherAuthReady;
+      const { data, error } = await window.ByGetherAuth.signIn(supabaseClient, { email, password });
 
       if (error) {
         alert('Error al entrar: ' + error.message);
