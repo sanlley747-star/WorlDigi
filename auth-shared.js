@@ -32,4 +32,5 @@
       });
     }
   });
+  if (!window.byGetherAuthReady) window.byGetherAuthReady = Promise.resolve();
 })();
