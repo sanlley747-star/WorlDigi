@@ -91,18 +91,10 @@
     submit.textContent = 'Procesando…';
     try {
       if (mode === 'signup') {
-        const TERMS_VERSION = '2026-10-02';
-        const { data, error } = await supabaseClient.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: name,
-              terms_version: TERMS_VERSION,
-              terms_accepted_at: new Date().toISOString()
-            },
-            emailRedirectTo: window.location.origin + '/dashboard.html'
-          }
+        await window.byGetherAuthReady;
+        const { data, error } = await window.ByGetherAuth.signUp(supabaseClient, {
+          name, email, password,
+          redirectTo: window.location.origin + '/dashboard.html'
         });
         if (error) throw error;
         if (data && data.session) {
@@ -111,7 +103,8 @@
         }
         errorBox.textContent = 'Registro iniciado. Revisa tu correo y confirma la cuenta para poder entrar.';
       } else {
-        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        await window.byGetherAuthReady;
+        const { error } = await window.ByGetherAuth.signIn(supabaseClient, { email, password });
         if (error) throw error;
         window.location.replace('dashboard.html');
         return;
@@ -129,10 +122,8 @@
     const errorBox = getModal().querySelector('[data-auth-error]');
     errorBox.textContent = '';
     try {
-      const { error } = await supabaseClient.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: window.location.origin + '/dashboard.html' }
-      });
+      await window.byGetherAuthReady;
+      const { error } = await window.ByGetherAuth.google(supabaseClient, window.location.origin + '/dashboard.html');
       if (error) throw error;
     } catch (error) {
       errorBox.textContent = error && error.message ? error.message : 'No se pudo iniciar sesión con Google.';
