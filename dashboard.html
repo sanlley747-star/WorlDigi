@@ -510,6 +510,7 @@
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (!session && guestModeRequested) {
           isGuestMode = true;
+          window.byGetherGuestMode = true;
           currentUser = null;
           revealApp();
           document.getElementById('guestAuthActions')?.classList.remove('hidden');
@@ -1676,6 +1677,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
     }
 
    async function repostPost(postId) {
+  if (!currentUser) return;
   const authorName =
     currentUser.user_metadata?.full_name ||
     currentUser.email.split('@')[0];
@@ -1988,7 +1990,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
 
       const { data: comments, error } = await supabaseClient
         .from('comments')
-        .select('*')
+        .select(isGuestMode ? 'id, post_id, user_name, content, created_at, reply_to' : '*')
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
 
