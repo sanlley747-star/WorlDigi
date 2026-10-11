@@ -140,7 +140,7 @@
       </div>
       <div id="searchResults" class="hidden"></div>
     </div>
-    <div id="guestAuthActions" class="hidden flex items-center gap-2 ml-3 shrink-0"><a href="index.html" class="px-3 py-2 rounded-lg border border-slate-600 text-xs sm:text-sm font-semibold hover:bg-slate-800">Iniciar sesión</a><a href="index.html" class="px-3 py-2 rounded-lg bg-blue-600 text-xs sm:text-sm font-semibold hover:bg-blue-700">Registrarse</a></div>
+    <div id="guestAuthActions" class="hidden flex items-center gap-2 ml-3 shrink-0"><a id="guestAuthLogin" href="#" role="button" class="px-3 py-2 rounded-lg border border-slate-600 text-xs sm:text-sm font-semibold hover:bg-slate-800">Iniciar sesión</a><a id="guestAuthSignup" href="#" role="button" class="px-3 py-2 rounded-lg bg-blue-600 text-xs sm:text-sm font-semibold hover:bg-blue-700">Registrarse</a></div>
     <div id="feedModeTabs" role="tablist" aria-label="Modo del muro">
       <button id="feedModeRecent" type="button" role="tab" aria-selected="true" class="is-active">Reciente</button>
       <button id="feedModeFeatured" type="button" role="tab" aria-selected="false">Destacado</button>
@@ -2201,6 +2201,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
   <script src="composer-autogrow.js"></script>
   <script src="composer-counter.js"></script>
   <script src="mobile-nav.js"></script>
+  <script src="guest-auth-modal.js"></script>
 
   <!-- Pegado/arrastre de imágenes: aislado del modal de publicar -->
   <script>
