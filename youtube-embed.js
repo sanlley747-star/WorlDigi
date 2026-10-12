@@ -53,6 +53,10 @@
       .yt-meta { margin-top: .25rem; font-size: .75rem; }
       .yt-meta a { color: #6b7280; }
       .yt-meta a:hover { text-decoration: underline; }
+      @media (max-width: 640px) {
+        .yt-embed, .yt-frame, .yt-frame iframe { min-width: 0; max-width: 100%; box-sizing: border-box; }
+        .yt-frame.yt-short { max-width: min(320px, 100%); }
+      }
       /* Modo teatro (respaldo cuando el navegador no permite fullscreen de elementos, p. ej. iPhone) */
     `;
     document.head.appendChild(s);
