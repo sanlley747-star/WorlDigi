@@ -78,6 +78,8 @@
     modal.classList.add('flex');
     document.body.style.overflow = 'hidden';
     window.setTimeout(() => {
+      const isMobile = window.matchMedia('(pointer: coarse)').matches;
+      if (isMobile) return;
       const field = modal.querySelector(mode === 'signup' ? '#guestAuthEmail' : '#guestAuthLoginEmail');
       field && field.focus({ preventScroll: true });
     }, 0);
