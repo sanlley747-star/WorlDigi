@@ -115,6 +115,7 @@
     #searchTopWrap { max-width:100%; }
     #searchTopWrap > div { height:38px; }
     #searchInput { font-size:13px; }
+    .post-body-indent, .post-actions-indent, .post-quote-indent { margin-left:0 !important; }
   }
   #feedModeTabs { position:absolute; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:22px; height:100%; white-space:nowrap; }
   #feedModeTabs button { position:relative; height:100%; padding:0 2px; color:#94a3b8; font-size:13px; font-weight:600; transition:color .15s; }
@@ -970,7 +971,7 @@ let feedRestoringState = false;
           </div>
         `) : ''}
 
-        ${post.quote_text ? '<div class="mt-2 ml-6 border border-gray-200 dark:border-slate-700 rounded-2xl bg-gray-50 dark:bg-slate-800/40 p-3">': ''}
+        ${post.quote_text ? '<div class="mt-2 ml-6 post-quote-indent border border-gray-200 dark:border-slate-700 rounded-2xl bg-gray-50 dark:bg-slate-800/40 p-3">': ''}
 
         <div class="flex items-center space-x-3 relative z-10">
 
@@ -999,7 +1000,7 @@ let feedRestoringState = false;
           </div>
         </div>
 
-        <div class="${post.quote_text ? 'ml-9' : 'ml-[52px]'} mt-2 space-y-3">
+        <div class="${post.quote_text ? 'ml-9' : 'ml-[52px]'} post-body-indent mt-2 space-y-3">
           ${displayPost.content ? `
             <div>
               <p data-expandable-post-text class="text-gray-800 dark:text-gray-200 text-sm break-words cursor-pointer"
@@ -1025,7 +1026,7 @@ let feedRestoringState = false;
         </div>
 
         <div class="border-t border-gray-100 dark:border-slate-800 pt-2">
-          <div class="${post.quote_text ? 'ml-[60px]' : 'ml-[52px]'} flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
+          <div class="${post.quote_text ? 'ml-[60px]' : 'ml-[52px]'} post-actions-indent flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
 
           <button
             onclick="commentPost(${post.id})"
