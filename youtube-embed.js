@@ -5,6 +5,8 @@
   const MAX_EMBEDS_POR_POST = 1;
   const ID_RE = /^[A-Za-z0-9_-]{11}$/;
   const ICON_EXPAND = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M3 3l6 6M16 3h5v5M21 3l-6 6M8 21H3v-5M3 21l6-6M16 21h5v-5M21 21l-6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const ICON_SOUND_ON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+  const ICON_SOUND_OFF = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m16 9 5 6m0-6-5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 
   function parseStart(u) {
     const raw = u.searchParams.get('t') || u.searchParams.get('start');
@@ -48,6 +50,9 @@
       .yt-play:hover::after, .yt-play:focus-visible::after { background-color: #ff0000; }
       .yt-expand { display: none; position: absolute; right: .5rem; bottom: .5rem; width: 42px; height: 42px; border: 0; border-radius: .5rem; background: rgba(0,0,0,.72); color: #fff; align-items: center; justify-content: center; cursor: pointer; z-index: 3; }
       .yt-expand svg { width: 22px; height: 22px; }
+      .yt-mute { display: none; position: absolute; top: 8px; left: 8px; width: 32px; height: 32px; padding: 0; border: 0; border-radius: .5rem; background: rgba(0,0,0,.72); color: #fff; align-items: center; justify-content: center; cursor: pointer; z-index: 4; }
+      .yt-mute svg { width: 19px; height: 19px; }
+      @media (max-width: 640px) { .yt-mute { display: flex; } }
       @media (max-width: 767px) { .yt-expand { display: flex; } }
       .yt-frame.yt-theater { position: fixed; inset: 0; z-index: 9999; width: 100vw; height: 100vh; aspect-ratio: auto; border-radius: 0; }
       .yt-meta { margin-top: .25rem; font-size: .75rem; }
@@ -70,6 +75,7 @@
       <div class="yt-frame${v.short ? ' yt-short' : ''}">
         <button type="button" class="yt-play" style="background-image:url('${thumb}')" aria-label="Reproducir video"></button>
         <button type="button" class="yt-expand" aria-label="Pantalla completa" title="Pantalla completa">${ICON_EXPAND}</button>
+        <button type="button" class="yt-mute" aria-label="Activar sonido" title="Activar sonido">${ICON_SOUND_OFF}</button>
       </div>
       <div class="yt-meta"><a href="${watch}" target="_blank" rel="noopener noreferrer">YouTube</a></div>
     </div>`;
@@ -307,6 +313,8 @@
     iframe.loading = preload ? 'eager' : 'lazy';
     iframe.addEventListener('load', function () {
       iframe.dataset.ytLoaded = '1';
+      const audioBox = frame.closest('.yt-embed');
+      postPlayerCommand(frame, audioBox && audioBox.dataset.audio === 'unmuted' ? 'unMute' : 'mute');
       // Suscribe el iframe para recibir infoDelivery (incluido el estado mute).
       try {
         iframe.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: iframe.id }), YT_ORIGIN);
@@ -352,7 +360,20 @@
     const box = e.target.closest && e.target.closest('.yt-embed');
     if (!box) return;
     e.stopPropagation();
-    if (e.target.closest('.yt-play')) { box.dataset.audio = 'unmuted'; pauseOtherFrames(box.querySelector('.yt-frame')); loadPlayer(box, true, true); playFrame(box.querySelector('.yt-frame')); }
+    const muteButton = e.target.closest('.yt-mute');
+    if (muteButton) {
+      e.preventDefault();
+      const frame = box.querySelector('.yt-frame');
+      const iframe = frame && frame.querySelector('iframe');
+      box.dataset.audio = box.dataset.audio === 'unmuted' ? 'muted' : 'unmuted';
+      const unmuted = box.dataset.audio === 'unmuted';
+      muteButton.innerHTML = unmuted ? ICON_SOUND_ON : ICON_SOUND_OFF;
+      muteButton.setAttribute('aria-label', unmuted ? 'Silenciar' : 'Activar sonido');
+      muteButton.title = unmuted ? 'Silenciar' : 'Activar sonido';
+      if (iframe) postPlayerCommand(frame, unmuted ? 'unMute' : 'mute');
+      else loadPlayer(box, false, true);
+    }
+    else if (e.target.closest('.yt-play')) { box.dataset.audio = 'unmuted'; pauseOtherFrames(box.querySelector('.yt-frame')); loadPlayer(box, true, true); playFrame(box.querySelector('.yt-frame')); }
     else if (e.target.closest('.yt-expand')) { toggleExpand(box); }
   }, true);
 
