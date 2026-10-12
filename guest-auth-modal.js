@@ -78,6 +78,8 @@
     modal.classList.add('flex');
     document.body.style.overflow = 'hidden';
     window.setTimeout(() => {
+      const isMobile = window.matchMedia('(pointer: coarse)').matches;
+      if (isMobile) return;
       const field = modal.querySelector(mode === 'signup' ? '#guestAuthEmail' : '#guestAuthLoginEmail');
       field && field.focus({ preventScroll: true });
     }, 0);
@@ -226,11 +228,6 @@
       open('signup');
     }, true);
 
-    document.addEventListener('touchstart', function (event) {
-      if (!isGuestWithoutSession() || isAllowed(event.target) || !isInteractive(event.target)) return;
-      stopEvent(event);
-      open('signup');
-    }, { capture: true, passive: false });
 
     document.addEventListener('keydown', function (event) {
       if (!isGuestWithoutSession()) return;
