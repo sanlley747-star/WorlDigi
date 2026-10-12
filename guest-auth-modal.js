@@ -226,11 +226,6 @@
       open('signup');
     }, true);
 
-    document.addEventListener('touchstart', function (event) {
-      if (!isGuestWithoutSession() || isAllowed(event.target) || !isInteractive(event.target)) return;
-      stopEvent(event);
-      open('signup');
-    }, { capture: true, passive: false });
 
     document.addEventListener('keydown', function (event) {
       if (!isGuestWithoutSession()) return;
