@@ -59,6 +59,8 @@
       .yt-meta a { color: #6b7280; }
       .yt-meta a:hover { text-decoration: underline; }
       @media (max-width: 640px) {
+        .yt-expand { width: 32px; height: 32px; }
+        .yt-expand svg { width: 18px; height: 18px; }
         .yt-embed, .yt-frame, .yt-frame iframe { min-width: 0; max-width: 100%; box-sizing: border-box; }
         .yt-frame.yt-short { max-width: min(320px, 100%); }
       }
