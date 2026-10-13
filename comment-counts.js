@@ -369,7 +369,7 @@ async function ccToggleCommentLike(btn, id, currentLikes, isLiked, userEmail, us
     btn.classList.toggle('text-red-500', likedState);
     btn.classList.toggle('hover:text-red-500', !likedState);
     if (heartPath) heartPath.setAttribute('fill', likedState ? 'currentColor' : 'none');
-    btn.setAttribute('onclick', `ccToggleCommentLike(this, ${id}, ${likesCount}, ${likedState}, decodeURIComponent(' ${encodeURIComponent(userEmail)} '), decodeURIComponent(' ${encodeURIComponent(userName)} '))`.replaceAll("' ", "'").replaceAll(" '", "'"));
+    btn.setAttribute('onclick', `ccToggleCommentLike(this, ${id}, ${likesCount}, ${likedState}, decodeURIComponent('${encodeURIComponent(userEmail)}'), decodeURIComponent('${encodeURIComponent(userName)}'))`);
     const wrapper = btn.closest('[data-like-wrapper]');
     if (wrapper) ccLikeHover(wrapper, false);
   };
