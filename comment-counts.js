@@ -108,7 +108,11 @@ function ccLikeHover(wrapper, show) {
 // btn: el <button> pulsado. id: id del post. currentLikes: contador actual mostrado. isLiked: si ya tenía like.
 // userEmail/userName: identidad de quien da el like.
 async function ccToggleLike(btn) {
-  if (window.byGetherGuestMode) return;
+  // El muro autenticado usa la identidad ya resuelta por el dashboard.
+  // En páginas que no declaran currentUser, conserva la identidad entregada al renderizar el botón.
+  const activeUser = typeof currentUser !== 'undefined' ? currentUser : null;
+  if (window.byGetherGuestMode || !btn) return;
+
   if (window.matchMedia && window.matchMedia('(max-width: 1023px)').matches) {
     if (navigator.vibrate) navigator.vibrate(10);
     const rect = btn.getBoundingClientRect();
@@ -125,20 +129,23 @@ async function ccToggleLike(btn) {
       setTimeout(() => spark.remove(), 500);
     }
   }
+
   const id = btn.getAttribute('data-post-id');
   const currentLikes = parseInt(btn.getAttribute('data-likes') || '0', 10);
   const isLiked = btn.getAttribute('data-liked') === 'true';
-  const userEmail = btn.getAttribute('data-user-email');
-  const userName = btn.getAttribute('data-user-name');
+  const userEmail = activeUser?.email || btn.getAttribute('data-user-email');
+  const userName = activeUser?.user_metadata?.full_name ||
+    btn.getAttribute('data-user-name') ||
+    (userEmail ? userEmail.split('@')[0] : '');
 
-  if (!userEmail) return;
+  // Invitados o botones sin identidad autenticada: nunca escribir en Supabase.
+  if (!userEmail || !id || !supabaseClient) return;
 
   const counterElement = document.getElementById(`likes-count-${id}`);
   const heartPath = btn.querySelector('[data-heart-icon]');
   const newLiked = !isLiked;
   const newLikes = Math.max(0, currentLikes + (isLiked ? -1 : 1));
 
-  // Función interna para actualizar interfaz y atributos data-*
   const updateUI = (likesCount, likedState) => {
     if (counterElement) counterElement.textContent = likesCount;
     btn.setAttribute('data-likes', likesCount.toString());
@@ -150,34 +157,30 @@ async function ccToggleLike(btn) {
     if (wrapper) ccLikeHover(wrapper, false);
   };
 
-  // 1. Actualización optimista de UI
+  // Actualización optimista; se revierte si Supabase rechaza la operación.
   updateUI(newLikes, newLiked);
 
   try {
     let response;
     if (isLiked) {
-      // Quitar me gusta
       response = await supabaseClient
         .from('post_likes')
         .delete()
         .eq('post_id', id)
         .eq('user_email', userEmail);
     } else {
-      // Dar me gusta
       response = await supabaseClient
         .from('post_likes')
         .insert({ post_id: id, user_email: userEmail, user_name: userName });
     }
 
-    // 2. Si Supabase devuelve error (RLS o duplicado), revertir UI
     if (response.error) {
       console.error('Error en Supabase post_likes:', response.error.message);
       updateUI(currentLikes, isLiked);
       return;
     }
 
-    // 3. El contador de posts.likes se sincroniza automáticamente desde post_likes mediante trigger.
-
+    // trg_sync_post_likes_count sincroniza posts.likes desde post_likes.
   } catch (err) {
     console.error('Error inesperado de ejecución:', err);
     updateUI(currentLikes, isLiked);
