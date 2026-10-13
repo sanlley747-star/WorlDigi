@@ -13,6 +13,9 @@
   var me = null;
 
   var css = [
+    '.cm-thread-post{position:relative}',
+    '.cm-thread-post::after{content:"";position:absolute;left:19px;top:40px;bottom:-33px;width:2px;background:#00B341;pointer-events:none;z-index:1}',
+    '.dark .cm-thread-post::after{background:#39FF14}',
     '.cm-lim{position:relative;width:32px;height:32px;flex:0 0 auto;opacity:0;transform:scale(.85);',
     '  transition:opacity .15s ease,transform .15s ease;pointer-events:none}',
     '.cm-lim.cm-on{opacity:1;transform:none}',
