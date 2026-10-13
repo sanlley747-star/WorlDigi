@@ -294,7 +294,7 @@ function ccCommentActionsHtml(c, v) {
 
       <div class="relative" data-like-wrapper onmouseenter="ccLikeHover(this, true)" onmouseleave="ccLikeHover(this, false)">
         <button type="button" data-like-btn data-liked="${v.isLiked ? 'true' : 'false'}"
-          onclick="ccToggleCommentLike(this, ${id}, ${v.likes || 0}, ${v.isLiked ? 'true' : 'false'}, ${ue}, ${un})"
+          onclick="ccToggleCommentLike(this, ${id}, ${v.likes || 0}, ${v.isLiked ? 'true' : 'false'}, decodeURIComponent(\'${encodeURIComponent(v.userEmail || '')}\'), decodeURIComponent(\'${encodeURIComponent(v.userName || '')}\'))"
           title="Me gusta" class="flex items-center gap-1 font-semibold transition ${v.isLiked ? 'text-red-500' : 'hover:text-red-500'}">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0">
             <path data-heart-icon fill="${v.isLiked ? 'currentColor' : 'none'}" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"></path>
@@ -352,7 +352,10 @@ function ccToggleCommentRepostMenu(commentId) {
 
 // Alterna el "me gusta" de un comentario (mismo mecanismo que ccToggleLike, sobre comment_likes).
 async function ccToggleCommentLike(btn, id, currentLikes, isLiked, userEmail, userName) {
-  if (window.byGetherGuestMode) return;
+  if (window.byGetherGuestMode) {
+    if (window.byGetherGuestAuth && typeof window.byGetherGuestAuth.open === 'function') window.byGetherGuestAuth.open('signup');
+    return;
+  }
   if (!userEmail) return;
 
   const counterElement = document.getElementById(`c-likes-count-${id}`);
@@ -366,7 +369,7 @@ async function ccToggleCommentLike(btn, id, currentLikes, isLiked, userEmail, us
     btn.classList.toggle('text-red-500', likedState);
     btn.classList.toggle('hover:text-red-500', !likedState);
     if (heartPath) heartPath.setAttribute('fill', likedState ? 'currentColor' : 'none');
-    btn.setAttribute('onclick', `ccToggleCommentLike(this, ${id}, ${likesCount}, ${likedState}, ${JSON.stringify(userEmail)}, ${JSON.stringify(userName)})`);
+    btn.setAttribute('onclick', `ccToggleCommentLike(this, ${id}, ${likesCount}, ${likedState}, decodeURIComponent(' ${encodeURIComponent(userEmail)} '), decodeURIComponent(' ${encodeURIComponent(userName)} '))`.replaceAll("' ", "'").replaceAll(" '", "'"));
     const wrapper = btn.closest('[data-like-wrapper]');
     if (wrapper) ccLikeHover(wrapper, false);
   };
