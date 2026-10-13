@@ -65,7 +65,7 @@
         '<button type="button" data-cm="close" aria-label="Cerrar" class="absolute top-3 right-3 text-2xl text-gray-500 hover:text-gray-800 dark:hover:text-white leading-none">&times;</button>' +
 
         // La publicación
-        '<div data-cm="post" class="pr-8"></div>' +
+        '<div data-cm="post" class="pr-8 cm-thread-post"></div>' +
 
         // Quien comenta
         '<div class="flex items-start gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-slate-800">' +
@@ -213,8 +213,7 @@
           '<span class="text-sm text-gray-500 dark:text-gray-400 flex-shrink-0">' + esc(timeText(post.created_at)) + '</span>' +
         '</div>' +
       '</div>' +
-      (post.content ? '<p data-cm-clamp class="mt-3 text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line" style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;max-height:4.5em;overflow:hidden;">' + esc(post.content) + '</p><button type="button" data-cm-btn data-expanded="false" class="rm-btn hidden" onclick="window.cmToggleReadMore(this)">Ver más...</button>' : '') +
-      (post.image_url ? '<img src="' + esc(post.image_url) + '" alt="Imagen de publicación" class="mt-3 w-full rounded-lg max-h-60 object-cover">' : '');
+      (post.content ? '<div class="ml-[52px]"><p data-cm-clamp class="mt-3 text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line" style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;max-height:4.5em;overflow:hidden;">' + esc(post.content) + '</p><button type="button" data-cm-btn data-expanded="false" class="rm-btn hidden" onclick="window.cmToggleReadMore(this)">Ver más...</button></div>' : '');
     requestAnimationFrame(function () { window.cmCheckReadMore(els.post); });
   }
 
