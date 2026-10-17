@@ -1,0 +1,6 @@
+agentes/
+supabase/
+PostCard.jsx
+.gitignore
+*.md
+*.sql
