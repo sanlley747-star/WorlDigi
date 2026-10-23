@@ -54,8 +54,8 @@ function openModal(mode) {
   } else {
     title.textContent = signup ? 'Create your account' : 'Welcome back';
     subtitle.textContent = signup
-      ? 'Join ByGether and begin exploring.'
-      : 'Sign in to your ByGether account.';
+      ? 'Join TuNetFy and begin exploring.'
+      : 'Sign in to your TuNetFy account.';
   }
 
   if (nameField) {
