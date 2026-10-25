@@ -79,7 +79,7 @@
   panel.id = 'gmPanel';
   panel.setAttribute('role', 'dialog');
   panel.setAttribute('aria-modal', 'true');
-  panel.setAttribute('aria-label', 'Menú de ByGether');
+  panel.setAttribute('aria-label', 'Menú de TuNetFy');
   panel.setAttribute('aria-hidden', 'true');
   panel.innerHTML =
     '<div class="gm-top"><button type="button" class="gm-close" aria-label="Cerrar menú">' + ICON.close + '</button></div>' +

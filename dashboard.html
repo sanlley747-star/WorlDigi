@@ -28,7 +28,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>ByGether - Muro Principal</title>
+  <title>TuNetFy - Muro Principal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -163,7 +163,7 @@
 
   <nav class="sticky top-0 z-50 bg-black text-white px-4 py-2 flex justify-between items-center shadow-md border-b border-slate-800">
     <div class="flex items-center flex-1 min-w-0">
-      <a href="dashboard.html" class="flex items-center flex-shrink-0"><img src="assets/logo-circle.png" alt="ByGether" class="h-10 w-auto"></a>
+      <a href="dashboard.html" class="flex items-center flex-shrink-0"><img src="assets/logo-circle.png" alt="TuNetFy" class="h-10 w-auto"></a>
     </div>
     <div id="searchTopWrap" class="hidden absolute left-1/2 -translate-x-1/2 w-full max-w-md px-4">
       <div class="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-full px-3 h-8 shadow-sm">
@@ -317,7 +317,7 @@
       <div class="sticky top-0 bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 flex flex-col items-center justify-center" style="width: 300px; height: 600px;">
         <span class="text-xs text-gray-400 uppercase tracking-widest mb-2 text-gray-400">Publicidad</span>
         <a id="advertisementLink" href="/" target="_blank" rel="noopener noreferrer" class="block w-full h-full">
-          <img id="advertisementImage" alt="Publicidad ByGether" class="w-full h-full rounded-lg object-cover" width="300" height="600" style="visibility:hidden">
+          <img id="advertisementImage" alt="Publicidad TuNetFy" class="w-full h-full rounded-lg object-cover" width="300" height="600" style="visibility:hidden">
         </a>
       </div>
     </aside>
@@ -1922,7 +1922,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
 
       if (navigator.share) {
         try {
-          await navigator.share({ title: 'ByGether', url: shareUrl });
+          await navigator.share({ title: 'TuNetFy', url: shareUrl });
           shared = true;
         } catch (error) {
           if (error?.name === 'AbortError') return;

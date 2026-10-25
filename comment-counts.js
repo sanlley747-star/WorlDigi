@@ -430,7 +430,7 @@ async function ccQuoteComment(commentId) {
 function ccShareComment(commentId, postId) {
   const url = `${window.location.origin}/publicacion.html?id=${encodeURIComponent(postId)}#comentario-${commentId}`;
   if (navigator.share) {
-    navigator.share({ title: 'ByGether', url });
+    navigator.share({ title: 'TuNetFy', url });
   } else {
     navigator.clipboard.writeText(url);
     if (typeof showToast === 'function') showToast('Enlace del comentario copiado');
