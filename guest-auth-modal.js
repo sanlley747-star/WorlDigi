@@ -59,7 +59,7 @@
     modal.querySelector('[data-auth-back]').classList.add('hidden');
     modal.querySelector('[data-auth-switch]').classList.remove('hidden');
     modal.querySelector('[data-auth-switch]').innerHTML = signup
-      ? '¿Ya eres ByGer? <button type="button" data-switch-auth="login" class="font-semibold text-blue-400 hover:text-blue-300 underline underline-offset-2">Inicia sesión</button>'
+      ? '¿Ya tienes cuenta? <button type="button" data-switch-auth="login" class="font-semibold text-blue-400 hover:text-blue-300 underline underline-offset-2">Inicia sesión</button>'
       : '¿No tienes cuenta? <button type="button" data-switch-auth="signup" class="font-semibold text-blue-400 hover:text-blue-300 underline underline-offset-2">Regístrate</button>';
     modal.querySelector('[data-auth-error]').textContent = '';
     modal.querySelector('[data-auth-login-error]').textContent = '';
@@ -290,7 +290,7 @@
             <button data-auth-submit type="submit" class="w-full rounded-xl bg-blue-600 px-4 py-3 font-bold text-white transition hover:bg-blue-500 disabled:cursor-wait disabled:opacity-60">Iniciar sesión</button>
           </div>
         </form>
-        <p data-auth-switch class="mt-5 text-center text-sm text-slate-400">¿Ya eres ByGer? <button type="button" data-switch-auth="login" class="font-semibold text-blue-400 underline underline-offset-2">Inicia sesión</button></p>
+        <p data-auth-switch class="mt-5 text-center text-sm text-slate-400">¿Ya tienes cuenta? <button type="button" data-switch-auth="login" class="font-semibold text-blue-400 underline underline-offset-2">Inicia sesión</button></p>
       </section>`;
     document.body.appendChild(modal);
     modal.addEventListener('click', event => { if (event.target === modal) close(); });
