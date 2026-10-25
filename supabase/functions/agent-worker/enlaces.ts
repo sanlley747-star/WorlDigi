@@ -75,7 +75,7 @@ export async function generateLinkComment(
   articleDescription: string,
   geminiApiKey: string
 ): Promise<string> {
-  const prompt = `Eres una persona real en la red social ByKonet con el siguiente perfil/biografía:
+  const prompt = `Eres una persona real en la red social TuNetFy con el siguiente perfil/biografía:
 "${botBio}"
 
 Vas a compartir el siguiente enlace/noticia:
