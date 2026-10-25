@@ -1,3 +1,5 @@
+Consulta primero `NOTA_NOMBRE.md` antes de modificar cualquier referencia al nombre antiguo de la red social.
+
 # Cuentas automaticas de ByGether
 
 Herramientas para crear y operar cuentas automaticas de prueba (marcadas `is_cuenta_automatica = true`).
