@@ -593,7 +593,7 @@
               ${post.quote_text ? `<div>\n  <p data-expandable-post-text class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line"\n     style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;max-height:4.5em;overflow:hidden;">${linkifyContent(post.quote_text)}</p>\n  <button type="button" data-rm-btn data-expanded="false" class="rm-btn hidden"\n     onclick="event.stopPropagation();togglePostText(this)">Ver más...</button>\n</div>` : ''}
               <a href="publicacion.html?id=${c.post_id}#comentario-${c.id}" class="block border border-gray-200 dark:border-slate-700 rounded-xl p-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition">
                 <div class="flex items-center gap-2 mb-1">
-                  <img src="${connEscape(cAvatar)}" class="w-6 h-6 rounded-full object-cover flex-shrink-0" alt="${connEscape(cAuthor)}">
+                  <img src="${connEscape(safeUrl(cAvatar))}" class="w-6 h-6 rounded-full object-cover flex-shrink-0" alt="${connEscape(cAuthor)}">
                   <span class="font-bold text-sm text-gray-900 dark:text-white">${connEscape(cAuthor)}</span>
                   <span class="text-xs text-gray-400">· ${formatCompactTime(c.created_at)}</span>
                 </div>
