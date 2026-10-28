@@ -271,7 +271,7 @@
       avatarEl.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(name) + '&background=random';
 
       var prof = await supabaseClient.from('profiles').select('avatar_url').eq('user_name', name).maybeSingle();
-      if (prof && prof.data && prof.data.avatar_url) avatarEl.src = prof.data.avatar_url;
+      if (prof && prof.data && prof.data.avatar_url) avatarEl.src = safeUrl(prof.data.avatar_url);
 
       // En páginas sin el menú lateral con campanita (ej. Ajustes) se consulta el contador aquí.
       if (!sourceBadge && user.email) {
