@@ -204,15 +204,7 @@
     }
 
     // El texto se escapa primero (para que nadie pueda meter HTML) y luego se convierten los enlaces
-    function linkifyContent(text) {
-      if (!text) return '';
-      const safe = connEscape(text);
-      return safe.replace(/(https?:\/\/[^\s]+)/g, (url) => {
-        let domain;
-        try { domain = new URL(url).hostname.replace('www.', ''); } catch (e) { domain = url; }
-        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-green-600 dark:text-green-400 font-semibold hover:underline align-middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 inline-block"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>${domain}</a>`;
-      });
-    }
+    function linkifyContent(text) { return safeLinkifyContent(text); }
 
     // "Volver": regresa a donde estaba el usuario (con su posición en el muro); si entró directo, va al inicio
     function goBack(e) {
@@ -302,7 +294,7 @@
 
           <div class="flex items-center space-x-3">
             <a href="perfil.html?user=${encodeURIComponent(v.author)}">
-              <img src="${connEscape(v.avatarUrl)}" class="w-12 h-12 rounded-full object-cover border border-gray-300 dark:border-slate-700 hover:opacity-80 transition" alt="${connEscape(v.author)}">
+              <img src="${connEscape(safeUrl(v.avatarUrl))}" class="w-12 h-12 rounded-full object-cover border border-gray-300 dark:border-slate-700 hover:opacity-80 transition" alt="${connEscape(v.author)}">
             </a>
             <div>
               <div class="flex items-center space-x-2">
@@ -316,7 +308,7 @@
           <div class="ml-[60px] space-y-3">
             ${post.content ? `<p class="text-gray-800 dark:text-gray-200 text-base break-words whitespace-pre-line">${linkifyContent(ytStripLink(post.content))}</p>${ytEmbedsFor(post.content)}` : ''}
 
-            ${post.image_url && !ytOwnsImage(post.content, post.image_url) ? `<img src="${connEscape(post.image_url)}" class="w-full rounded-lg max-h-[32rem] object-cover" alt="Imagen de publicación">` : ''}
+            ${post.image_url && !ytOwnsImage(post.content, post.image_url) ? `<img src="${connEscape(safeUrl(post.image_url))}" class="w-full rounded-lg max-h-[32rem] object-cover" alt="Imagen de publicación">` : ''}
           </div>
 
           <div class="border-t border-gray-100 dark:border-slate-800 pt-2">
@@ -498,7 +490,7 @@
         return `
           <div id="comentario-${c.id}" class="p-4 flex items-start gap-3 ${isReply ? 'pl-12 bg-gray-50/60 dark:bg-slate-800/40' : ''}">
             <a href="perfil.html?user=${encodeURIComponent(name)}" class="flex-shrink-0">
-              <img src="${connEscape(avatar)}" class="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-slate-700 hover:opacity-80 transition" alt="${connEscape(name)}">
+              <img src="${connEscape(safeUrl(avatar))}" class="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-slate-700 hover:opacity-80 transition" alt="${connEscape(name)}">
             </a>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2">
