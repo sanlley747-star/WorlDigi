@@ -185,7 +185,7 @@
     // Mi foto
     if (user) {
       supabaseClient.from('profiles').select('avatar_url').eq('user_email', user.email).maybeSingle()
-        .then(function (r) { if (currentPostId === mySeq && r.data && r.data.avatar_url) els.myAvatar.src = r.data.avatar_url; });
+        .then(function (r) { if (currentPostId === mySeq && r.data && r.data.avatar_url) els.myAvatar.src = safeUrl(r.data.avatar_url); });
     }
 
     // La publicación (si es un repost, se muestra lo mismo que se ve en la tarjeta: la publicación original)
