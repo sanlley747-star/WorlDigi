@@ -671,7 +671,7 @@
         const avatar = profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
         return `
           <a href="perfil.html?user=${encodeURIComponent(name)}" class="rounded-lg">
-            <img src="${avatar}" class="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-slate-700 flex-shrink-0" alt="${connEscape(name)}">
+            <img src="${connEscape(safeUrl(avatar))}" class="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-slate-700 flex-shrink-0" alt="${connEscape(name)}">
             <span class="font-semibold text-sm text-gray-900 dark:text-white truncate">${connEscape(name)}</span>
           </a>
         `;
@@ -782,7 +782,7 @@
     window.addEventListener('resize', () => setupExpandablePostTexts());
     window.addEventListener('load', () => setupExpandablePostTexts());
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => setupExpandablePostTexts());
-    function linkifyContent(text) { if (!text) return ''; const urlRegex = /(https?:\/\/[^\s]+)/g; return text.replace(urlRegex, (url) => { let domain; try { domain = new URL(url).hostname.replace('www.', ''); } catch (e) { domain = url; } return `<a href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 text-green-600 dark:text-green-400 font-semibold hover:underline align-middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 inline-block"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>${domain}</a>`; }); }
+    function linkifyContent(text) { return safeLinkifyContent(text); }
 let feedOffset = 0;
 const feedPageSize = 20;
 let feedHasMore = true;
@@ -951,7 +951,7 @@ let feedRestoringState = false;
           <div class="relative z-10">
             <div class="flex items-start gap-3">
             <a href="perfil.html?user=${encodeURIComponent(author)}" class="flex-shrink-0">
-              <img src="${avatarUrl}" class="w-12 h-12 rounded-full object-cover border border-gray-300 dark:border-slate-700" alt="${connEscape(author)}">
+              <img src="${connEscape(safeUrl(avatarUrl))}" class="w-12 h-12 rounded-full object-cover border border-gray-300 dark:border-slate-700" alt="${connEscape(author)}">
             </a>
             <div class="min-w-0 flex-1">
               <a href="perfil.html?user=${encodeURIComponent(author)}" data-user-card="${connEscape(author)}" class="font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(author)}</a>
@@ -977,9 +977,9 @@ let feedRestoringState = false;
 
           <a href="perfil.html?user=${encodeURIComponent(originalAuthor)}">
             <img
-              src="${originalAvatarUrl}"
+              src="${connEscape(safeUrl(originalAvatarUrl))}"
               class="${post.quote_text ? 'w-6 h-6' : 'w-10 h-10'} rounded-full object-cover border border-gray-300 dark:border-slate-700 hover:opacity-80 transition cursor-pointer"
-              alt="${originalAuthor}">
+              alt="${connEscape(originalAuthor)}">
           </a>
 
           <div class="flex items-center space-x-2">
@@ -987,7 +987,7 @@ let feedRestoringState = false;
             <a
               href="perfil.html?user=${encodeURIComponent(originalAuthor)}"
               class="font-bold text-gray-900 dark:text-white text-sm hover:underline">
-              ${originalAuthor}
+              ${connEscape(originalAuthor)}
             </a>
             ${connIsChannelEmail(channelSet, displayPost.user_email) ? connChannelChip(true) : ''}
 
@@ -1015,7 +1015,7 @@ let feedRestoringState = false;
           ` : ''}
           ${displayPost.image_url && !ytOwnsImage(displayPost.content, displayPost.image_url) ? `
             <img
-              src="${displayPost.image_url}"
+              src="${connEscape(safeUrl(displayPost.image_url))}"
               class="w-full rounded-lg max-h-96 object-cover cursor-pointer"
               alt="Imagen de publicación"
               onclick="openPostViewer(${displayPost.id})">
@@ -1299,7 +1299,7 @@ let feedRestoringState = false;
           <div class="relative z-10">
             <div class="flex items-start gap-3">
             <a href="perfil.html?user=${encodeURIComponent(author)}" class="flex-shrink-0">
-              <img src="${avatarUrl}" class="w-12 h-12 rounded-full object-cover border border-gray-300 dark:border-slate-700" alt="${connEscape(author)}">
+              <img src="${connEscape(safeUrl(avatarUrl))}" class="w-12 h-12 rounded-full object-cover border border-gray-300 dark:border-slate-700" alt="${connEscape(author)}">
             </a>
             <div class="min-w-0 flex-1">
               <a href="perfil.html?user=${encodeURIComponent(author)}" data-user-card="${connEscape(author)}" class="font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(author)}</a>
@@ -1325,9 +1325,9 @@ let feedRestoringState = false;
 
           <a href="perfil.html?user=${encodeURIComponent(originalAuthor)}">
             <img
-              src="${originalAvatarUrl}"
+              src="${connEscape(safeUrl(originalAvatarUrl))}"
               class="${post.quote_text ? 'w-6 h-6' : 'w-10 h-10'} rounded-full object-cover border border-gray-300 dark:border-slate-700 hover:opacity-80 transition cursor-pointer"
-              alt="${originalAuthor}">
+              alt="${connEscape(originalAuthor)}">
           </a>
 
           <div class="flex items-center space-x-2">
@@ -1335,7 +1335,7 @@ let feedRestoringState = false;
             <a
               href="perfil.html?user=${encodeURIComponent(originalAuthor)}"
               class="font-bold text-gray-900 dark:text-white text-sm hover:underline">
-              ${originalAuthor}
+              ${connEscape(originalAuthor)}
             </a>
             ${connIsChannelEmail(channelSet, displayPost.user_email) ? connChannelChip(true) : ''}
 
@@ -1363,7 +1363,7 @@ let feedRestoringState = false;
           ` : ''}
           ${displayPost.image_url && !ytOwnsImage(displayPost.content, displayPost.image_url) ? `
             <img
-              src="${displayPost.image_url}"
+              src="${connEscape(safeUrl(displayPost.image_url))}"
               class="w-full rounded-lg max-h-96 object-cover cursor-pointer"
               alt="Imagen de publicación"
               onclick="openPostViewer(${displayPost.id})">
@@ -1873,7 +1873,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
                onclick="event.stopPropagation();togglePostText(this)">Ver más...</button>
           </div>` : ''}
           ${ytEmbedsFor(post.content || '')}
-          ${post.image_url && !ytOwnsImage(post.content || '', post.image_url) ? `<img src="${connEscape(post.image_url)}" class="w-full rounded-lg max-h-72 object-cover mt-3" alt="Imagen de publicación">` : ''}
+          ${post.image_url && !ytOwnsImage(post.content || '', post.image_url) ? `<img src="${connEscape(safeUrl(post.image_url))}" class="w-full rounded-lg max-h-72 object-cover mt-3" alt="Imagen de publicación">` : ''}
         </div>
       `;
       setupExpandablePostTexts(body);
@@ -2049,7 +2049,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
           <img src="${connEscape(commentAvatarByEmail[c.user_email] || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(c.user_name) + '&background=random'))}" class="w-8 h-8 rounded-full object-cover flex-shrink-0">
           <div class="bg-gray-100 dark:bg-slate-800 rounded-xl px-3 py-2 flex-1">
             <div class="text-xs font-bold text-gray-900 dark:text-white" data-user-card="${connEscape(c.user_name)}">${connEscape(c.user_name)}</div>
-            <div class="text-sm text-gray-700 dark:text-gray-200 break-words">${c.content}</div>
+            <div class="text-sm text-gray-700 dark:text-gray-200 break-words">${linkifyContent(c.content)}</div>
           </div>
         </div>
       `).join('');
