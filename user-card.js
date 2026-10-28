@@ -161,7 +161,7 @@
     var isChannelHidden = info && info.channel && !info.isMe; // "Siguiendo" privado en cuentas canal
     // Mientras llegan los datos, el avatar permanece completamente blanco.
     // No mostramos las iniciales/fallback porque ese contenido da una falsa sensación de dato ya cargado.
-    var avatar = (info && info.avatar) || (loading ? "" : connAvatarFallback(name));
+    var avatar = safeUrl((info && info.avatar) || (loading ? "" : connAvatarFallback(name)));
     var profileUrl = connProfileUrl(name);
     var following = info ? info.counts.following : '–';
     var followers = info ? info.counts.followers : '–';
