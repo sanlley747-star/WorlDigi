@@ -51,10 +51,63 @@
 })();
 
 // ---------- Utilidades ----------
-function connEscape(text) {
-  return String(text == null ? '' : text)
+function escapeHTML(value) {
+  if (value === null || value === undefined) return '';
+  return String(value)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function safeUrl(value, fallback = '') {
+  if (value === null || value === undefined) return fallback || '';
+  const url = String(value).trim();
+  if (!url || /[\u0000-\u001F\u007F]/.test(url)) return fallback || '';
+  if (/^https?:\/\//i.test(url)) {
+    try {
+      const parsed = new URL(url);
+      if ((parsed.protocol === 'https:' || parsed.protocol === 'http:') && parsed.hostname) return url;
+    } catch (_) {}
+  }
+  // Solo rutas locales conocidas/formadas como rutas relativas, nunca //host ni esquemas ejecutables.
+  if ((url.startsWith('/') && !url.startsWith('//') && !url.startsWith('/\\')) ||
+      url.startsWith('./') || url.startsWith('assets/') || url.startsWith('favicon')) {
+    return url;
+  }
+  return fallback || '';
+}
+
+function safeLinkifyContent(value) {
+  const raw = value === null || value === undefined ? '' : String(value);
+  const urlPattern = /https?:\/\/[^\s<>"']+/gi;
+  const linkIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 inline-block"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>';
+  let output = '';
+  let cursor = 0;
+  let match;
+  while ((match = urlPattern.exec(raw)) !== null) {
+    const original = match[0];
+    const candidate = original.replace(/[.,;:!?)\]}]+$/g, '');
+    output += escapeHTML(raw.slice(cursor, match.index));
+    const href = candidate ? safeUrl(candidate, '') : '';
+    if (href) {
+      let domain = href;
+      try { domain = new URL(href).hostname.replace(/^www\./i, '') || href; } catch (_) {}
+      output += '<a href="' + escapeHTML(href) + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 text-green-600 dark:text-green-400 font-semibold hover:underline align-middle">' + linkIcon + escapeHTML(domain) + '</a>';
+      output += escapeHTML(original.slice(candidate.length));
+    } else {
+      output += escapeHTML(original);
+    }
+    cursor = match.index + original.length;
+  }
+  output += escapeHTML(raw.slice(cursor));
+  return output;
+}
+
+window.escapeHTML = escapeHTML;
+window.safeUrl = safeUrl;
+window.safeLinkifyContent = safeLinkifyContent;
+
+function connEscape(text) {
+  return escapeHTML(text);
 }
 
 function connAvatarFallback(name) {
