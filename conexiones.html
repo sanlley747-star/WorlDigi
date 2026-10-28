@@ -321,7 +321,7 @@
       list.innerHTML = data.map(r => {
         const email = r[otherCol];
         const p = people[email];
-        const avatar = p.avatar || connAvatarFallback(p.name);
+        const avatar = safeUrl(p.avatar) || connAvatarFallback(p.name);
         const isMe = email === currentUser.email;
         return `
           <div class="p-4 flex items-center gap-3">
