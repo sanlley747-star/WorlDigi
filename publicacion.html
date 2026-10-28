@@ -236,7 +236,7 @@
       // Mi foto (para el cuadro de comentar)
       supabaseClient.from('profiles').select('avatar_url').eq('user_email', currentUser.email).maybeSingle()
         .then(({ data }) => {
-          document.getElementById('myCommentAvatar').src = (data && data.avatar_url) || connAvatarFallback(currentName);
+          document.getElementById('myCommentAvatar').src = safeUrl(data && data.avatar_url) || connAvatarFallback(currentName);
         });
 
       await loadPost();
