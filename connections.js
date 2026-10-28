@@ -62,7 +62,7 @@ function safeUrl(value, fallback = '') {
   if (value === null || value === undefined) return fallback || '';
   const url = String(value).trim();
   if (!url || /[\u0000-\u001F\u007F]/.test(url)) return fallback || '';
-  if (/^https?:\/\/[^/\\\s<>"']+(?:[/?#][^\\s<>"']*)?$/i.test(url)) return url;
+  if (/^https?:\/\/[^/\\\s<>"']+(?:[/?#][^\s<>"']*)?$/i.test(url)) return url;
   // Solo rutas locales conocidas/formadas como rutas relativas, nunca //host ni esquemas ejecutables.
   if ((url.startsWith('/') && !url.startsWith('//') && !url.startsWith('/\\')) ||
       url.startsWith('./') || url.startsWith('assets/') || url.startsWith('favicon')) {
