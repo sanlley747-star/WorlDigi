@@ -643,7 +643,7 @@ function connNotifState(st) {
       const avatarUrl = profileRow?.avatar_url || post.avatar_url ||
         `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user_name || 'Usuario')}&background=random`;
 
-      document.getElementById('postViewerAvatar').src = avatarUrl;
+      document.getElementById('postViewerAvatar').src = safeUrl(avatarUrl);
       document.getElementById('postViewerAuthor').textContent = post.user_name || 'Usuario';
       document.getElementById('postViewerAuthor').setAttribute('data-user-card', post.user_name || '');
       document.getElementById('postViewerTime').textContent = formatCompactTime(post.created_at);
