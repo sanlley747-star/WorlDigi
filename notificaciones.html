@@ -204,8 +204,7 @@
       return `${day} ${month} ${year}`;
     }
 
-    function linkifyContent(text) { if (!text) return ''; const urlRegex = /(https?:\/\/[^\s]+)/g; return text.replace(urlRegex, (url) => { let domain; try { domain = new URL(url).hostname.replace('www.', ''); } catch (e) { domain = url; } return `<a href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 text-green-600 dark:text-green-400 font-semibold hover:underline align-middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 inline-block"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>${domain}</a>`; }); }
-
+    function linkifyContent(text) { return safeLinkifyContent(text); }
     function notifTypeIconHtml(type) {
   const icons = {
     share: {
@@ -384,7 +383,7 @@ function connNotifState(st) {
         const actorName = n.actor_name || (n.actor_email ? n.actor_email.split('@')[0] : 'Usuario');
         const safeActorName = connEscape(actorName);
         const avatarUrl = avatarByEmail[n.actor_email] || connAvatarFallback(actorName);
-        const safeAvatarUrl = connEscape(avatarUrl);
+        const safeAvatarUrl = connEscape(safeUrl(avatarUrl));
         const unreadClass = n.is_read ? '' : 'bg-blue-50 dark:bg-slate-800/70';
 
         if (n.type === 'connection') {
@@ -395,7 +394,7 @@ function connNotifState(st) {
             <div class="w-full p-4 flex items-center gap-3 transition ${unreadClass} min-w-0">
               ${connIconHtml}
               <a href="${connProfileUrl(actorName)}" class="flex items-start gap-3 flex-1 min-w-0 notif-comment-link">
-                <img src="${safeAvatarUrl}" class="w-11 h-11 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-slate-700" alt="${safeActorName}">
+                <img src="${connEscape(safeUrl(safeAvatarUrl))}" class="w-11 h-11 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-slate-700" alt="${safeActorName}">
                 <div class="flex-1 min-w-0">
                   <p class="text-sm text-gray-800 dark:text-gray-100"><strong data-user-card="${safeActorName}">${safeActorName}</strong> estableció conexión</p>
                   <p class="text-xs text-gray-400 mt-1">${formatCompactTime(n.created_at)}</p>
@@ -433,7 +432,7 @@ function connNotifState(st) {
             return `
               <div class="w-full text-left p-4 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition ${unreadClass}" onclick="handleNotifClick(${c.post_id}, ${n.id})">
                 <a href="${connProfileUrl(actorName)}" class="flex-shrink-0 notif-comment-link">
-                  <img src="${safeAvatarUrl}" class="w-11 h-11 rounded-full object-cover border border-gray-200 dark:border-slate-700 hover:opacity-80 transition" alt="${safeActorName}">
+                  <img src="${connEscape(safeUrl(safeAvatarUrl))}" class="w-11 h-11 rounded-full object-cover border border-gray-200 dark:border-slate-700 hover:opacity-80 transition" alt="${safeActorName}">
                 </a>
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2">
@@ -453,7 +452,7 @@ function connNotifState(st) {
         return `
           <button onclick="handleNotifClick(${n.post_id}, ${n.id})" class="w-full text-left p-4 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition ${unreadClass}">
             ${notifTypeIconHtml(n.type)}
-            <img src="${safeAvatarUrl}" class="w-11 h-11 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-slate-700" alt="${safeActorName}">
+            <img src="${connEscape(safeUrl(safeAvatarUrl))}" class="w-11 h-11 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-slate-700" alt="${safeActorName}">
             <div class="flex-1 min-w-0">
               <p class="text-sm text-gray-800 dark:text-gray-100">${message}</p>
               <p class="text-xs text-gray-400 mt-1">${formatCompactTime(n.created_at)}</p>
@@ -652,7 +651,7 @@ function connNotifState(st) {
 
       const imageWrap = document.getElementById('postViewerImageWrap');
       if (post.image_url) {
-        document.getElementById('postViewerImage').src = post.image_url;
+        document.getElementById('postViewerImage').src = safeUrl(post.image_url);
         imageWrap.classList.remove('hidden');
       } else {
         imageWrap.classList.add('hidden');
@@ -711,7 +710,7 @@ function connNotifState(st) {
           <img src="${connEscape(commentAvatarByEmail[c.user_email] || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(c.user_name) + '&background=random'))}" class="w-8 h-8 rounded-full object-cover flex-shrink-0">
           <div class="bg-gray-100 dark:bg-slate-800 rounded-xl px-3 py-2 flex-1">
             <div class="text-xs font-bold text-gray-900 dark:text-white" data-user-card="${connEscape(c.user_name)}">${connEscape(c.user_name)}</div>
-            <div class="text-sm text-gray-700 dark:text-gray-200 break-words">${c.content}</div>
+            <div class="text-sm text-gray-700 dark:text-gray-200 break-words">${linkifyContent(c.content)}</div>
           </div>
         </div>
       `).join('');
