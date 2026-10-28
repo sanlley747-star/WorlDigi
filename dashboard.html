@@ -903,7 +903,7 @@ let feedRestoringState = false;
 </div>` : ''}
           <a href="publicacion.html?id=${c.post_id}#comentario-${c.id}" class="block border border-gray-200 dark:border-slate-700 rounded-xl p-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition">
             <div class="flex items-center gap-2 mb-1">
-              <img src="${connEscape(cAvatar)}" class="w-6 h-6 rounded-full object-cover flex-shrink-0" alt="${connEscape(cAuthor)}">
+              <img src="${connEscape(safeUrl(cAvatar))}" class="w-6 h-6 rounded-full object-cover flex-shrink-0" alt="${connEscape(cAuthor)}">
               <span class="font-bold text-sm text-gray-900 dark:text-white">${connEscape(cAuthor)}</span>
               <span class="text-xs text-gray-400">· ${formatCompactTime(c.created_at)}</span>
             </div>
@@ -1251,7 +1251,7 @@ let feedRestoringState = false;
 </div>` : ''}
           <a href="publicacion.html?id=${c.post_id}#comentario-${c.id}" class="block border border-gray-200 dark:border-slate-700 rounded-xl p-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition">
             <div class="flex items-center gap-2 mb-1">
-              <img src="${connEscape(cAvatar)}" class="w-6 h-6 rounded-full object-cover flex-shrink-0" alt="${connEscape(cAuthor)}">
+              <img src="${connEscape(safeUrl(cAvatar))}" class="w-6 h-6 rounded-full object-cover flex-shrink-0" alt="${connEscape(cAuthor)}">
               <span class="font-bold text-sm text-gray-900 dark:text-white">${connEscape(cAuthor)}</span>
               <span class="text-xs text-gray-400">· ${formatCompactTime(c.created_at)}</span>
             </div>
@@ -1860,7 +1860,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
       body.innerHTML = `
         <div class="border border-gray-200 dark:border-slate-700 rounded-xl p-3">
           <div class="flex items-center gap-2 mb-2">
-            <img src="${connEscape(authorAvatar)}" class="w-8 h-8 rounded-full object-cover flex-shrink-0" alt="">
+            <img src="${connEscape(safeUrl(authorAvatar))}" class="w-8 h-8 rounded-full object-cover flex-shrink-0" alt="">
             <div class="min-w-0">
               <div class="font-bold text-sm text-gray-900 dark:text-white truncate">${connEscape(author)}</div>
               <div class="text-xs text-gray-400">${formatCompactTime(post.created_at)}</div>
