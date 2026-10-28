@@ -178,8 +178,8 @@
       '</div>' +
       '<div class="uc-stats">' +
         (isChannelHidden ? '' :
-          '<a href="' + connEscape(connListUrl(name, 'siguiendo')) + '"><strong data-uc-following>' + following + '</strong> Siguiendo</a>') +
-        '<a href="' + connEscape(connListUrl(name, 'seguidores')) + '"><strong data-uc-followers>' + followers + '</strong> Seguidores</a>' +
+          '<a href="' + connEscape(connListUrl(name, 'siguiendo')) + '"><strong data-uc-following>' + connEscape(following) + '</strong> Siguiendo</a>') +
+        '<a href="' + connEscape(connListUrl(name, 'seguidores')) + '"><strong data-uc-followers>' + connEscape(followers) + '</strong> Seguidores</a>' +
       '</div>';
 
     statFollowing = card.querySelector('[data-uc-following]');
