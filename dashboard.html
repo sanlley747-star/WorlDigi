@@ -343,7 +343,7 @@
       const link = document.getElementById('advertisementLink');
       if (!image || !link) return;
       const url = (ad && ad.image_url) ? ad.image_url : BYGETHER_AD_DEFAULT;
-      if (ad && ad.target_url) link.href = ad.target_url;
+      if (ad && ad.target_url) link.href = safeUrl(ad.target_url) || '/';
       if (image.getAttribute('src') === url) { image.style.visibility = 'visible'; return; }
       image.dataset.want = url; // evita que una carga lenta pise a una más reciente
       const pre = new Image();
