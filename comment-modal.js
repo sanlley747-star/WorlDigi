@@ -214,7 +214,7 @@
     els.post.innerHTML =
       '<span class="cm-thread-light" aria-hidden="true"></span>' +
       '<div class="flex items-center gap-3">' +
-        '<img src="' + esc(avatar) + '" alt="' + esc(author) + '" class="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700 flex-shrink-0">' +
+        '<img src="' + esc(safeUrl(avatar)) + '" alt="' + esc(author) + '" class="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700 flex-shrink-0">' +
         '<div class="flex items-center gap-2 min-w-0">' +
           '<span data-user-card="' + esc(author) + '" class="font-bold text-sm text-gray-900 dark:text-white truncate">' + esc(author) + '</span>' +
           '<span class="text-gray-400 text-sm">·</span>' +
