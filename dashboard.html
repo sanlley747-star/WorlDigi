@@ -437,6 +437,7 @@
           feedPostsById,
           feedRecentShownIds,
           feedHtml: feed.innerHTML,
+          safeFeedHtmlVersion: 1,
           scrollTop: window.innerWidth < 1024 ? window.scrollY : container.scrollTop
         }));
       } catch (err) {
@@ -581,7 +582,7 @@
       let restored = false;
       try {
         const saved = JSON.parse(sessionStorage.getItem('bygether_dashboard_state') || 'null');
-        if (saved && saved.userEmail === currentUser.email && saved.feedHtml) {
+        if (saved && saved.safeFeedHtmlVersion === 1 && saved.userEmail === currentUser.email && saved.feedHtml) {
           const feed = document.getElementById('feed');
           const container = document.getElementById('feedScrollContainer');
           if (feed && container) {
