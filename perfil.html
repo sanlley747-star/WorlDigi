@@ -374,7 +374,7 @@
 
       const coverImg = document.getElementById('profileCover');
       if (data?.cover_url) {
-        coverImg.src = data.cover_url;
+        coverImg.src = safeUrl(data.cover_url);
         coverImg.style.display = 'block';
       } else {
         coverImg.style.display = 'none';
@@ -938,7 +938,7 @@
       const avatarUrl = profileRow?.avatar_url || post.avatar_url ||
         `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user_name || 'Usuario')}&background=random`;
 
-      document.getElementById('postViewerAvatar').src = avatarUrl;
+      document.getElementById('postViewerAvatar').src = safeUrl(avatarUrl);
       document.getElementById('postViewerAuthor').textContent = post.user_name || 'Usuario';
       document.getElementById('postViewerAuthor').setAttribute('data-user-card', post.user_name || '');
       document.getElementById('postViewerTime').textContent = formatCompactTime(post.created_at);
@@ -946,7 +946,7 @@
 
       const imageWrap = document.getElementById('postViewerImageWrap');
       if (post.image_url) {
-        document.getElementById('postViewerImage').src = post.image_url;
+        document.getElementById('postViewerImage').src = safeUrl(post.image_url);
         imageWrap.classList.remove('hidden');
       } else {
         imageWrap.classList.add('hidden');
