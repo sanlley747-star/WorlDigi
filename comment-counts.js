@@ -77,8 +77,8 @@ function ccLikeButtonHtml(id, likes, isLiked, userEmail, userName) {
         data-post-id="${id}"
         data-likes="${count}"
         data-liked="${isLiked ? 'true' : 'false'}"
-        data-user-email="${userEmail || ''}"
-        data-user-name="${userName || ''}"
+        data-user-email="${connEscape(userEmail || '')}"
+        data-user-name="${connEscape(userName || '')}"
         onclick="ccToggleLike(this)"
         title="Me gusta"
         class="flex items-center gap-1.5 font-semibold transition ${isLiked ? 'text-red-500' : 'hover:text-red-500'}">
@@ -294,7 +294,7 @@ function ccCommentActionsHtml(c, v) {
 
       <div class="relative" data-like-wrapper onmouseenter="ccLikeHover(this, true)" onmouseleave="ccLikeHover(this, false)">
         <button type="button" data-like-btn data-liked="${v.isLiked ? 'true' : 'false'}"
-          onclick="ccToggleCommentLike(this, ${id}, ${v.likes || 0}, ${v.isLiked ? 'true' : 'false'}, decodeURIComponent(\'${encodeURIComponent(v.userEmail || '')}\'), decodeURIComponent(\'${encodeURIComponent(v.userName || '')}\'))"
+          onclick="ccToggleCommentLike(this, ${id}, ${v.likes || 0}, ${v.isLiked ? 'true' : 'false'}, ${connEscape(ue)}, ${connEscape(un)})"
           title="Me gusta" class="flex items-center gap-1 font-semibold transition ${v.isLiked ? 'text-red-500' : 'hover:text-red-500'}">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0">
             <path data-heart-icon fill="${v.isLiked ? 'currentColor' : 'none'}" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"></path>
@@ -326,7 +326,7 @@ function ccCommentActionsHtml(c, v) {
         </div>
       </div>
 
-      <button type="button" onclick="ccShareComment(${id}, ${JSON.stringify(v.postId)})" title="Compartir" class="hover:text-blue-600 transition">
+      <button type="button" onclick="ccShareComment(${id}, ${connEscape(JSON.stringify(v.postId))})" title="Compartir" class="hover:text-blue-600 transition">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
       </button>
 
@@ -369,7 +369,7 @@ async function ccToggleCommentLike(btn, id, currentLikes, isLiked, userEmail, us
     btn.classList.toggle('text-red-500', likedState);
     btn.classList.toggle('hover:text-red-500', !likedState);
     if (heartPath) heartPath.setAttribute('fill', likedState ? 'currentColor' : 'none');
-    btn.setAttribute('onclick', `ccToggleCommentLike(this, ${id}, ${likesCount}, ${likedState}, decodeURIComponent('${encodeURIComponent(userEmail)}'), decodeURIComponent('${encodeURIComponent(userName)}'))`);
+    btn.setAttribute('onclick', `ccToggleCommentLike(this, ${Number(id) || 0}, ${Number(likesCount) || 0}, ${!!likedState}, ${JSON.stringify(String(userEmail || ''))}, ${JSON.stringify(String(userName || ''))})`);
     const wrapper = btn.closest('[data-like-wrapper]');
     if (wrapper) ccLikeHover(wrapper, false);
   };
