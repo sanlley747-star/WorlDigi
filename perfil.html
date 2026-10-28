@@ -369,8 +369,8 @@
         .maybeSingle();
 
       document.getElementById('profileAvatar').src =
-        data?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random`;
-      window.currentProfileAvatarUrl = data?.avatar_url || null; 
+        safeUrl(data?.avatar_url) || `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random`;
+      window.currentProfileAvatarUrl = safeUrl(data?.avatar_url) || null; 
 
       const coverImg = document.getElementById('profileCover');
       if (data?.cover_url) {
