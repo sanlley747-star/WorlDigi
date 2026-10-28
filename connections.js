@@ -62,12 +62,7 @@ function safeUrl(value, fallback = '') {
   if (value === null || value === undefined) return fallback || '';
   const url = String(value).trim();
   if (!url || /[\u0000-\u001F\u007F]/.test(url)) return fallback || '';
-  if (/^https?:\/\//i.test(url)) {
-    try {
-      const parsed = new URL(url);
-      if ((parsed.protocol === 'https:' || parsed.protocol === 'http:') && parsed.hostname) return url;
-    } catch (_) {}
-  }
+  if (/^https?:\/\/[^/\\\s<>"']+(?:[/?#][^\\s<>"']*)?$/i.test(url)) return url;
   // Solo rutas locales conocidas/formadas como rutas relativas, nunca //host ni esquemas ejecutables.
   if ((url.startsWith('/') && !url.startsWith('//') && !url.startsWith('/\\')) ||
       url.startsWith('./') || url.startsWith('assets/') || url.startsWith('favicon')) {
@@ -89,8 +84,8 @@ function safeLinkifyContent(value) {
     output += escapeHTML(raw.slice(cursor, match.index));
     const href = candidate ? safeUrl(candidate, '') : '';
     if (href) {
-      let domain = href;
-      try { domain = new URL(href).hostname.replace(/^www\./i, '') || href; } catch (_) {}
+      const authority = (href.match(/^https?:\/\/([^/?#]+)/i) || [])[1] || href;
+      const domain = authority.split('@').pop().replace(/^www\./i, '') || href;
       output += '<a href="' + escapeHTML(href) + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 text-green-600 dark:text-green-400 font-semibold hover:underline align-middle">' + linkIcon + escapeHTML(domain) + '</a>';
       output += escapeHTML(original.slice(candidate.length));
     } else {
