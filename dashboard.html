@@ -347,9 +347,9 @@
       if (image.getAttribute('src') === url) { image.style.visibility = 'visible'; return; }
       image.dataset.want = url; // evita que una carga lenta pise a una más reciente
       const pre = new Image();
-      pre.onload = () => { if (image.dataset.want !== url) return; image.src = url; image.style.visibility = 'visible'; };
+      pre.onload = () => { if (image.dataset.want !== url) return; image.src = safeUrl(url); image.style.visibility = 'visible'; };
       pre.onerror = () => { if (image.dataset.want !== url) return; image.src = BYGETHER_AD_DEFAULT; image.style.visibility = 'visible'; };
-      pre.src = url;
+      pre.src = safeUrl(url);
     }
 
     function pickByGetherAd(list) {
