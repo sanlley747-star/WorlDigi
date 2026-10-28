@@ -394,7 +394,7 @@ function connNotifState(st) {
             <div class="w-full p-4 flex items-center gap-3 transition ${unreadClass} min-w-0">
               ${connIconHtml}
               <a href="${connProfileUrl(actorName)}" class="flex items-start gap-3 flex-1 min-w-0 notif-comment-link">
-                <img src="${connEscape(safeUrl(safeAvatarUrl))}" class="w-11 h-11 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-slate-700" alt="${safeActorName}">
+                <img src="${safeAvatarUrl}" class="w-11 h-11 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-slate-700" alt="${safeActorName}">
                 <div class="flex-1 min-w-0">
                   <p class="text-sm text-gray-800 dark:text-gray-100"><strong data-user-card="${safeActorName}">${safeActorName}</strong> estableció conexión</p>
                   <p class="text-xs text-gray-400 mt-1">${formatCompactTime(n.created_at)}</p>
@@ -432,7 +432,7 @@ function connNotifState(st) {
             return `
               <div class="w-full text-left p-4 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition ${unreadClass}" onclick="handleNotifClick(${c.post_id}, ${n.id})">
                 <a href="${connProfileUrl(actorName)}" class="flex-shrink-0 notif-comment-link">
-                  <img src="${connEscape(safeUrl(safeAvatarUrl))}" class="w-11 h-11 rounded-full object-cover border border-gray-200 dark:border-slate-700 hover:opacity-80 transition" alt="${safeActorName}">
+                  <img src="${safeAvatarUrl}" class="w-11 h-11 rounded-full object-cover border border-gray-200 dark:border-slate-700 hover:opacity-80 transition" alt="${safeActorName}">
                 </a>
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2">
@@ -441,7 +441,7 @@ function connNotifState(st) {
                     <span class="text-xs text-gray-500 dark:text-gray-400">${formatCompactTime(c.created_at)}</span>
                   </div>
                   <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Comentó a <a href="${recipientHref}" data-user-card="${safeRecipientName}" class="text-green-500 hover:underline notif-comment-link">${safeRecipientName}</a></p>
-                  <p class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line mt-1">${linkifyContent(connEscape(c.content || ''))}</p>
+                  <p class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line mt-1">${linkifyContent(c.content || '')}</p>
                   <div class="publicacion-comment-actions" data-comment-action-root data-comment-id="${c.id}" data-post-id="${c.post_id}">${actions}</div>
                 </div>
               </div>
@@ -452,7 +452,7 @@ function connNotifState(st) {
         return `
           <button onclick="handleNotifClick(${n.post_id}, ${n.id})" class="w-full text-left p-4 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition ${unreadClass}">
             ${notifTypeIconHtml(n.type)}
-            <img src="${connEscape(safeUrl(safeAvatarUrl))}" class="w-11 h-11 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-slate-700" alt="${safeActorName}">
+            <img src="${safeAvatarUrl}" class="w-11 h-11 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-slate-700" alt="${safeActorName}">
             <div class="flex-1 min-w-0">
               <p class="text-sm text-gray-800 dark:text-gray-100">${message}</p>
               <p class="text-xs text-gray-400 mt-1">${formatCompactTime(n.created_at)}</p>
@@ -707,7 +707,7 @@ function connNotifState(st) {
 
       container.innerHTML = comments.map(c => `
         <div class="flex items-start gap-2">
-          <img src="${connEscape(commentAvatarByEmail[c.user_email] || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(c.user_name) + '&background=random'))}" class="w-8 h-8 rounded-full object-cover flex-shrink-0">
+          <img src="${connEscape(safeUrl(commentAvatarByEmail[c.user_email] || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(c.user_name) + '&background=random')))}" class="w-8 h-8 rounded-full object-cover flex-shrink-0">
           <div class="bg-gray-100 dark:bg-slate-800 rounded-xl px-3 py-2 flex-1">
             <div class="text-xs font-bold text-gray-900 dark:text-white" data-user-card="${connEscape(c.user_name)}">${connEscape(c.user_name)}</div>
             <div class="text-sm text-gray-700 dark:text-gray-200 break-words">${linkifyContent(c.content)}</div>
