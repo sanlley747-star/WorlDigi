@@ -1,5 +1,28 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+function safeExternalUrl(value) {
+    if (typeof value !== 'string') return '';
+    try {
+        const parsed = new URL(value.trim());
+        return (parsed.protocol === 'https:' || parsed.protocol === 'http:') && parsed.hostname ? value.trim() : '';
+    } catch (_) {
+        return '';
+    }
+}
+
+function safeMediaUrl(value) {
+    if (typeof value !== 'string') return '';
+    const url = value.trim();
+    if (!url) return '';
+    try {
+        const parsed = new URL(url);
+        if ((parsed.protocol === 'https:' || parsed.protocol === 'http:') && parsed.hostname) return url;
+    } catch (_) {}
+    if ((url.startsWith('/') && !url.startsWith('//') && !url.startsWith('/\\')) ||
+        url.startsWith('./') || url.startsWith('assets/')) return url;
+    return '';
+}
+
 function ReadMoreText({ children, className = '' }) {
     const textRef = useRef(null);
     const [isExpanded, setIsExpanded] = useState(false);
@@ -86,13 +109,13 @@ export default function PostCard({ post, currentUserId, onLike, onRepost, onQuot
                 {post.content}
             </ReadMoreText>
 
-            {post.image_url && (
-                <img src={post.image_url} alt={post.metadata?.og_title || 'Imagen de la publicación'}
+            {safeMediaUrl(post.image_url) && (
+                <img src={safeMediaUrl(post.image_url)} alt={post.metadata?.og_title || 'Imagen de la publicación'}
                     className="w-full rounded-xl mb-4 max-h-[420px] object-cover" loading="lazy" />
             )}
 
-            {post.metadata?.tipo === 'link_preview' && post.metadata?.url && (
-                <a href={post.metadata.url} target="_blank" rel="noopener noreferrer"
+            {post.metadata?.tipo === 'link_preview' && safeExternalUrl(post.metadata?.url) && (
+                <a href={safeExternalUrl(post.metadata.url)} target="_blank" rel="noopener noreferrer"
                     className="block border border-gray-700 rounded-xl p-3 mb-4 hover:bg-gray-800 transition">
                     <div className="text-xs text-gray-400 mb-1">{post.metadata.domain || 'Enlace'}</div>
                     <div className="text-sm font-medium text-gray-100">{post.metadata.og_title || post.metadata.url}</div>
@@ -102,13 +125,13 @@ export default function PostCard({ post, currentUserId, onLike, onRepost, onQuot
                 </a>
             )}
 
-            {post.image_url && (
-                <img src={post.image_url} alt={post.metadata?.og_title || 'Imagen de la publicación'}
+            {safeMediaUrl(post.image_url) && (
+                <img src={safeMediaUrl(post.image_url)} alt={post.metadata?.og_title || 'Imagen de la publicación'}
                     className="w-full rounded-xl mb-4 max-h-[420px] object-cover" loading="lazy" />
             )}
 
-            {post.metadata?.tipo === 'link_preview' && post.metadata?.url && (
-                <a href={post.metadata.url} target="_blank" rel="noopener noreferrer"
+            {post.metadata?.tipo === 'link_preview' && safeExternalUrl(post.metadata?.url) && (
+                <a href={safeExternalUrl(post.metadata.url)} target="_blank" rel="noopener noreferrer"
                     className="block border border-gray-700 rounded-xl p-3 mb-4 hover:bg-gray-800 transition">
                     <div className="text-xs text-gray-400 mb-1">{post.metadata.domain || 'Enlace'}</div>
                     <div className="text-sm font-medium text-gray-100">{post.metadata.og_title || post.metadata.url}</div>
@@ -218,12 +241,12 @@ export default function PostCard({ post, currentUserId, onLike, onRepost, onQuot
                                     <ReadMoreText className="text-sm text-gray-200 leading-relaxed">
                                         {post.content}
                                     </ReadMoreText>
-                                    {post.image_url && (
-                                        <img src={post.image_url} alt={post.metadata?.og_title || 'Imagen de la publicación'}
+                                    {safeMediaUrl(post.image_url) && (
+                                        <img src={safeMediaUrl(post.image_url)} alt={post.metadata?.og_title || 'Imagen de la publicación'}
                                             className="w-full rounded-xl mt-3 max-h-[260px] object-cover" loading="lazy" />
                                     )}
-                                    {post.metadata?.tipo === 'link_preview' && post.metadata?.url && (
-                                        <a href={post.metadata.url} target="_blank" rel="noopener noreferrer"
+                                    {post.metadata?.tipo === 'link_preview' && safeExternalUrl(post.metadata?.url) && (
+                                        <a href={safeExternalUrl(post.metadata.url)} target="_blank" rel="noopener noreferrer"
                                             className="block border border-gray-700 rounded-xl p-3 mt-3">
                                             <div className="text-xs text-gray-400 mb-1">{post.metadata.domain || 'Enlace'}</div>
                                             <div className="text-sm font-medium text-gray-100">{post.metadata.og_title || post.metadata.url}</div>
