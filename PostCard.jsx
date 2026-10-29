@@ -1,5 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+function decodeEntities(value) {
+    if (value === null || value === undefined) return '';
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = String(value);
+    return textarea.value.replace(/\u00a0/g, ' ');
+}
+
 function safeExternalUrl(value) {
     if (typeof value !== 'string') return '';
     try {
@@ -96,47 +103,47 @@ export default function PostCard({ post, currentUserId, onLike, onRepost, onQuot
             {/* Cabecera del Post */}
             <div className="flex items-center space-x-3 mb-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center font-bold text-white">
-                    {post.authorInitials || 'SS'}
+                    {decodeEntities(post.authorInitials || 'SS')}
                 </div>
                 <div>
-                    <h4 className="font-bold text-sm text-gray-100">{post.authorName || 'Sanlley Sánchez Pérez'}</h4>
-                    <span className="text-xs text-gray-400">@{post.authorHandle || 'sanylley'} · {post.timeAgo || '10m'}</span>
+                    <h4 className="font-bold text-sm text-gray-100">{decodeEntities(post.authorName || 'Sanlley Sánchez Pérez')}</h4>
+                    <span className="text-xs text-gray-400">@{decodeEntities(post.authorHandle || 'sanylley')} · {post.timeAgo || '10m'}</span>
                 </div>
             </div>
 
             {/* Cuerpo del Post */}
             <ReadMoreText className="text-sm text-gray-200 mb-4 leading-relaxed">
-                {post.content}
+                {decodeEntities(post.content)}
             </ReadMoreText>
 
-            {safeMediaUrl(post.image_url) && (
-                <img src={safeMediaUrl(post.image_url)} alt={post.metadata?.og_title || 'Imagen de la publicación'}
+            {safeMediaUrl(decodeEntities(post.image_url)) && (
+                <img src={safeMediaUrl(decodeEntities(post.image_url))} alt={decodeEntities(post.metadata?.og_title || 'Imagen de la publicación')}
                     className="w-full rounded-xl mb-4 max-h-[420px] object-cover" loading="lazy" />
             )}
 
-            {post.metadata?.tipo === 'link_preview' && safeExternalUrl(post.metadata?.url) && (
-                <a href={safeExternalUrl(post.metadata.url)} target="_blank" rel="noopener noreferrer"
+            {post.metadata?.tipo === 'link_preview' && safeExternalUrl(decodeEntities(post.metadata?.url)) && (
+                <a href={safeExternalUrl(decodeEntities(post.metadata.url))} target="_blank" rel="noopener noreferrer"
                     className="block border border-gray-700 rounded-xl p-3 mb-4 hover:bg-gray-800 transition">
-                    <div className="text-xs text-gray-400 mb-1">{post.metadata.domain || 'Enlace'}</div>
-                    <div className="text-sm font-medium text-gray-100">{post.metadata.og_title || post.metadata.url}</div>
+                    <div className="text-xs text-gray-400 mb-1">{decodeEntities(post.metadata.domain || 'Enlace')}</div>
+                    <div className="text-sm font-medium text-gray-100">{decodeEntities(post.metadata.og_title || post.metadata.url)}</div>
                     {post.metadata.og_description && (
-                        <div className="text-xs text-gray-400 mt-1 line-clamp-2">{post.metadata.og_description}</div>
+                        <div className="text-xs text-gray-400 mt-1 line-clamp-2">{decodeEntities(post.metadata.og_description)}</div>
                     )}
                 </a>
             )}
 
-            {safeMediaUrl(post.image_url) && (
-                <img src={safeMediaUrl(post.image_url)} alt={post.metadata?.og_title || 'Imagen de la publicación'}
+            {safeMediaUrl(decodeEntities(post.image_url)) && (
+                <img src={safeMediaUrl(decodeEntities(post.image_url))} alt={decodeEntities(post.metadata?.og_title || 'Imagen de la publicación')}
                     className="w-full rounded-xl mb-4 max-h-[420px] object-cover" loading="lazy" />
             )}
 
-            {post.metadata?.tipo === 'link_preview' && safeExternalUrl(post.metadata?.url) && (
-                <a href={safeExternalUrl(post.metadata.url)} target="_blank" rel="noopener noreferrer"
+            {post.metadata?.tipo === 'link_preview' && safeExternalUrl(decodeEntities(post.metadata?.url)) && (
+                <a href={safeExternalUrl(decodeEntities(post.metadata.url))} target="_blank" rel="noopener noreferrer"
                     className="block border border-gray-700 rounded-xl p-3 mb-4 hover:bg-gray-800 transition">
-                    <div className="text-xs text-gray-400 mb-1">{post.metadata.domain || 'Enlace'}</div>
-                    <div className="text-sm font-medium text-gray-100">{post.metadata.og_title || post.metadata.url}</div>
+                    <div className="text-xs text-gray-400 mb-1">{decodeEntities(post.metadata.domain || 'Enlace')}</div>
+                    <div className="text-sm font-medium text-gray-100">{decodeEntities(post.metadata.og_title || post.metadata.url)}</div>
                     {post.metadata.og_description && (
-                        <div className="text-xs text-gray-400 mt-1 line-clamp-2">{post.metadata.og_description}</div>
+                        <div className="text-xs text-gray-400 mt-1 line-clamp-2">{decodeEntities(post.metadata.og_description)}</div>
                     )}
                 </a>
             )}
@@ -217,7 +224,7 @@ export default function PostCard({ post, currentUserId, onLike, onRepost, onQuot
                             <div className="p-4">
                                 <div className="flex items-start space-x-3 mb-4">
                                     <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center font-bold text-white shrink-0">
-                                        {post.currentUserInitials || post.viewerInitials || 'Tú'}
+                                        {decodeEntities(post.currentUserInitials || post.viewerInitials || 'Tú')}
                                     </div>
                                     <textarea
                                         value={quoteText}
@@ -231,25 +238,25 @@ export default function PostCard({ post, currentUserId, onLike, onRepost, onQuot
                                 <div className="border border-gray-700 rounded-xl p-3 bg-gray-950/40">
                                     <div className="flex items-center space-x-3 mb-3">
                                         <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center font-bold text-white text-xs">
-                                            {post.authorInitials || 'SS'}
+                                            {decodeEntities(post.authorInitials || 'SS')}
                                         </div>
                                         <div>
-                                            <h4 className="font-bold text-sm text-gray-100">{post.authorName || 'Sanlley Sánchez Pérez'}</h4>
-                                            <span className="text-xs text-gray-400">@{post.authorHandle || 'sanylley'} · {post.timeAgo || '10m'}</span>
+                                            <h4 className="font-bold text-sm text-gray-100">{decodeEntities(post.authorName || 'Sanlley Sánchez Pérez')}</h4>
+                                            <span className="text-xs text-gray-400">@{decodeEntities(post.authorHandle || 'sanylley')} · {post.timeAgo || '10m'}</span>
                                         </div>
                                     </div>
                                     <ReadMoreText className="text-sm text-gray-200 leading-relaxed">
-                                        {post.content}
+                                        {decodeEntities(post.content)}
                                     </ReadMoreText>
-                                    {safeMediaUrl(post.image_url) && (
-                                        <img src={safeMediaUrl(post.image_url)} alt={post.metadata?.og_title || 'Imagen de la publicación'}
+                                    {safeMediaUrl(decodeEntities(post.image_url)) && (
+                                        <img src={safeMediaUrl(decodeEntities(post.image_url))} alt={decodeEntities(post.metadata?.og_title || 'Imagen de la publicación')}
                                             className="w-full rounded-xl mt-3 max-h-[260px] object-cover" loading="lazy" />
                                     )}
-                                    {post.metadata?.tipo === 'link_preview' && safeExternalUrl(post.metadata?.url) && (
-                                        <a href={safeExternalUrl(post.metadata.url)} target="_blank" rel="noopener noreferrer"
+                                    {post.metadata?.tipo === 'link_preview' && safeExternalUrl(decodeEntities(post.metadata?.url)) && (
+                                        <a href={safeExternalUrl(decodeEntities(post.metadata.url))} target="_blank" rel="noopener noreferrer"
                                             className="block border border-gray-700 rounded-xl p-3 mt-3">
-                                            <div className="text-xs text-gray-400 mb-1">{post.metadata.domain || 'Enlace'}</div>
-                                            <div className="text-sm font-medium text-gray-100">{post.metadata.og_title || post.metadata.url}</div>
+                                            <div className="text-xs text-gray-400 mb-1">{decodeEntities(post.metadata.domain || 'Enlace')}</div>
+                                            <div className="text-sm font-medium text-gray-100">{decodeEntities(post.metadata.og_title || post.metadata.url)}</div>
                                         </a>
                                     )}
                                 </div>
