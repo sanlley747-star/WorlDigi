@@ -110,7 +110,7 @@ window.safeUrl = safeUrl;
 window.safeLinkifyContent = safeLinkifyContent;
 
 function connEscape(text) {
-  return escapeHTML(text);
+  return escapeHTML(decodeEntities(text));
 }
 
 function connAvatarFallback(name) {
