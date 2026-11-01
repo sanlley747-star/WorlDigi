@@ -14,6 +14,7 @@
   let mode = 'signup';
   let signupStep = 1;
   let busy = false;
+  let recoveryCooldown = false;
 
   function allowedSelector() {
     return ALLOWED_GUEST_INTERACTIONS.join(',');
@@ -156,8 +157,8 @@
       showSignupStep(2);
       return;
     }
-    if (mode === 'signup' && signupStep === 2 && password.length < 6) {
-      errorBox.textContent = 'La contraseña debe tener al menos 6 caracteres.';
+    if (mode === 'signup' && signupStep === 2 && password.length < 8) {
+      errorBox.textContent = 'La contraseña debe tener al menos 8 caracteres.';
       modal.querySelector('#guestAuthPassword').focus();
       return;
     }
@@ -195,6 +196,39 @@
         if (mode === 'login') submit.disabled = false;
       }
     }
+  }
+
+  async function recoverPassword() {
+    const modal = getModal();
+    const link = modal.querySelector('[data-auth-forgot]');
+    const message = modal.querySelector('[data-auth-login-error]');
+    const email = modal.querySelector('#guestAuthLoginEmail').value.trim();
+    message.textContent = '';
+
+    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+      message.textContent = 'Escribe tu correo arriba y vuelve a pulsar.';
+      return;
+    }
+    if (recoveryCooldown) return;
+
+    recoveryCooldown = true;
+    link.disabled = true;
+    link.classList.add('opacity-50', 'cursor-not-allowed');
+    try {
+      await window.byGetherAuthReady;
+      await window.ByGetherAuth.recover(supabaseClient, {
+        email,
+        redirectTo: window.location.origin + '/reset-password.html'
+      });
+    } catch (_) {
+      // Mensaje neutro: no revelar si el correo existe ni detalles del proveedor.
+    }
+    message.textContent = 'Si ese correo está registrado, te enviamos un enlace para crear una nueva contraseña.';
+    window.setTimeout(() => {
+      recoveryCooldown = false;
+      link.disabled = false;
+      link.classList.remove('opacity-50', 'cursor-not-allowed');
+    }, 60000);
   }
 
   async function googleAuth() {
@@ -286,6 +320,7 @@
           <div data-auth-login-fields class="hidden space-y-3">
             <label class="block"><span class="mb-1.5 block text-sm text-slate-300">Correo electrónico</span><input id="guestAuthLoginEmail" type="email" autocomplete="email" class="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-base text-white outline-none transition placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" placeholder="Email address"></label>
             <label class="block"><span class="mb-1.5 block text-sm text-slate-300">Contraseña</span><input id="guestAuthLoginPassword" type="password" autocomplete="current-password" class="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-base text-white outline-none transition placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" placeholder="Tu contraseña"></label>
+            <button type="button" data-auth-forgot class="text-xs text-blue-400 hover:text-blue-300 underline underline-offset-2">¿Olvidaste tu contraseña?</button>
             <p data-auth-login-error role="alert" aria-live="polite" class="min-h-0 text-sm text-red-400"></p>
             <button data-auth-submit type="submit" class="w-full rounded-xl bg-blue-600 px-4 py-3 font-bold text-white transition hover:bg-blue-500 disabled:cursor-wait disabled:opacity-60">Iniciar sesión</button>
           </div>
@@ -298,6 +333,7 @@
     modal.querySelector('[data-auth-back]').addEventListener('click', () => showSignupStep(1));
     modal.querySelector('[data-auth-google]').addEventListener('click', googleAuth);
     modal.querySelector('[data-auth-form]').addEventListener('submit', submitAuth);
+    modal.querySelector('[data-auth-forgot]').addEventListener('click', recoverPassword);
     modal.querySelector('[data-auth-step1-submit]').addEventListener('click', submitAuth);
     modal.querySelector('[data-auth-toggle-password]').addEventListener('click', () => {
       const input = modal.querySelector('#guestAuthPassword');
