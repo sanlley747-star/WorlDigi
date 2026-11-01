@@ -202,10 +202,10 @@
     const modal = getModal();
     const link = modal.querySelector('[data-auth-forgot]');
     const message = modal.querySelector('[data-auth-login-error]');
-    const email = modal.querySelector('#guestAuthLoginEmail').value.trim();
+    const email = modal.querySelector('#guestAuthLoginEmail').value.trim().toLowerCase();
     message.textContent = '';
 
-    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       message.textContent = 'Escribe tu correo arriba y vuelve a pulsar.';
       return;
     }
