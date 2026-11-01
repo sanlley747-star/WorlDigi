@@ -109,9 +109,9 @@
       grid-template-columns: minmax(0, 1.08fr) minmax(320px, .92fr);
       align-items: center;
       gap: clamp(28px, 5vw, 76px);
-      min-height: min(710px, calc(100svh - 72px));
+      min-height: 0;
       overflow: hidden;
-      padding: clamp(72px, 9vw, 126px) clamp(24px, 8vw, 120px);
+      padding: 48px clamp(24px, 8vw, 120px);
       background:
         radial-gradient(ellipse at 78% 46%, rgba(59, 130, 246, .13), transparent 38%),
         linear-gradient(118deg, var(--tn-deep) 0%, var(--tn-navy) 54%, #080d1b 100%);
@@ -156,14 +156,20 @@
       letter-spacing: -.065em;
       line-height: .99;
     }
+    .hero-copy { align-self: start; }
     h1 .hero-line {
       display: block;
       white-space: nowrap;
     }
+    h1 .hero-cyan {
+      color: var(--tn-cyan);
+      text-shadow: 0 0 28px rgba(18, 207, 227, .2);
+    }
+    h1 .hero-white { color: #fff; }
     h1 .hero-highlight {
       display: block;
-      color: var(--tn-cyan);
-      text-shadow: 0 0 34px rgba(18, 207, 227, .2);
+      color: var(--tn-red);
+      text-shadow: 0 0 30px rgba(239, 68, 68, .2);
     }
     .hero-description {
       max-width: 670px;
@@ -284,7 +290,7 @@
         grid-template-columns: 1fr;
         gap: 18px;
         min-height: auto;
-        padding: 72px 25px 48px;
+        padding: 28px 25px 48px;
       }
       .eyebrow { margin-bottom: 18px; font-size: 10px; }
       h1 { font-size: clamp(2.35rem, 10.5vw, 4.1rem); line-height: 1.02; }
@@ -329,7 +335,7 @@
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero-copy">
         <p class="eyebrow">Tu espacio, tu conexión</p>
-        <h1 id="hero-title"><span class="hero-line">Conecta, descubre,</span><span class="hero-highlight">disfruta</span></h1>
+        <h1 id="hero-title"><span class="hero-line"><span class="hero-cyan">Conecta,</span> <span class="hero-white">descubre,</span></span><span class="hero-highlight">disfruta</span></h1>
         <p class="hero-description">TuNetFy es el cyberentorno desde donde puedes conectar con el mundo, saber lo que sucede, descubrir cosas, disfrutar lo que de verdad importa, expresarte e intercambiar ideas con otros. Es tu red, tu espacio, es conexión y tecnología para ti.</p>
       </div>
 
