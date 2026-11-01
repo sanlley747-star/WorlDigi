@@ -214,6 +214,11 @@
     recoveryCooldown = true;
     link.disabled = true;
     link.classList.add('opacity-50', 'cursor-not-allowed');
+    window.setTimeout(() => {
+      recoveryCooldown = false;
+      link.disabled = false;
+      link.classList.remove('opacity-50', 'cursor-not-allowed');
+    }, 60000);
     try {
       await window.byGetherAuthReady;
       await window.ByGetherAuth.recover(supabaseClient, {
@@ -224,11 +229,6 @@
       // Mensaje neutro: no revelar si el correo existe ni detalles del proveedor.
     }
     message.textContent = 'Si ese correo está registrado, te enviamos un enlace para crear una nueva contraseña.';
-    window.setTimeout(() => {
-      recoveryCooldown = false;
-      link.disabled = false;
-      link.classList.remove('opacity-50', 'cursor-not-allowed');
-    }, 60000);
   }
 
   async function googleAuth() {
