@@ -187,20 +187,23 @@
       justify-self: center;
     }
 
+    .view { display: none; }
+    .view.is-active { display: block; }
+    .nav-links a.is-active { color: var(--tn-cyan); }
     .placeholder-section {
-      min-height: 150px;
-      padding: 48px clamp(24px, 8vw, 120px);
+      min-height: calc(100vh - 72px);
+      padding: 72px clamp(24px, 8vw, 120px);
       background: #080d18;
       border-top: 1px solid rgba(51, 65, 85, .55);
     }
-    .placeholder-section:nth-of-type(even) { background: #0b1220; }
     .placeholder-section h2 {
-      margin: 0;
+      margin: 0 0 16px;
       color: #e2e8f0;
-      font-size: clamp(20px, 2vw, 27px);
+      font-size: clamp(24px, 2.5vw, 32px);
       font-weight: 750;
       letter-spacing: -.025em;
     }
+    .placeholder-section p { margin: 0; color: #cbd5e1; font-size: 17px; line-height: 1.7; }
 
     @media (max-width: 640px) {
       .site-nav { min-height: 66px; padding: 9px 16px; gap: 10px; }
@@ -236,7 +239,7 @@
       h1 .hero-line { white-space: normal; }
       .hero-description { margin-top: 22px; font-size: 19px; line-height: 1.75; }
       .hero-logo { width: min(78vw, 300px); margin: 4px auto 0; }
-      .placeholder-section { min-height: 125px; padding: 38px 25px; }
+      .placeholder-section { min-height: calc(100vh - 66px); padding: 48px 25px; }
     }
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
@@ -246,7 +249,7 @@
 </head>
 <body>
   <header class="site-nav">
-    <a class="brand" href="inicio.html" aria-label="TuNetFy, inicio">
+    <a class="brand" href="#compania" aria-label="TuNetFy, Compañía">
       <img src="assets/logo.png" alt="TuNetFy">
     </a>
 
@@ -258,7 +261,7 @@
       </button>
       <nav class="nav-links" id="primary-navigation" aria-label="Navegación principal">
         <a href="#compania">Compañía</a>
-        <a href="#lo-diferente">Lo diferente</a>
+        <a href="#diferente">Lo diferente</a>
         <a href="#noticias">Noticias</a>
         <a href="#soporte">Soporte</a>
       </nav>
@@ -267,7 +270,8 @@
   </header>
 
   <main>
-    <section class="hero" aria-labelledby="hero-title">
+    <section class="view is-active" id="compania" aria-label="Compañía">
+      <section class="hero" aria-labelledby="hero-title">
       <div class="hero-copy">
         <p class="eyebrow">Tu espacio, tu conexión</p>
         <h1 id="hero-title"><span class="hero-line"><span class="hero-cyan">Conecta,</span> <span class="hero-white">descubre,</span></span><span class="hero-highlight">disfruta</span></h1>
@@ -275,19 +279,19 @@
       </div>
 
       <img class="hero-logo" src="assets/logo4.png" alt="TuNetFy">
+      </section>
     </section>
-
-    <section class="placeholder-section" id="compania" aria-labelledby="company-title">
-      <h2 id="company-title">Compañía</h2>
+    <section class="view placeholder-section" id="diferente" aria-labelledby="different-title">
+      <h2 id="different-title">Lo diferente</h2>
+      <p>Contenido próximamente</p>
     </section>
-    <section class="placeholder-section" id="lo-diferente" aria-labelledby="different-title">
-      <h2 id="different-title">Lo diferente: TuNetFy</h2>
-    </section>
-    <section class="placeholder-section" id="noticias" aria-labelledby="news-title">
+    <section class="view placeholder-section" id="noticias" aria-labelledby="news-title">
       <h2 id="news-title">Noticias</h2>
+      <p>Contenido próximamente</p>
     </section>
-    <section class="placeholder-section" id="soporte" aria-labelledby="support-title">
+    <section class="view placeholder-section" id="soporte" aria-labelledby="support-title">
       <h2 id="support-title">Soporte</h2>
+      <p>Contenido próximamente</p>
     </section>
   </main>
 
@@ -295,8 +299,25 @@
     (() => {
       const button = document.querySelector('.menu-toggle');
       const navigation = document.querySelector('#primary-navigation');
-      if (!button || !navigation) return;
+      const links = [...document.querySelectorAll('.nav-links a')];
+      const views = [...document.querySelectorAll('main .view')];
 
+      const showView = () => {
+        const requested = window.location.hash.slice(1) || 'compania';
+        const activeId = views.some(view => view.id === requested) ? requested : 'compania';
+        views.forEach(view => view.classList.toggle('is-active', view.id === activeId));
+        links.forEach(link => {
+          const active = link.hash === '#' + activeId;
+          link.classList.toggle('is-active', active);
+          if (active) link.setAttribute('aria-current', 'page');
+          else link.removeAttribute('aria-current');
+        });
+      };
+
+      showView();
+      window.addEventListener('hashchange', showView);
+
+      if (!button || !navigation) return;
       button.addEventListener('click', () => {
         const isOpen = navigation.classList.toggle('is-open');
         button.setAttribute('aria-expanded', String(isOpen));
