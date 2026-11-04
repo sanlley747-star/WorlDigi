@@ -196,6 +196,25 @@
       justify-self: center;
     }
 
+    .hero-copyright {
+      grid-column: 1 / -1;
+      justify-self: center;
+      margin: 16px 0 2px;
+      color: var(--tn-muted);
+      font-size: 12px;
+      line-height: 1.6;
+      text-align: center;
+    }
+    .hero-copyright a { color: var(--tn-cyan); text-decoration: none; }
+    .hero-copyright a:hover, .hero-copyright a:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
+
+    #noticias.placeholder-section {
+      min-height: 0;
+      padding: 0;
+      background: transparent;
+      border-top: 0;
+    }
+
     .view { display: none; }
     .view.is-active { display: block; }
     .nav-links a.is-active { color: var(--tn-cyan); }
@@ -287,21 +306,28 @@
       </div>
 
       <img class="hero-logo" src="assets/logo4.png" alt="TuNetFy">
+      <p class="hero-copyright">Copyright 2026 <a href="dashboard.html">TuNetFy, Inc.</a> All rights reserved</p>
       </section>
     </section>
-    <section class="view hero" id="diferente" aria-labelledby="different-title">
+    <section class="view" id="diferente" aria-label="Lo diferente">
+      <section class="hero" aria-labelledby="different-title">
       <div class="hero-copy">
         <h2 class="different-title" id="different-title">Lo diferente</h2>
         <p class="hero-description">Conoce personas de todas partes y deja que cada encuentro sume a tu día. Conversa con naturalidad y conecta a tu manera. Entérate de lo que sucede en el mundo y comparte tu voz con quien quieras. Descubre historias, ideas y momentos que te inspiran a diario. Una red creada para que disfrutes cada momento. Únete a TuNetFy y empieza a conectar hoy.</p>
       </div>
       <img class="hero-logo" src="assets/logo4.png" alt="TuNetFy">
+      <p class="hero-copyright">Copyright 2026 <a href="dashboard.html">TuNetFy, Inc.</a> All rights reserved</p>
+      </section>
     </section>
-    <section class="view placeholder-section hero" id="noticias" aria-labelledby="news-title">
+    <section class="view placeholder-section" id="noticias" aria-label="Noticias">
+      <section class="hero" aria-labelledby="news-title">
       <div class="hero-copy">
         <h2 id="news-title">Noticias</h2>
         <p>Contenido próximamente</p>
       </div>
       <img class="hero-logo" src="assets/logo4.png" alt="TuNetFy">
+      <p class="hero-copyright">Copyright 2026 <a href="dashboard.html">TuNetFy, Inc.</a> All rights reserved</p>
+      </section>
     </section>
   </main>
 
