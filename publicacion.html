@@ -45,6 +45,19 @@
     .publicacion-post-actions > :nth-child(2) { order: 1; }
     .publicacion-post-actions > :nth-child(3) { order: 2; }
     .publicacion-post-actions > :nth-child(4) { order: 4; }
+
+    @media (max-width: 767px) {
+      .publicacion-post-actions {
+        margin-left: 0;
+      }
+      .publicacion-post-actions > * {
+        flex: 1 1 0%;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
     html{scrollbar-width:thin;scrollbar-color:#050b18 transparent}
     ::-webkit-scrollbar{width:10px}
     ::-webkit-scrollbar-track{background:transparent}
@@ -305,14 +318,14 @@
             </div>
           </div>
 
-          <div class="ml-[60px] space-y-3">
+          <div class="ml-0 md:ml-[60px] space-y-3">
             ${post.content ? `<p class="text-gray-800 dark:text-gray-200 text-base break-words whitespace-pre-line">${linkifyContent(ytStripLink(post.content))}</p>${ytEmbedsFor(post.content)}` : ''}
 
             ${post.image_url && !ytOwnsImage(post.content, post.image_url) ? `<img src="${connEscape(safeUrl(post.image_url))}" class="w-full rounded-lg max-h-[32rem] object-cover" alt="Imagen de publicación">` : ''}
           </div>
 
           <div class="border-t border-gray-100 dark:border-slate-800 pt-2">
-            <div class="publicacion-post-actions ml-[60px] flex items-center space-x-5 text-sm text-gray-600 dark:text-gray-400">
+            <div class="publicacion-post-actions ml-0 md:ml-[60px] flex items-center space-x-0 md:space-x-5 text-sm text-gray-600 dark:text-gray-400">
 
             ${ccLikeButtonHtml(id, post.likes, v.isLiked, currentUser.email, currentName)}
 
@@ -490,7 +503,7 @@
         return `
           <div id="comentario-${c.id}" class="p-4 flex items-start gap-3 ${isReply ? 'pl-12 bg-gray-50/60 dark:bg-slate-800/40' : ''}">
             <a href="perfil.html?user=${encodeURIComponent(name)}" class="flex-shrink-0">
-              <img src="${connEscape(safeUrl(avatar))}" class="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-slate-700 hover:opacity-80 transition" alt="${connEscape(name)}">
+              <img src="${connEscape(safeUrl(avatar))}" class="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover border border-gray-200 dark:border-slate-700 hover:opacity-80 transition" alt="${connEscape(name)}">
             </a>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2">
@@ -499,7 +512,7 @@
                 <span class="text-gray-400 text-sm">·</span>
                 <span class="text-xs text-gray-500 dark:text-gray-400">${formatCompactTime(c.created_at)}</span>
               </div>
-              <p class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line mt-0.5">${linkifyContent(c.content)}</p>
+              <p class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line md:mt-0.5">${linkifyContent(c.content)}</p>
               <div class="publicacion-comment-actions">${actions}</div>
               <div id="reply-box-${c.id}" class="hidden mt-2 flex items-start gap-2">
                 <textarea id="reply-input-${c.id}" maxlength="280" rows="1" placeholder="Escribe una respuesta..." class="flex-1 text-sm p-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-transparent text-gray-900 dark:text-gray-100 resize-none focus:outline-none focus:border-blue-500"></textarea>
