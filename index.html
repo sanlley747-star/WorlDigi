@@ -16,9 +16,61 @@
   <meta name="twitter:description" content="Descubre y conecta. Noticias, deportes, entretenimiento y gente real en un solo lugar.">
   <meta name="twitter:image" content="https://tunetfy.sanlley747.workers.dev/assets/logo.png">
   <script>
-    // La raíz siempre delega la decisión de sesión al dashboard.
-    // Conserva query y hash para que Supabase procese OAuth/confirmación.
-    window.location.replace('dashboard.html' + window.location.search + window.location.hash);
+    (function () {
+      'use strict';
+      var dashboard = 'dashboard.html' + window.location.search + window.location.hash;
+      function go(destination) {
+        window.location.replace(destination);
+      }
+
+      try {
+        // 1. Los retornos de autenticación siempre se procesan en el dashboard.
+        var returnKeys = ['access_token', 'code', 'error', 'type'];
+        var queryParams = new URLSearchParams(window.location.search);
+        var hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+        var hasAuthReturn = returnKeys.some(function (key) {
+          return queryParams.has(key) || hashParams.has(key);
+        });
+        if (hasAuthReturn) {
+          go(dashboard);
+          return;
+        }
+
+        // 2. Detectar cualquier sesión Supabase guardada sin cargar su SDK.
+        var hasSession = false;
+        try {
+          for (var i = 0; i < window.localStorage.length; i++) {
+            var key = window.localStorage.key(i);
+            if (key && key.indexOf('sb-') === 0 && key.slice(-11) === '-auth-token') {
+              hasSession = true;
+              break;
+            }
+          }
+        } catch (storageError) {
+          hasSession = false;
+        }
+        if (hasSession) {
+          go(dashboard);
+          return;
+        }
+
+        // 3. Solo una búsqueda de Google muestra la portada a visitantes sin sesión.
+        var referrer = document.referrer || '';
+        var fromGoogleSearch = referrer.indexOf('android-app://com.google.android.googlequicksearchbox') === 0;
+        if (!fromGoogleSearch && referrer) {
+          var hostname = new URL(referrer).hostname.toLowerCase();
+          fromGoogleSearch = hostname === 'google.com' || hostname.indexOf('www.google.') === 0;
+        }
+        go(fromGoogleSearch ? 'inicio.html' : dashboard);
+      } catch (error) {
+        // 4. Ante cualquier error inesperado, entrar al muro.
+        try {
+          go(dashboard);
+        } catch (fallbackError) {
+          window.location.href = dashboard;
+        }
+      }
+    })();
   </script>
 </head>
 <body>
