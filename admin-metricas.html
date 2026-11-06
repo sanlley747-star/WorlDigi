@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#050b18">
+  <title>Métricas privadas · TuNetFy</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{color-scheme:dark;--bg:#050b18;--panel:#0d1728;--panel2:#111f34;--line:#24354d;--cyan:#12cfe3;--blue:#3b82f6;--red:#ef4444;--white:#f8fafc;--muted:#94a3b8;--green:#22c55e}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 15% 0%,#10223b 0,transparent 42%),var(--bg);color:var(--white);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
+    button,input,select{font:inherit}button{cursor:pointer}.shell{width:min(1440px,100%);margin:auto;padding:26px clamp(16px,3vw,42px) 48px}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:28px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+    .brand{display:flex;align-items:center;gap:14px}.brand img{width:42px;height:42px;object-fit:contain}.brand h1{font-size:20px;line-height:1.1;margin:0;font-weight:800;letter-spacing:-.04em}.brand p{margin:4px 0 0;color:var(--muted);font-size:12px}
+    .actions{display:flex;align-items:center;gap:10px}.select,.btn{border:1px solid var(--line);background:var(--panel2);color:var(--white);border-radius:9px;padding:9px 13px}.btn.primary{background:var(--blue);border-color:var(--blue);font-weight:700}.btn:hover,.select:hover{filter:brightness(1.13)}.btn:disabled{opacity:.55;cursor:wait}
+    .status{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px}.dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 12px #22c55e80}
+    .notice{display:none;margin:0 0 20px;padding:12px 15px;border:1px solid #7f3340;background:#341721;color:#fecdd3;border-radius:10px}.notice.show{display:block}
+    .login-wrap{min-height:65vh;display:grid;place-items:center}.login{width:min(420px,100%);padding:28px;border:1px solid var(--line);background:#0d1728eF;border-radius:18px;box-shadow:0 24px 80px #0006}
+    .login h2{font-size:23px;margin:0 0 7px;letter-spacing:-.04em}.login p{color:var(--muted);margin:0 0 22px}.field{display:grid;gap:7px;margin:14px 0}.field label{color:#cbd5e1;font-size:12px;font-weight:650}.field input{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:9px;background:#07101e;color:var(--white);outline:none}.field input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px #12cfe322}.login .btn{width:100%;padding:12px}.small{font-size:11px;color:var(--muted);margin-top:16px!important}
+    #dashboard{display:none}.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:16px}.card{background:linear-gradient(145deg,#101e32,#0b1525);border:1px solid var(--line);border-radius:14px;padding:17px;min-width:0}.kpi-label{color:var(--muted);font-size:12px;font-weight:600}.kpi-value{font-size:clamp(25px,3vw,34px);font-weight:800;letter-spacing:-.05em;margin-top:6px}.kpi-foot{font-size:11px;color:var(--muted);margin-top:2px}
+    .grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr);gap:16px;margin-bottom:16px}.grid.equal{grid-template-columns:repeat(2,minmax(0,1fr))}.card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px}.card h2{font-size:14px;margin:0;font-weight:750}.hint{color:var(--muted);font-size:11px}
+    .chart{width:100%;height:230px;display:block;overflow:visible}.chart text{fill:#91a4bd;font-size:10px}.chart .gridline{stroke:#293b53;stroke-width:1;stroke-dasharray:3 5}.chart .area{fill:url(#areaFill)}.chart .line{fill:none;stroke:var(--cyan);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}.chart .point{fill:var(--cyan);stroke:#0d1728;stroke-width:2}
+    .bars{display:grid;gap:12px}.bar-row{display:grid;grid-template-columns:minmax(80px,1fr) minmax(80px,2fr) 38px;gap:10px;align-items:center}.bar-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#cbd5e1;font-size:12px}.bar-track{height:8px;background:#1b2a40;border-radius:20px;overflow:hidden}.bar-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--blue),var(--cyan))}.bar-value{text-align:right;color:#dbeafe;font-size:12px;font-variant-numeric:tabular-nums}
+    .split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.split-item{padding:13px;background:#0a1423;border:1px solid #1d3049;border-radius:10px}.split-item span{display:block;color:var(--muted);font-size:11px}.split-item strong{display:block;font-size:21px;margin-top:4px}.split-item small{color:var(--muted);font-size:10px}
+    .table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:360px}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid #203149}th{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}td{font-size:12px;color:#dbe5f1}td:last-child,th:last-child{text-align:right}.empty{color:var(--muted);padding:18px 0;text-align:center;font-size:12px}
+    .footer{margin-top:24px;text-align:center;color:#64748b;font-size:11px}
+    @media(max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.grid,.grid.equal{grid-template-columns:1fr}}
+    @media(max-width:520px){.shell{padding:16px 13px 32px}.top{align-items:flex-start;flex-wrap:wrap}.actions{width:100%;justify-content:space-between}.brand h1{font-size:18px}.kpis{gap:9px}.card{padding:13px}.kpi-value{font-size:26px}.bar-row{grid-template-columns:minmax(65px,.9fr) minmax(55px,1.5fr) 30px;gap:7px}.chart{height:205px}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="top">
+      <div class="brand">
+        <img src="assets/logo.png" alt="TuNetFy" onerror="this.style.display='none'">
+        <div><h1>Métricas privadas</h1><p>Panel de administración · TuNetFy</p></div>
+      </div>
+      <div class="actions" id="headerActions" hidden>
+        <span class="status"><i class="dot"></i> Conectado</span>
+        <select id="range" class="select" aria-label="Periodo"><option value="7">7 días</option><option value="14" selected>14 días</option><option value="30">30 días</option><option value="90">90 días</option></select>
+        <button id="refresh" class="btn primary" type="button">Actualizar</button>
+        <button id="logout" class="btn" type="button">Salir</button>
+      </div>
+    </header>
+    <div id="notice" class="notice" role="alert"></div>
+
+    <section id="loginView" class="login-wrap">
+      <form id="loginForm" class="login">
+        <h2>Acceso de administrador</h2>
+        <p>Inicia sesión con la cuenta autorizada para consultar las métricas.</p>
+        <div class="field"><label for="email">Correo electrónico</label><input id="email" type="email" autocomplete="username" required></div>
+        <div class="field"><label for="password">Contraseña</label><input id="password" type="password" autocomplete="current-password" required></div>
+        <button id="loginButton" class="btn primary" type="submit">Entrar</button>
+        <p class="small">El acceso se valida directamente en Supabase. Esta página no ofrece registro de cuentas.</p>
+      </form>
+    </section>
+
+    <section id="dashboard" aria-live="polite">
+      <div class="kpis">
+        <article class="card"><div class="kpi-label">Visitas</div><div class="kpi-value" id="kVisits">—</div><div class="kpi-foot" id="periodLabel">Periodo seleccionado</div></article>
+        <article class="card"><div class="kpi-label">Visitantes únicos</div><div class="kpi-value" id="kUnique">—</div><div class="kpi-foot">Identificadores únicos en el periodo</div></article>
+        <article class="card"><div class="kpi-label">Nuevos usuarios</div><div class="kpi-value" id="kNew">—</div><div class="kpi-foot">Registros durante el periodo</div></article>
+        <article class="card"><div class="kpi-label">Usuarios reales registrados</div><div class="kpi-value" id="kTotal">—</div><div class="kpi-foot">Excluye cuentas automáticas identificadas</div></article>
+      </div>
+
+      <div class="grid">
+        <article class="card">
+          <div class="card-head"><h2>Actividad diaria</h2><span class="hint">Visitas y usuarios nuevos</span></div>
+          <svg id="dailyChart" class="chart" viewBox="0 0 720 230" role="img" aria-label="Gráfico de visitas diarias"></svg>
+          <div class="hint" id="chartSummary"></div>
+        </article>
+        <article class="card">
+          <div class="card-head"><h2>Dispositivos</h2><span class="hint">Distribución de visitas</span></div>
+          <div class="split">
+            <div class="split-item"><span>Móvil</span><strong id="mobileCount">—</strong><small id="mobileUnique">Visitantes únicos: —</small></div>
+            <div class="split-item"><span>Escritorio</span><strong id="desktopCount">—</strong><small id="desktopUnique">Visitantes únicos: —</small></div>
+            <div class="split-item"><span>Sin dato</span><strong id="unknownCount">—</strong><small>Dispositivo no identificado</small></div>
+            <div class="split-item"><span>Con sesión</span><strong id="signedCount">—</strong><small id="signedUnique">Visitantes únicos: —</small></div>
+            <div class="split-item"><span>Sin sesión</span><strong id="guestCount">—</strong><small id="guestUnique">Visitantes únicos: —</small></div>
+          </div>
+        </article>
+      </div>
+
+      <div class="grid equal">
+        <article class="card"><div class="card-head"><h2>Procedencia</h2><span class="hint">Visitantes únicos · Top 10</span></div><div id="sources" class="bars"></div></article>
+        <article class="card"><div class="card-head"><h2>Páginas más visitadas</h2><span class="hint">Visitas · Top 10</span></div><div id="pages" class="bars"></div></article>
+      </div>
+
+      <article class="card">
+        <div class="card-head"><h2>Últimos registros</h2><span class="hint">Hasta 20 usuarios · sin mostrar correos</span></div>
+        <div class="table-wrap"><table><thead><tr><th>Usuario</th><th>Fecha de registro</th></tr></thead><tbody id="users"></tbody></table></div>
+      </article>
+    </section>
+    <footer class="footer">TuNetFy · Panel privado · Zona horaria: America/Santo_Domingo</footer>
+  </main>
+
+  <script>
+    (() => {
+      'use strict';
+      const SUPABASE_URL = 'https://aiymadawznadvavzspxj.supabase.co';
+      const SUPABASE_ANON_KEY = 'sb_publishable_fL7vTXJ4NLhC2CJs9nPVAg_fvzWbfCY';
+      const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const $ = (id) => document.getElementById(id);
+      const fmt = new Intl.NumberFormat('es-DO');
+      const dateFmt = new Intl.DateTimeFormat('es-DO', {day:'2-digit',month:'short',year:'numeric',timeZone:'America/Santo_Domingo'});
+      const shortDate = new Intl.DateTimeFormat('es-DO', {day:'2-digit',month:'short',timeZone:'America/Santo_Domingo'});
+      let busy = false;
+
+      function notice(message) { $('notice').textContent = message; $('notice').classList.add('show'); }
+      function clearNotice() { $('notice').textContent = ''; $('notice').classList.remove('show'); }
+      function showLogin() { $('loginView').style.display='grid'; $('dashboard').style.display='none'; $('headerActions').hidden=true; }
+      function showDashboard() { $('loginView').style.display='none'; $('dashboard').style.display='block'; $('headerActions').hidden=false; }
+      function safeNumber(value) { const n=Number(value); return Number.isFinite(n)?n:0; }
+      function put(id,value) { $(id).textContent=fmt.format(safeNumber(value)); }
+
+      async function checkAdmin() {
+        const {data:{session},error:sessionError}=await client.auth.getSession();
+        if(sessionError) throw sessionError;
+        if(!session){showLogin();return false;}
+        const {data,isError}=await client.rpc('es_admin');
+        if(isError) throw isError;
+        if(data!==true){await client.auth.signOut();showLogin();notice('Esta cuenta no tiene permisos de administrador.');return false;}
+        showDashboard();
+        return true;
+      }
+
+      function renderBars(id,items,labelKey,valueKey) {
+        const root=$(id); root.replaceChildren();
+        if(!items || !items.length){root.innerHTML='<div class="empty">Todavía no hay datos para este periodo.</div>';return;}
+        const max=Math.max(1,...items.map(x=>safeNumber(x[valueKey])));
+        items.forEach(item=>{
+          const row=document.createElement('div');row.className='bar-row';
+          const label=document.createElement('div');label.className='bar-label';label.textContent=String(item[labelKey]??'—');
+          const track=document.createElement('div');track.className='bar-track';
+          const fill=document.createElement('div');fill.className='bar-fill';fill.style.width=(safeNumber(item[valueKey])/max*100)+'%';track.append(fill);
+          const value=document.createElement('div');value.className='bar-value';value.textContent=fmt.format(safeNumber(item[valueKey]));
+          row.append(label,track,value);root.append(row);
+        });
+      }
+
+      function renderChart(rows) {
+        const svg=$('dailyChart');svg.replaceChildren();
+        const NS='http://www.w3.org/2000/svg';
+        const make=(tag,attrs,parent=svg)=>{const el=document.createElementNS(NS,tag);Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,String(v)));parent.append(el);return el;};
+        const W=720,H=230,L=42,R=12,T=12,B=32,plotW=W-L-R,plotH=H-T-B;
+        const max=Math.max(1,...rows.map(r=>safeNumber(r.visitas)));
+        for(let i=0;i<=4;i++){const y=T+plotH*i/4;make('line',{x1:L,y1:y,x2:W-R,y2:y,class:'gridline'});const t=make('text',{x:L-9,y:y+4,'text-anchor':'end'});t.textContent=fmt.format(Math.round(max*(1-i/4)));}
+        const points=rows.map((r,i)=>({x:L+(rows.length===1?plotW/2:i*plotW/(rows.length-1)),y:T+plotH-(safeNumber(r.visitas)/max)*plotH,v:safeNumber(r.visitas),d:r.fecha}));
+        if(points.length){
+          const d=points.map((p,i)=>(i?'L':'M')+p.x+' '+p.y).join(' ');
+          make('path',{d:d+' L '+points[points.length-1].x+' '+(T+plotH)+' L '+points[0].x+' '+(T+plotH)+' Z',class:'area'});
+          make('path',{d,class:'line'});
+          points.forEach((p,i)=>{if(i===0||i===points.length-1||i%Math.ceil(points.length/7)===0){make('circle',{cx:p.x,cy:p.y,r:3.8,class:'point'});const t=make('text',{x:p.x,y:H-8,'text-anchor':'middle'});t.textContent=shortDate.format(new Date(p.d+'T12:00:00'));}});
+        }
+      }
+
+      function renderUsers(users) {
+        const body=$('users');body.replaceChildren();
+        if(!users || !users.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=2;td.className='empty';td.textContent='No hay registros disponibles.';tr.append(td);body.append(tr);return;}
+        users.forEach(user=>{const tr=document.createElement('tr'),name=document.createElement('td'),date=document.createElement('td');name.textContent=user.nombre||'Usuario';date.textContent=user.fecha_registro?dateFmt.format(new Date(user.fecha_registro)):'—';tr.append(name,date);body.append(tr);});
+      }
+
+      async function loadMetrics() {
+        if(busy)return;busy=true;$('refresh').disabled=true;clearNotice();
+        try{
+          const days=Number($('range').value);
+          const {data,error}=await client.rpc('metricas_admin',{dias:days});
+          if(error)throw error;
+          if(!data || !data.totales)throw new Error('La respuesta de métricas no tiene el formato esperado.');
+          const t=data.totales,d=data.dispositivos||{},s=data.sesiones||{};
+          put('kVisits',t.visitas);put('kUnique',t.visitantes_unicos);put('kNew',t.usuarios_nuevos);put('kTotal',t.usuarios_auth_reales);
+          $('periodLabel').textContent=data.periodo.desde+' — '+data.periodo.hasta+' · '+data.periodo.zona_horaria;
+          renderChart(data.por_dia||[]);
+          const daily=(data.por_dia||[]).reduce((sum,row)=>sum+safeNumber(row.visitas),0);
+          $('chartSummary').textContent=fmt.format(daily)+' visitas contabilizadas en '+days+' días.';
+          put('mobileCount',d.movil);put('desktopCount',d.escritorio);put('unknownCount',d.sin_dato);
+          put('signedCount',s.con_sesion);put('guestCount',s.sin_sesion);
+          $('mobileUnique').textContent='Visitantes únicos: '+fmt.format(d.movil_unicos||0);
+          $('desktopUnique').textContent='Visitantes únicos: '+fmt.format(d.escritorio_unicos||0);
+          $('signedUnique').textContent='Visitantes únicos: '+fmt.format(s.con_sesion_unicos||0);
+          $('guestUnique').textContent='Visitantes únicos: '+fmt.format(s.sin_sesion_unicos||0);
+          renderBars('sources',data.procedencia_top10||[],'dominio','visitantes_unicos');
+          renderBars('pages',data.paginas_top10||[],'pagina','visitas');
+          renderUsers(data.ultimos_20_usuarios||[]);
+          showDashboard();
+        }catch(error){notice(error.message||'No se pudieron cargar las métricas.');}
+        finally{busy=false;$('refresh').disabled=false;}
+      }
+
+      $('loginForm').addEventListener('submit',async event=>{
+        event.preventDefault();clearNotice();$('loginButton').disabled=true;$('loginButton').textContent='Validando…';
+        try{
+          const {error}=await client.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
+          if(error)throw error;
+          if(await checkAdmin())await loadMetrics();
+        }catch(error){notice(error.message||'No fue posible iniciar sesión.');}
+        finally{$('loginButton').disabled=false;$('loginButton').textContent='Entrar';}
+      });
+      $('refresh').addEventListener('click',loadMetrics);
+      $('range').addEventListener('change',loadMetrics);
+      $('logout').addEventListener('click',async()=>{await client.auth.signOut();showLogin();clearNotice();});
+      client.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT')showLogin();});
+      (async()=>{try{if(await checkAdmin())await loadMetrics();}catch(error){showLogin();notice(error.message||'No se pudo verificar el acceso.');}})();
+    })();
+  </script>
+</body>
+</html>
