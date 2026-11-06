@@ -67,7 +67,7 @@
 
       <div class="grid">
         <article class="card">
-          <div class="card-head"><h2>Actividad diaria</h2><span class="hint">Visitas y usuarios nuevos</span></div>
+          <div class="card-head"><h2>Actividad diaria</h2><span class="hint">Visitas por día</span></div>
           <svg id="dailyChart" class="chart" viewBox="0 0 720 230" role="img" aria-label="Gráfico de visitas diarias"></svg>
           <div class="hint" id="chartSummary"></div>
         </article>
@@ -119,8 +119,8 @@
         const {data:{session},error:sessionError}=await client.auth.getSession();
         if(sessionError) throw sessionError;
         if(!session){showLogin();return false;}
-        const {data,isError}=await client.rpc('es_admin');
-        if(isError) throw isError;
+        const {data,error}=await client.rpc('es_admin');
+        if(error) throw error;
         if(data!==true){await client.auth.signOut();showLogin();notice('Esta cuenta no tiene permisos de administrador.');return false;}
         showDashboard();
         return true;
