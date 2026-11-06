@@ -4,3 +4,4 @@ PostCard.jsx
 .gitignore
 *.md
 *.sql
+wrangler.jsonc
