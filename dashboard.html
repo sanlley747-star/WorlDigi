@@ -369,6 +369,9 @@
 
     async function registrarVisitaDashboard(userId) {
       if (dashboardVisitTracked) return;
+      try {
+        if (localStorage.getItem('tunetfy_owner') === '1') return;
+      } catch (storageError) {}
       dashboardVisitTracked = true;
       try {
         const visitorId = getDashboardVisitorId();
@@ -605,7 +608,7 @@
           window.byGetherGuestMode = true;
           currentUser = null;
           revealApp();
-          void registrarVisitaDashboard(null);
+          await registrarVisitaDashboard(null);
           document.getElementById('guestAuthActions')?.classList.remove('hidden');
           feedRestoringState = false;
           await loadPosts();
@@ -615,8 +618,14 @@
         return;
       }
       currentUser = user;
+      try {
+        const { data: isAdmin, error: adminError } = await supabaseClient.rpc('es_admin');
+        if (!adminError && isAdmin === true) {
+          try { localStorage.setItem('tunetfy_owner', '1'); } catch (storageError) {}
+        }
+      } catch (adminCheckError) {}
       revealApp();
-      void registrarVisitaDashboard(currentUser.id);
+      await registrarVisitaDashboard(currentUser.id);
       
       const authorName = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
       document.getElementById('myProfileLink').href = `perfil.html?user=${encodeURIComponent(authorName)}`;
