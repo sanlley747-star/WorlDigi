@@ -32,6 +32,8 @@
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
     </button>
     <span class="text-sm text-gray-300">Ajustes</span>
+  
+    <button id="navMetricsBtn" type="button" onclick="window.location.href='admin-metricas.html'" style="display:none;" class="bg-cyan-700/90 hover:bg-cyan-700 text-white text-xs font-semibold px-2 sm:px-3 py-1.5 rounded-lg border border-cyan-600 transition z-10 shrink-0 whitespace-nowrap">Métricas</button>
   </nav>
 
   <main class="w-full max-w-6xl mx-auto mt-8 px-4 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-24 items-start">
@@ -261,6 +263,36 @@
       list.insertBefore(link, publish);
     })();
   </script>
+
+  <script>
+    (function initOwnerMetricsNavButton() {
+      const button = document.getElementById('navMetricsBtn');
+      if (!button || typeof supabaseClient === 'undefined') return;
+
+      let checkId = 0;
+      async function updateMetricsVisibility(session) {
+        const currentCheck = ++checkId;
+        button.style.display = 'none';
+        if (!session || !session.user) return;
+        try {
+          const { data, error } = await supabaseClient.rpc('es_admin');
+          if (currentCheck !== checkId) return;
+          button.style.display = (!error && data === true) ? 'inline-flex' : 'none';
+        } catch (error) {
+          if (currentCheck === checkId) button.style.display = 'none';
+        }
+      }
+
+      supabaseClient.auth.getSession().then(({ data }) => {
+        updateMetricsVisibility(data && data.session);
+      }).catch(() => { button.style.display = 'none'; });
+
+      supabaseClient.auth.onAuthStateChange((_event, session) => {
+        Promise.resolve().then(() => updateMetricsVisibility(session));
+      });
+    })();
+  </script>
+
 </body>
 </html>
 
