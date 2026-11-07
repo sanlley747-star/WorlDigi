@@ -68,6 +68,8 @@
 
   <nav class="sticky top-0 z-50 bg-black text-white px-4 py-3 flex justify-between items-center shadow-md border-b border-slate-800">
     <a href="dashboard.html" class="flex items-center"><img src="assets/logo-circle.png" alt="TuNetFy" class="h-12 w-auto"></a>
+  
+    <button id="navMetricsBtn" type="button" onclick="window.location.href='admin-metricas.html'" style="display:none;" class="bg-cyan-700/90 hover:bg-cyan-700 text-white text-xs font-semibold px-2 sm:px-3 py-1.5 rounded-lg border border-cyan-600 transition z-10 shrink-0 whitespace-nowrap">Métricas</button>
   </nav>
 
   <!-- CONTENEDOR PRINCIPAL -->
@@ -621,5 +623,35 @@
   </script>
 
   <script src="mobile-nav.js"></script>
+
+  <script>
+    (function initOwnerMetricsNavButton() {
+      const button = document.getElementById('navMetricsBtn');
+      if (!button || typeof supabaseClient === 'undefined') return;
+
+      let checkId = 0;
+      async function updateMetricsVisibility(session) {
+        const currentCheck = ++checkId;
+        button.style.display = 'none';
+        if (!session || !session.user) return;
+        try {
+          const { data, error } = await supabaseClient.rpc('es_admin');
+          if (currentCheck !== checkId) return;
+          button.style.display = (!error && data === true) ? 'inline-flex' : 'none';
+        } catch (error) {
+          if (currentCheck === checkId) button.style.display = 'none';
+        }
+      }
+
+      supabaseClient.auth.getSession().then(({ data }) => {
+        updateMetricsVisibility(data && data.session);
+      }).catch(() => { button.style.display = 'none'; });
+
+      supabaseClient.auth.onAuthStateChange((_event, session) => {
+        Promise.resolve().then(() => updateMetricsVisibility(session));
+      });
+    })();
+  </script>
+
 </body>
 </html>
