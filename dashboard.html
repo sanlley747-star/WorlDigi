@@ -333,6 +333,60 @@
     const SUPABASE_URL = 'https://aiymadawznadvavzspxj.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_fL7vTXJ4NLhC2CJs9nPVAg_fvzWbfCY'; 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // ===== REGISTRO DE VISITAS DEL MURO PÚBLICO =====
+    // Identificador persistente del navegador: permite contar visitantes únicos
+    // aunque no creen una cuenta ni inicien sesión.
+    const TUNETFY_VISITOR_KEY = 'tunetfy_visitor_id_v1';
+    let dashboardVisitTracked = false;
+
+    function getDashboardVisitorId() {
+      try {
+        let visitorId = localStorage.getItem(TUNETFY_VISITOR_KEY);
+        if (!visitorId) {
+          visitorId = (window.crypto && typeof window.crypto.randomUUID === 'function')
+            ? window.crypto.randomUUID()
+            : 'v-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+          localStorage.setItem(TUNETFY_VISITOR_KEY, visitorId);
+        }
+        return visitorId;
+      } catch (error) {
+        // Si el navegador bloquea localStorage, conserva el identificador al menos
+        // durante esta pestaña; no impide que el muro público cargue.
+        try {
+          let visitorId = sessionStorage.getItem(TUNETFY_VISITOR_KEY);
+          if (!visitorId) {
+            visitorId = (window.crypto && typeof window.crypto.randomUUID === 'function')
+              ? window.crypto.randomUUID()
+              : 'v-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+            sessionStorage.setItem(TUNETFY_VISITOR_KEY, visitorId);
+          }
+          return visitorId;
+        } catch (storageError) {
+          return 'v-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+        }
+      }
+    }
+
+    async function registrarVisitaDashboard(userId) {
+      if (dashboardVisitTracked) return;
+      dashboardVisitTracked = true;
+      try {
+        const visitorId = getDashboardVisitorId();
+        const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '') ||
+          (window.matchMedia && window.matchMedia('(max-width: 767px)').matches);
+        const { error } = await supabaseClient.from('visitas').insert({
+          visitor_id: visitorId,
+          pagina: 'dashboard.html',
+          referrer: (document.referrer || '').slice(0, 300) || null,
+          es_movil: Boolean(isMobile),
+          user_id: userId || null
+        });
+        if (error) console.warn('No se pudo registrar la visita al dashboard:', error.message);
+      } catch (error) {
+        console.warn('No se pudo registrar la visita al dashboard:', error);
+      }
+    }
+
     // ===== SISTEMA DE PUBLICIDAD =====
     // Selecciona un anuncio activo por bloque horario y cambia automáticamente
     // al comenzar la siguiente hora. El <img> arranca oculto y sin src para no
@@ -551,6 +605,7 @@
           window.byGetherGuestMode = true;
           currentUser = null;
           revealApp();
+          void registrarVisitaDashboard(null);
           document.getElementById('guestAuthActions')?.classList.remove('hidden');
           feedRestoringState = false;
           await loadPosts();
@@ -561,6 +616,7 @@
       }
       currentUser = user;
       revealApp();
+      void registrarVisitaDashboard(currentUser.id);
       
       const authorName = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
       document.getElementById('myProfileLink').href = `perfil.html?user=${encodeURIComponent(authorName)}`;
