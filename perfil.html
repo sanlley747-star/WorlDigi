@@ -142,8 +142,12 @@
     </div>
 
     <button id="editProfileBtn" onclick="openEditProfileModal()" style="display:none;"
-      class="absolute top-2 right-6 bg-slate-900/80 hover:bg-slate-900 text-white text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 transition z-10">
+      class="absolute top-2 right-28 bg-slate-900/80 hover:bg-slate-900 text-white text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 transition z-10">
       Editar perfil
+    </button>
+    <button id="metricsBtn" onclick="window.location.href='admin-metricas.html'" style="display:none;"
+      class="absolute top-2 right-6 bg-cyan-700/90 hover:bg-cyan-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg border border-cyan-600 transition z-10">
+      Métricas
     </button>
 
     <div class="pt-12 sm:pl-24 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -273,6 +277,7 @@
     let currentUserEmail = null;
     let loggedUserName = null;
     let isOwnProfile = false;
+    let isAdminProfile = false;
 
     async function initProfile() {
       const params = new URLSearchParams(window.location.search);
@@ -292,10 +297,18 @@
       if (user) {
         currentUserEmail = user.email;
         loggedUserName = user.user_metadata?.full_name || user.email.split('@')[0];
-        isOwnProfile = loggedUserName === username;
+        const { data: targetProfile, error: profileError } = await supabaseClient
+          .from('profiles').select('user_email').eq('user_name', username).maybeSingle();
+        isOwnProfile = !profileError && Boolean(targetProfile?.user_email) &&
+          targetProfile.user_email.toLowerCase() === user.email.toLowerCase();
+        if (isOwnProfile) {
+          const { data: adminResult, error: adminError } = await supabaseClient.rpc('es_admin');
+          isAdminProfile = !adminError && adminResult === true;
+        }
       }
 
       document.getElementById('editProfileBtn').style.display = isOwnProfile ? 'block' : 'none';
+      document.getElementById('metricsBtn').style.display = (isOwnProfile && isAdminProfile) ? 'block' : 'none';
 
       initNotifications(currentUserEmail);
       initConnections(username);
