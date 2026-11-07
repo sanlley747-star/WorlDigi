@@ -38,6 +38,8 @@
       <img src="assets/logo-circle.png" alt="TuNetFy" class="h-10 w-auto">
     </button>
     <a href="dashboard.html" class="hidden lg:flex items-center"><img src="assets/logo-circle.png" alt="TuNetFy" class="h-10 w-auto"></a>
+  
+    <button id="navMetricsBtn" type="button" onclick="window.location.href='admin-metricas.html'" style="display:none;" class="bg-cyan-700/90 hover:bg-cyan-700 text-white text-xs font-semibold px-2 sm:px-3 py-1.5 rounded-lg border border-cyan-600 transition z-10 shrink-0 whitespace-nowrap">Métricas</button>
   </nav>
   <div id="mobileFunctionMenu" class="hidden lg:hidden fixed top-[56px] left-4 z-40 w-[220px] bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-gray-200 dark:border-slate-800 p-4">
     <nav class="space-y-2">
@@ -374,5 +376,35 @@
       list.insertBefore(link, publish);
     })();
   </script>
+
+  <script>
+    (function initOwnerMetricsNavButton() {
+      const button = document.getElementById('navMetricsBtn');
+      if (!button || typeof supabaseClient === 'undefined') return;
+
+      let checkId = 0;
+      async function updateMetricsVisibility(session) {
+        const currentCheck = ++checkId;
+        button.style.display = 'none';
+        if (!session || !session.user) return;
+        try {
+          const { data, error } = await supabaseClient.rpc('es_admin');
+          if (currentCheck !== checkId) return;
+          button.style.display = (!error && data === true) ? 'inline-flex' : 'none';
+        } catch (error) {
+          if (currentCheck === checkId) button.style.display = 'none';
+        }
+      }
+
+      supabaseClient.auth.getSession().then(({ data }) => {
+        updateMetricsVisibility(data && data.session);
+      }).catch(() => { button.style.display = 'none'; });
+
+      supabaseClient.auth.onAuthStateChange((_event, session) => {
+        Promise.resolve().then(() => updateMetricsVisibility(session));
+      });
+    })();
+  </script>
+
 </body>
 </html>
