@@ -64,6 +64,8 @@
       </a>
       <span id="profileTopName" class="text-base font-bold text-white truncate max-w-[260px]">Cargando...</span>
     </div>
+  
+    <button id="navMetricsBtn" type="button" onclick="window.location.href='admin-metricas.html'" style="display:none;" class="bg-cyan-700/90 hover:bg-cyan-700 text-white text-xs font-semibold px-2 sm:px-3 py-1.5 rounded-lg border border-cyan-600 transition z-10 shrink-0 whitespace-nowrap">Métricas</button>
   </nav>
 
   <!-- CONTENEDOR PRINCIPAL: Estructura exacta de 3 columnas idéntica al dashboard -->
@@ -144,10 +146,6 @@
     <button id="editProfileBtn" onclick="openEditProfileModal()" style="display:none;"
       class="absolute top-2 right-28 bg-slate-900/80 hover:bg-slate-900 text-white text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 transition z-10">
       Editar perfil
-    </button>
-    <button id="metricsBtn" onclick="window.location.href='admin-metricas.html'" style="display:none;"
-      class="absolute top-2 right-6 bg-cyan-700/90 hover:bg-cyan-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg border border-cyan-600 transition z-10">
-      Métricas
     </button>
 
     <div class="pt-12 sm:pl-24 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -277,7 +275,6 @@
     let currentUserEmail = null;
     let loggedUserName = null;
     let isOwnProfile = false;
-    let isAdminProfile = false;
 
     async function initProfile() {
       const params = new URLSearchParams(window.location.search);
@@ -301,14 +298,9 @@
           .from('profiles').select('user_email').eq('user_name', username).maybeSingle();
         isOwnProfile = !profileError && Boolean(targetProfile?.user_email) &&
           targetProfile.user_email.toLowerCase() === user.email.toLowerCase();
-        if (isOwnProfile) {
-          const { data: adminResult, error: adminError } = await supabaseClient.rpc('es_admin');
-          isAdminProfile = !adminError && adminResult === true;
-        }
       }
 
       document.getElementById('editProfileBtn').style.display = isOwnProfile ? 'block' : 'none';
-      document.getElementById('metricsBtn').style.display = (isOwnProfile && isAdminProfile) ? 'block' : 'none';
 
       initNotifications(currentUserEmail);
       initConnections(username);
@@ -1178,5 +1170,35 @@
       list.insertBefore(link, publish);
     })();
   </script>
+
+  <script>
+    (function initOwnerMetricsNavButton() {
+      const button = document.getElementById('navMetricsBtn');
+      if (!button || typeof supabaseClient === 'undefined') return;
+
+      let checkId = 0;
+      async function updateMetricsVisibility(session) {
+        const currentCheck = ++checkId;
+        button.style.display = 'none';
+        if (!session || !session.user) return;
+        try {
+          const { data, error } = await supabaseClient.rpc('es_admin');
+          if (currentCheck !== checkId) return;
+          button.style.display = (!error && data === true) ? 'inline-flex' : 'none';
+        } catch (error) {
+          if (currentCheck === checkId) button.style.display = 'none';
+        }
+      }
+
+      supabaseClient.auth.getSession().then(({ data }) => {
+        updateMetricsVisibility(data && data.session);
+      }).catch(() => { button.style.display = 'none'; });
+
+      supabaseClient.auth.onAuthStateChange((_event, session) => {
+        Promise.resolve().then(() => updateMetricsVisibility(session));
+      });
+    })();
+  </script>
+
 </body>
 </html>
