@@ -371,10 +371,17 @@
 
     async function registrarVisitaDashboard(userId) {
       if (dashboardVisitTracked) return;
-      try {
-        if (localStorage.getItem('tunetfy_owner') === '1') return;
-      } catch (storageError) {}
       dashboardVisitTracked = true;
+      // Las visitas autenticadas se excluyen mediante el control del servidor.
+      // Si no puede verificarse el rol, se falla de forma segura y no se inserta.
+      if (userId) {
+        try {
+          const { data: isAdmin, error: adminError } = await supabaseClient.rpc('es_admin');
+          if (adminError || isAdmin === true) return;
+        } catch (adminCheckError) {
+          return;
+        }
+      }
       try {
         const visitorId = getDashboardVisitorId();
         const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '') ||
@@ -620,12 +627,6 @@
         return;
       }
       currentUser = user;
-      try {
-        const { data: isAdmin, error: adminError } = await supabaseClient.rpc('es_admin');
-        if (!adminError && isAdmin === true) {
-          try { localStorage.setItem('tunetfy_owner', '1'); } catch (storageError) {}
-        }
-      } catch (adminCheckError) {}
       revealApp();
       await registrarVisitaDashboard(currentUser.id);
       
