@@ -377,7 +377,7 @@
         const { error } = await supabaseClient.from('visitas').insert({
           visitor_id: visitorId,
           pagina: 'dashboard.html',
-          referrer: (document.referrer || '').slice(0, 500) || null,
+          referrer: (document.referrer || '').slice(0, 300) || null,
           es_movil: Boolean(isMobile),
           user_id: userId || null
         });
