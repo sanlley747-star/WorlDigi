@@ -194,28 +194,19 @@ async function connFetchPeople(profileIds, hints) {
 }
 
 // ---------- Cuentas Canal ----------
-// Cuentas de canal (automáticas o de clientes): solo tienen seguidores. Lo que ellas siguen es
-// silencioso y solo lo ve la propia cuenta (esto lo garantiza la base de datos, no la pantalla).
-// La lista vive en la tabla `cuentas_canal`, que solo se administra desde Supabase.
-let connChannelCache = null;
+// El indicador público es_canal evita consultar correos o la tabla administrativa.
+const connChannelCache = new Map();
 
-async function connFetchChannelSet() {
-  if (connChannelCache) return connChannelCache;
-  const { data, error } = await supabaseClient.from('cuentas_canal').select('user_email');
-  const set = new Set((data || []).map(r => String(r.user_email).toLowerCase()));
-  if (!error) connChannelCache = set; // si falla, no se guarda un resultado vacío falso
-  return set;
+async function connIsChannelProfile(profileId) {
+  if (!profileId) return false;
+  if (connChannelCache.has(profileId)) return connChannelCache.get(profileId);
+  const { data, error } = await supabaseClient
+    .from('profiles').select('es_canal').eq('profile_id', profileId).maybeSingle();
+  const isChannel = !error && data?.es_canal === true;
+  if (!error) connChannelCache.set(profileId, isChannel);
+  return isChannel;
 }
 
-function connIsChannelEmail(channelSet, email) {
-  return !!email && channelSet.has(String(email).toLowerCase());
-}
-
-async function connIsChannel(email) {
-  return connIsChannelEmail(await connFetchChannelSet(), email);
-}
-
-// Etiqueta discreta junto al nombre. noMargin=true cuando el contenedor ya separa sus elementos.
 function connChannelChip(noMargin) {
   return '<span class="conn-channel-chip' + (noMargin ? ' conn-nomargin' : '') + '" title="Cuenta canal">Canal</span>';
 }

@@ -325,8 +325,8 @@ function connNotifState(st) {
       }
 
       // Datos comunes de las notificaciones.
-      const actorEmails = [...new Set(notifs.map(n => n.actor_email).filter(Boolean))];
-      const connActorEmails = notifs.filter(n => n.type === 'connection').map(n => n.actor_email).filter(Boolean);
+      const actorNames = [...new Set(notifs.map(n => n.actor_name).filter(Boolean))];
+      const connActorNames = [...new Set(notifs.filter(n => n.type === 'connection').map(n => n.actor_name).filter(Boolean))];
       const commentNotifs = notifs.filter(n => n.type === 'comment' && n.comment_id);
       const commentIds = [...new Set(commentNotifs.map(n => n.comment_id))];
       const postIds = [...new Set(notifs.map(n => n.post_id).filter(Boolean))];
@@ -344,15 +344,15 @@ function connNotifState(st) {
         postIds.length
           ? supabaseClient.from('posts').select('id,user_name,author_id').in('id', postIds)
           : Promise.resolve({ data: [] }),
-        actorEmails.length
-          ? supabaseClient.from('profiles').select('user_email,profile_id,avatar_url').in('user_email', actorEmails)
+        actorNames.length
+          ? supabaseClient.from('profiles').select('profile_id,user_name,avatar_url').in('user_name', actorNames)
           : Promise.resolve({ data: [] })
       ]);
 
-      const actorProfileByEmail = {};
-      (profileRes.data || []).forEach(p => { actorProfileByEmail[p.user_email] = p; });
+      const actorProfileByName = {};
+      (profileRes.data || []).forEach(p => { actorProfileByName[p.user_name] = p; });
       const currentUserProfileId = await connGetMyProfileId();
-      const connActorProfileIds = [...new Set(connActorEmails.map(email => actorProfileByEmail[email]?.profile_id).filter(Boolean))];
+      const connActorProfileIds = [...new Set(connActorNames.map(name => actorProfileByName[name]?.profile_id).filter(Boolean))];
       const connStates = connActorProfileIds.length
         ? await connFetchStates(currentUserProfileId, connActorProfileIds)
         : {};
@@ -367,8 +367,8 @@ function connNotifState(st) {
       const postById = {};
       (postRes.data || []).forEach(p => { postById[p.id] = p; });
 
-      const avatarByEmail = {};
-      (profileRes.data || []).forEach(p => { avatarByEmail[p.user_email] = p.avatar_url; });
+      const avatarByName = {};
+      (profileRes.data || []).forEach(p => { avatarByName[p.user_name] = p.avatar_url; });
 
       // Datos de los botones de cada comentario, cargados en lote.
       const [likeCounts, replyCounts, repostCounts, myCommentLikes, myCommentReposts] = commentIds.length
@@ -390,14 +390,14 @@ function connNotifState(st) {
       });
 
       wall.innerHTML = notifs.map(n => {
-        const actorName = n.actor_name || (n.actor_email ? n.actor_email.split('@')[0] : 'Usuario');
+        const actorName = n.actor_name || 'Usuario';
         const safeActorName = connEscape(actorName);
-        const avatarUrl = avatarByEmail[n.actor_email] || connAvatarFallback(actorName);
+        const avatarUrl = avatarByName[actorName] || connAvatarFallback(actorName);
         const safeAvatarUrl = connEscape(safeUrl(avatarUrl));
         const unreadClass = n.is_read ? '' : 'bg-blue-50 dark:bg-slate-800/70';
 
         if (n.type === 'connection') {
-          const actorProfileId = actorProfileByEmail[n.actor_email]?.profile_id;
+          const actorProfileId = actorProfileByName[actorName]?.profile_id;
           const st = connStates[actorProfileId] || { iFollow: false, followsMe: true };
           const connIconHtml = connNotifIconHtml(connNotifState(st))
             .replace('<span data-conn-icon ', '<span data-notif-conn-icon data-conn-icon data-profile-id="' + connEscape(actorProfileId || '') + '" ');

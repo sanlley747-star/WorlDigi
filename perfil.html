@@ -294,7 +294,7 @@
 
       const { data: { user } } = await supabaseClient.auth.getUser();
       const { data: targetProfile, error: profileError } = await supabaseClient
-        .from('profiles').select('profile_id').eq('user_name', username).maybeSingle();
+        .from('profiles').select('profile_id,es_canal').eq('user_name', username).maybeSingle();
       viewedProfileId = !profileError ? targetProfile?.profile_id || null : null;
       if (user) {
         currentUserEmail = user.email;
@@ -313,7 +313,6 @@
 
     // ===== CONEXIONES: contadores Siguiendo / Seguidores y botón Conectar =====
     let profileId = null;
-    let profileChannelEmail = null;
     let profileUserName = null;
 
     async function refreshConnCounts() {
@@ -333,13 +332,10 @@
 
       try {
         profileUserName = username;
-        profileId = await connResolveProfileId(username);
-        // Esta consulta de correo se conserva solo para detectar cuentas de canal; se elimina en la Pieza 2.
-        const channelProfile = await supabaseClient.from('profiles').select('user_email').eq('user_name', username).limit(1).maybeSingle();
-        profileChannelEmail = channelProfile.data?.user_email || null;
+        profileId = viewedProfileId;
 
-        // Cuenta canal: la clasificación y su privacidad se mantienen sin alterar permisos.
-        if (profileChannelEmail && await connIsChannel(profileChannelEmail)) {
+        // Cuenta canal: clasificación mediante el indicador público mínimo es_canal.
+        if (profileId && await connIsChannelProfile(profileId)) {
           document.getElementById('profileName').insertAdjacentHTML('beforeend', connChannelChip());
           if (profileId !== currentProfileId) {
             document.getElementById('connFollowingLink').style.display = 'none';
