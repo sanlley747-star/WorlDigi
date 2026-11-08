@@ -799,8 +799,8 @@
 
       const postIdToDelete = pendingDeletePostId;
 
-      // El filtro por user_email es una salvaguarda adicional en el cliente:
-      // solo se borra si la publicación pertenece a quien inició sesión.
+      // author_id añade una salvaguarda de propiedad en el cliente;
+      // la política RLS vigente sigue protegiendo la operación en la base de datos.
       const { error } = await supabaseClient
         .from('posts')
         .delete()
