@@ -290,29 +290,69 @@
       }
 
       currentUsername = username;
-      const { data: publicProfile } = await supabaseClient.from('profiles').select('username').eq('user_name', username).maybeSingle();
-      profileHandle = publicProfile?.username || null;
-      document.getElementById('profileHandle').textContent = profileHandle ? '@' + profileHandle : '';
+
+      // El encabezado no depende de ninguna petición a Supabase.
       document.getElementById('profileName').textContent = username;
       document.getElementById('profileTopName').textContent = username;
       document.getElementById('profileName').setAttribute('data-user-card', username);
 
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      if (user) {
-        currentUserEmail = user.email;
-        loggedUserName = user.user_metadata?.full_name || user.email.split('@')[0];
-        const { data: targetProfile, error: profileError } = await supabaseClient
-          .from('profiles').select('user_email').eq('user_name', username).maybeSingle();
-        isOwnProfile = !profileError && Boolean(targetProfile?.user_email) &&
-          targetProfile.user_email.toLowerCase() === user.email.toLowerCase();
-      }
+      // Cada bloque carga de forma independiente: una consulta lenta de avatar,
+      // sesión o conexiones no debe impedir que aparezcan las publicaciones.
+      const handleTask = (async () => {
+        try {
+          const { data: publicProfile, error } = await supabaseClient
+            .from('profiles').select('username').eq('user_name', username).maybeSingle();
+          if (error) throw error;
+          profileHandle = publicProfile?.username || null;
+          document.getElementById('profileHandle').textContent = profileHandle ? '@' + profileHandle : '';
+        } catch (error) {
+          console.error('Handle público del perfil:', error);
+          document.getElementById('profileHandle').textContent = '';
+        }
+      })();
 
-      document.getElementById('editProfileBtn').style.display = isOwnProfile ? 'block' : 'none';
+      const authTask = (async () => {
+        try {
+          const { data: { user } } = await supabaseClient.auth.getUser();
+          if (user) {
+            currentUserEmail = user.email || null;
+            loggedUserName = user.user_metadata?.full_name || (user.email || '').split('@')[0];
+            // user_email solo se consulta con una sesión autenticada.
+            if (currentUserEmail) {
+              const { data: targetProfile, error: profileError } = await supabaseClient
+                .from('profiles').select('user_email').eq('user_name', username).maybeSingle();
+              isOwnProfile = !profileError && Boolean(targetProfile?.user_email) &&
+                targetProfile.user_email.toLowerCase() === currentUserEmail.toLowerCase();
+            }
+          }
+        } catch (error) {
+          console.error('Sesión del perfil:', error);
+        } finally {
+          document.getElementById('editProfileBtn').style.display = isOwnProfile ? 'block' : 'none';
+          initNotifications(currentUserEmail);
+        }
+      })();
 
-      initNotifications(currentUserEmail);
-      initConnections(username);
-      await loadProfileImages(username);
-      loadUserPosts(username);
+      const imagesTask = loadProfileImages(username).catch(error => {
+        console.error('Imágenes del perfil:', error);
+        const avatar = document.getElementById('profileAvatar');
+        avatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random`;
+        document.getElementById('profileCover').style.display = 'none';
+      });
+
+      const postsTask = loadUserPosts(username).catch(error => {
+        console.error('Publicaciones del perfil:', error);
+        document.getElementById('userFeed').innerHTML =
+          '<p class="text-center text-red-500 bg-white dark:bg-slate-900 p-6 rounded-xl shadow">No se pudieron cargar las publicaciones. Recarga el perfil para intentarlo de nuevo.</p>';
+      });
+
+      profileUserName = username;
+      const countsTask = refreshConnCounts().catch(error => {
+        console.error('Contadores del perfil:', error);
+      });
+      const connectionsTask = authTask.then(() => initConnections(username));
+
+      await Promise.allSettled([handleTask, authTask, imagesTask, postsTask, countsTask, connectionsTask]);
     }
 
     // ===== CONEXIONES: contadores Siguiendo / Seguidores y botón Conectar =====
@@ -561,7 +601,7 @@
         .order('created_at', { ascending: false });
 
       const feed = document.getElementById('userFeed');
-      if (error || !posts.length) {
+      if (error || !posts || !posts.length) {
         feed.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-900 p-6 rounded-xl shadow border border-gray-200 dark:border-slate-800">Este usuario aún no ha realizado publicaciones.</p>';
         return;
       }
@@ -1035,20 +1075,21 @@
 
       ccSetCount(postId, comments.length);
 
-      // Fotos de perfil de quienes comentaron (por su correo); quien no tiene foto conserva su avatar de iniciales
-      const commenterEmails = [...new Set(comments.map(c => c.user_email).filter(Boolean))];
-      const commentAvatarByEmail = {};
-      if (commenterEmails.length) {
+      // Los comentarios públicos solo exponen nombre y contenido; los avatares
+      // se resuelven por user_name, sin consultar ni necesitar correos privados.
+      const commenterNames = [...new Set(comments.map(c => c.user_name).filter(Boolean))];
+      const commentAvatarByUser = {};
+      if (commenterNames.length) {
         const { data: commenterProfiles } = await supabaseClient
           .from('profiles')
-          .select('user_email, avatar_url')
-          .in('user_email', commenterEmails);
-        (commenterProfiles || []).forEach(p => { if (p.avatar_url) commentAvatarByEmail[p.user_email] = p.avatar_url; });
+          .select('user_name, avatar_url')
+          .in('user_name', commenterNames);
+        (commenterProfiles || []).forEach(p => { if (p.avatar_url) commentAvatarByUser[p.user_name] = p.avatar_url; });
       }
 
       container.innerHTML = comments.map(c => `
         <div class="flex items-start gap-2">
-          <img src="${connEscape(safeUrl(commentAvatarByEmail[c.user_email] || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(c.user_name) + '&background=random')))}" class="w-8 h-8 rounded-full object-cover flex-shrink-0">
+          <img src="${connEscape(safeUrl(commentAvatarByUser[c.user_name] || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(c.user_name) + '&background=random')))}" class="w-8 h-8 rounded-full object-cover flex-shrink-0">
           <div class="bg-gray-100 dark:bg-slate-800 rounded-xl px-3 py-2 flex-1">
             <div class="text-xs font-bold text-gray-900 dark:text-white" data-user-card="${connEscape(c.user_name)}">${connEscape(c.user_name)}</div>
             <div class="text-sm text-gray-700 dark:text-gray-200 break-words">${linkifyContent(c.content)}</div>
