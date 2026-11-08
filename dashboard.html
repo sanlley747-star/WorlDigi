@@ -899,7 +899,7 @@ let feedRestoringState = false;
 
   if (requestGeneration !== feedRequestGeneration) return;
 
-     const profileColumns = currentUser ? 'profile_id,user_name,avatar_url,user_email' : 'profile_id,user_name,avatar_url';
+     const profileColumns = 'profile_id,user_name,avatar_url';
       const { data: profiles } = await supabaseClient.from('profiles').select(profileColumns);
       const profileById = {};
       const avatarByUser = {};
@@ -953,6 +953,7 @@ let feedRestoringState = false;
     saltosResueltos++;
   }
 
+  Object.assign(profileById, await ccFetchProfilesByIds(Object.values(feedPostsById).map(p => p.author_id), !!currentUser));
   const postsById = feedPostsById;
 
   // Publicaciones que el usuario actual ya reposteó (sin cita), para pintar el botón en verde
@@ -1255,7 +1256,7 @@ let feedRestoringState = false;
       }
     }
   }
-     const profileColumns = currentUser ? 'profile_id,user_name,avatar_url,user_email' : 'profile_id,user_name,avatar_url';
+     const profileColumns = 'profile_id,user_name,avatar_url';
       const { data: profiles } = await supabaseClient.from('profiles').select(profileColumns);
       const profileById = {};
       const avatarByUser = {};
@@ -1309,6 +1310,7 @@ let feedRestoringState = false;
     saltosResueltos++;
   }
 
+  Object.assign(profileById, await ccFetchProfilesByIds(Object.values(feedPostsById).map(p => p.author_id), !!currentUser));
   const postsById = feedPostsById;
 
   // Publicaciones que el usuario actual ya reposteó (sin cita), para pintar el botón en verde
@@ -2137,7 +2139,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
       ccSetCount(postId, comments.length);
 
       // Avatares de comentarios resueltos por el ID interno del perfil.
-      const commentProfiles = await ccFetchProfilesByIds(comments.map(c => c.author_id), !!currentUser);
+      const commentProfiles = await ccFetchProfilesByIds(comments.map(c => c.author_id), false);
 
       container.innerHTML = comments.map(c => `
         <div class="flex items-start gap-2">
