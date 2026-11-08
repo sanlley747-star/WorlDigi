@@ -36,8 +36,7 @@ set auth_user_id=u.id
 from auth.users u
 where lower(u.email)=lower(p.user_email)
   and p.auth_user_id is null
-  and coalesce(p.is_cuenta_automatica,false)=false
-  and not exists(select 1 from public.cuentas_canal c where lower(c.user_email)=lower(p.user_email));
+  and coalesce(p.is_cuenta_automatica,false)=false;
 
 alter table public.profiles
   alter column profile_id set default gen_random_uuid(),
@@ -79,8 +78,7 @@ begin
   end if;
 
   if new.profile_id is null then new.profile_id:=gen_random_uuid(); end if;
-  if new.auth_user_id is null and coalesce(new.is_cuenta_automatica,false)=false
-    and not exists(select 1 from public.cuentas_canal c where lower(c.user_email)=lower(new.user_email)) then
+  if new.auth_user_id is null and coalesce(new.is_cuenta_automatica,false)=false then
     select u.id,u.raw_user_meta_data->>'username' into new.auth_user_id,v_meta_username
     from auth.users u where lower(u.email)=lower(new.user_email) limit 1;
     if new.username is null then new.username:=v_meta_username; end if;
