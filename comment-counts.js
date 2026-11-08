@@ -97,9 +97,17 @@ async function ccFetchCounts(postIds) {
 }
 
 // Actualiza en pantalla el contador de una publicación (si está visible en el feed).
+function ccSetActivityCount(el, n) {
+  if (!el) return;
+  const count = Math.max(0, Number(n) || 0);
+  el.textContent = count;
+  el.classList.toggle('hidden', count === 0);
+}
+
+// Actualiza en pantalla el contador de comentarios (oculta el cero).
 function ccSetCount(postId, n) {
   const el = document.getElementById(`comments-count-${postId}`);
-  if (el) el.textContent = n;
+  ccSetActivityCount(el, n);
 }
 
 // ===== CONTADOR DE REPOSTS =====
@@ -159,11 +167,11 @@ function ccLikeButtonHtml(id, likes, isLiked, userEmail, userName) {
         data-user-name="${connEscape(userName || '')}"
         onclick="ccToggleLike(this)"
         title="Me gusta"
-        class="flex items-center gap-1.5 font-semibold transition ${isLiked ? 'text-red-500' : 'hover:text-red-500'}">
+        class="flex items-center gap-1.5 text-gray-400 dark:text-gray-500 font-semibold transition">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0">
           <path data-heart-icon fill="${isLiked ? 'currentColor' : 'none'}" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"></path>
         </svg>
-        <span id="likes-count-${id}">${count}</span>
+        <span id="likes-count-${id}" class="${count > 0 ? '' : 'hidden'}">${count}</span>
       </button>
       <span data-like-tooltip class="hidden pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 whitespace-nowrap bg-gray-900 text-white text-[11px] font-semibold px-2 py-1 rounded-md shadow-lg z-10">Cancelar like</span>
     </div>
@@ -227,11 +235,10 @@ async function ccToggleLike(btn) {
   const newLikes = Math.max(0, currentLikes + (isLiked ? -1 : 1));
 
   const updateUI = (likesCount, likedState) => {
-    if (counterElement) counterElement.textContent = likesCount;
+    ccSetActivityCount(counterElement, likesCount);
     btn.setAttribute('data-likes', likesCount.toString());
     btn.setAttribute('data-liked', likedState.toString());
-    btn.classList.toggle('text-red-500', likedState);
-    btn.classList.toggle('hover:text-red-500', !likedState);
+    btn.classList.remove('text-red-500', 'hover:text-red-500');
     if (heartPath) heartPath.setAttribute('fill', likedState ? 'currentColor' : 'none');
     const wrapper = btn.closest('[data-like-wrapper]');
     if (wrapper) ccLikeHover(wrapper, false);
@@ -377,25 +384,25 @@ function ccCommentActionsHtml(c, v) {
       <div class="relative" data-like-wrapper onmouseenter="ccLikeHover(this, true)" onmouseleave="ccLikeHover(this, false)">
         <button type="button" data-like-btn data-liked="${v.isLiked ? 'true' : 'false'}"
           onclick="ccToggleCommentLike(this, ${id}, ${v.likes || 0}, ${v.isLiked ? 'true' : 'false'}, ${connEscape(ue)}, ${connEscape(un)})"
-          title="Me gusta" class="flex items-center gap-1 font-semibold transition ${v.isLiked ? 'text-red-500' : 'hover:text-red-500'}">
+          title="Me gusta" class="flex items-center gap-1 text-gray-400 dark:text-gray-500 font-semibold transition">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0">
             <path data-heart-icon fill="${v.isLiked ? 'currentColor' : 'none'}" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"></path>
           </svg>
-          <span id="c-likes-count-${id}">${v.likes || 0}</span>
+          <span id="c-likes-count-${id}" class="${(v.likes || 0) > 0 ? '' : 'hidden'}">${v.likes || 0}</span>
         </button>
         <span data-like-tooltip class="hidden pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 whitespace-nowrap bg-gray-900 text-white text-[11px] font-semibold px-2 py-1 rounded-md shadow-lg z-10">Cancelar like</span>
       </div>
 
-      <button type="button" onclick="ccReplyToComment(${id})" title="Responder" class="flex items-center gap-1 font-semibold hover:text-blue-600 transition">
+      <button type="button" onclick="ccReplyToComment(${id})" title="Responder" class="flex items-center gap-1 text-gray-400 dark:text-gray-500 font-semibold transition">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"></path></svg>
-        <span id="c-replies-count-${id}">${v.replies || 0}</span>
+        <span id="c-replies-count-${id}" class="${(v.replies || 0) > 0 ? '' : 'hidden'}">${v.replies || 0}</span>
       </button>
 
       <div class="relative">
         <button type="button" data-repost-toggle onclick="ccToggleCommentRepostMenu(${id})" title="Repostear"
-          class="flex items-center gap-1 font-semibold hover:text-green-600 transition ${v.isReposted ? 'text-green-600' : ''}">
+          class="flex items-center gap-1 text-gray-400 dark:text-gray-500 font-semibold transition">
           ${repostIcon}
-          <span id="c-reposts-count-${id}">${v.reposts || 0}</span>
+          <span id="c-reposts-count-${id}" class="${(v.reposts || 0) > 0 ? '' : 'hidden'}">${v.reposts || 0}</span>
         </button>
         <div id="c-repost-menu-${id}" class="hidden absolute left-0 bottom-full mb-2 w-44 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg overflow-hidden z-40">
           ${v.isReposted ? `
@@ -408,7 +415,7 @@ function ccCommentActionsHtml(c, v) {
         </div>
       </div>
 
-      <button type="button" onclick="ccShareComment(${id}, ${connEscape(JSON.stringify(v.postId))})" title="Compartir" class="hover:text-blue-600 transition">
+      <button type="button" onclick="ccShareComment(${id}, ${connEscape(JSON.stringify(v.postId))})" title="Compartir" class="text-gray-400 dark:text-gray-500 transition">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
       </button>
 
@@ -448,10 +455,9 @@ async function ccToggleCommentLike(btn, id, currentLikes, isLiked, userEmail, us
   const newLikes = Math.max(0, currentLikes + (isLiked ? -1 : 1));
 
   const updateUI = (likesCount, likedState) => {
-    if (counterElement) counterElement.textContent = likesCount;
+    ccSetActivityCount(counterElement, likesCount);
     btn.setAttribute('data-liked', likedState.toString());
-    btn.classList.toggle('text-red-500', likedState);
-    btn.classList.toggle('hover:text-red-500', !likedState);
+    btn.classList.remove('text-red-500', 'hover:text-red-500');
     if (heartPath) heartPath.setAttribute('fill', likedState ? 'currentColor' : 'none');
     btn.setAttribute('onclick', `ccToggleCommentLike(this, ${Number(id) || 0}, ${Number(likesCount) || 0}, ${!!likedState}, ${JSON.stringify(String(userEmail || ''))}, ${JSON.stringify(String(userName || ''))})`);
     const wrapper = btn.closest('[data-like-wrapper]');
