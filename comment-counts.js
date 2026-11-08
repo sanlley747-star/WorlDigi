@@ -5,7 +5,7 @@ async function ccGetMyProfileId() {
   ccMyProfileIdPromise = (async () => {
     try {
       const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-      if (userError || !user) return null;
+      if (userError || !user) { ccMyProfileIdPromise = null; return null; }
       const { data, error } = await supabaseClient.rpc('mi_perfil_id');
       if (error) throw error;
       return data || null;
