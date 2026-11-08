@@ -151,6 +151,7 @@
     <div class="pt-12 sm:pl-24 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div class="text-center sm:text-left">
         <h2 id="profileName" class="text-xl font-bold text-gray-900 dark:text-white">Cargando...</h2>
+        <p id="profileHandle" class="mt-0.5 text-sm text-gray-500 dark:text-gray-400"></p>
         <div class="mt-1 flex items-center justify-center sm:justify-start gap-5 text-sm text-gray-600 dark:text-gray-400">
           <a id="connFollowingLink" href="#" class="hover:underline"><strong id="connFollowingCount" class="text-gray-900 dark:text-white">–</strong> Siguiendo</a>
           <a id="connFollowersLink" href="#" class="hover:underline"><strong id="connFollowersCount" class="text-gray-900 dark:text-white">–</strong> Seguidores</a>
@@ -272,6 +273,9 @@
     }
 
        let currentUsername = null;
+    let profileHandle = null;
+    let editHandleAvailable = false;
+    let editHandleCheckSeq = 0;
     let currentUserEmail = null;
     let loggedUserName = null;
     let isOwnProfile = false;
@@ -286,6 +290,9 @@
       }
 
       currentUsername = username;
+      const { data: publicProfile } = await supabaseClient.from('profiles').select('username').eq('user_name', username).maybeSingle();
+      profileHandle = publicProfile?.username || null;
+      document.getElementById('profileHandle').textContent = profileHandle ? '@' + profileHandle : '';
       document.getElementById('profileName').textContent = username;
       document.getElementById('profileTopName').textContent = username;
       document.getElementById('profileName').setAttribute('data-user-card', username);
@@ -420,6 +427,10 @@
       document.getElementById('editAvatarPreview').src = document.getElementById('profileAvatar').src;
       pendingCoverFile = null;
       pendingAvatarFile = null;
+      const handleInput = document.getElementById('editUsernameInput');
+      handleInput.value = profileHandle || '';
+      document.getElementById('editUsernameStatus').textContent = 'Elige un @ único de 3 a 20 caracteres.';
+      editHandleAvailable = true;
 
       const modal = document.getElementById('editProfileModal');
       modal.classList.remove('hidden');
@@ -452,6 +463,23 @@
       });
     });
 
+    async function checkEditUsername() {
+      const input = document.getElementById('editUsernameInput');
+      const status = document.getElementById('editUsernameStatus');
+      const value = input.value.trim().toLowerCase();
+      const seq = ++editHandleCheckSeq;
+      if (value === profileHandle) { editHandleAvailable = true; status.textContent = 'Tu @ actual'; status.className = 'block mt-1 text-xs text-gray-500'; return true; }
+      if (!/^[a-z0-9_]{3,20}$/.test(value)) { editHandleAvailable = false; status.textContent = 'Usa 3–20 caracteres: letras minúsculas, números o _.'; status.className = 'block mt-1 text-xs text-red-500'; return false; }
+      status.textContent = 'Comprobando disponibilidad…';
+      const { data, error } = await supabaseClient.rpc('username_disponible', { p_username: value });
+      if (seq !== editHandleCheckSeq) return false;
+      editHandleAvailable = !error && data === true;
+      status.textContent = editHandleAvailable ? '@' + value + ' está disponible' : 'Ese @ no está disponible o está reservado.';
+      status.className = editHandleAvailable ? 'block mt-1 text-xs text-emerald-600' : 'block mt-1 text-xs text-red-500';
+      return editHandleAvailable;
+    }
+    document.getElementById('editUsernameInput').addEventListener('input', () => { checkEditUsername(); });
+
     async function uploadProfileImage(file, tipo) {
       const ext = file.name.split('.').pop();
       const filePath = `${currentUserEmail}/${tipo}.${ext}`;
@@ -472,7 +500,9 @@
     }
 
     async function saveProfileChanges() {
-      if (!pendingAvatarFile && !pendingCoverFile) {
+      const newHandle = document.getElementById('editUsernameInput').value.trim().toLowerCase();
+      const handleChanged = newHandle !== profileHandle;
+      if (!pendingAvatarFile && !pendingCoverFile && !handleChanged) {
         closeEditProfileModal();
         return;
       }
@@ -482,23 +512,30 @@
       saveBtn.textContent = 'Guardando...';
 
       try {
-        const updates = { user_email: currentUserEmail, user_name: currentUsername };
+        if (handleChanged) {
+          if (!(await checkEditUsername())) throw new Error('Elige un @ válido y disponible.');
+          const { error: handleError } = await supabaseClient.from('profiles').update({ username: newHandle }).eq('user_email', currentUserEmail);
+          if (handleError) throw new Error('No se pudo actualizar el @: ' + handleError.message);
+          profileHandle = newHandle;
+          document.getElementById('profileHandle').textContent = '@' + profileHandle;
+        }
         let newAvatarUrl = null;
         let newCoverUrl = null;
-
-        if (pendingAvatarFile) {
-          newAvatarUrl = await uploadProfileImage(pendingAvatarFile, 'avatar');
-          updates.avatar_url = newAvatarUrl;
+        if (pendingAvatarFile || pendingCoverFile) {
+          const updates = { user_email: currentUserEmail, user_name: currentUsername };
+          if (pendingAvatarFile) {
+            newAvatarUrl = await uploadProfileImage(pendingAvatarFile, 'avatar');
+            updates.avatar_url = newAvatarUrl;
+          }
+          if (pendingCoverFile) {
+            newCoverUrl = await uploadProfileImage(pendingCoverFile, 'cover');
+            updates.cover_url = newCoverUrl;
+          }
+          const { error: dbError } = await supabaseClient
+            .from('profiles')
+            .upsert(updates, { onConflict: 'user_email' });
+          if (dbError) throw new Error('Error al guardar en la base de datos: ' + dbError.message);
         }
-        if (pendingCoverFile) {
-          newCoverUrl = await uploadProfileImage(pendingCoverFile, 'cover');
-          updates.cover_url = newCoverUrl;
-        }
-
-        const { error: dbError } = await supabaseClient
-          .from('profiles')
-          .upsert(updates, { onConflict: 'user_email' });
-        if (dbError) throw new Error('Error al guardar en la base de datos: ' + dbError.message);
 
         if (newAvatarUrl) document.getElementById('profileAvatar').src = newAvatarUrl;
         if (newCoverUrl) {
@@ -1084,6 +1121,7 @@
       </div>
 
       <div class="p-4">
+        <label class="block mb-4"><span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tu @ público</span><input id="editUsernameInput" type="text" maxlength="20" autocomplete="username" class="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-gray-900 dark:text-white" placeholder="tu_usuario"><span id="editUsernameStatus" class="block mt-1 text-xs text-gray-500" aria-live="polite"></span></label>
         <!-- Portada -->
         <div class="relative w-full h-40 bg-slate-800 rounded-lg overflow-hidden">
           <img id="editCoverPreview" class="w-full h-full object-cover" alt="">

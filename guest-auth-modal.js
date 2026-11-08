@@ -15,6 +15,8 @@
   let signupStep = 1;
   let busy = false;
   let recoveryCooldown = false;
+  let handleAvailable = false;
+  let handleCheckSeq = 0;
 
   function allowedSelector() {
     return ALLOWED_GUEST_INTERACTIONS.join(',');
@@ -99,6 +101,7 @@
     if (!modal) return;
     const email = modal.querySelector('#guestAuthEmail');
     const username = modal.querySelector('#guestAuthName');
+    const handle = modal.querySelector('#guestAuthHandle');
     const password = modal.querySelector('#guestAuthPassword');
     const first = modal.querySelector('[data-auth-step1-submit]');
     const second = modal.querySelector('[data-auth-step2-submit]');
@@ -108,10 +111,34 @@
       first.classList.toggle('cursor-not-allowed', first.disabled);
     }
     if (second) {
-      second.disabled = !username.value.trim() || !password.value;
+      second.disabled = !username.value.trim() || !handle.value.trim() || !handleAvailable || !password.value;
       second.classList.toggle('opacity-40', second.disabled);
       second.classList.toggle('cursor-not-allowed', second.disabled);
     }
+  }
+
+  async function checkGuestHandle() {
+    const modal = getModal();
+    if (!modal) return;
+    const input = modal.querySelector('#guestAuthHandle');
+    const status = modal.querySelector('[data-auth-handle-status]');
+    const value = input.value.trim().toLowerCase();
+    const seq = ++handleCheckSeq;
+    handleAvailable = false;
+    if (!/^[a-z0-9_]{3,20}$/.test(value)) {
+      status.textContent = '3–20 caracteres: letras minúsculas, números o _. ';
+      status.className = 'min-h-0 text-sm text-red-400';
+      updateSignupButtons();
+      return;
+    }
+    status.textContent = 'Comprobando…';
+    status.className = 'min-h-0 text-sm text-slate-400';
+    const available = await window.ByGetherAuth.usernameAvailable(supabaseClient, value);
+    if (seq !== handleCheckSeq) return;
+    handleAvailable = available;
+    status.textContent = available ? '@' + value + ' está disponible' : 'Ese @ no está disponible o está reservado.';
+    status.className = available ? 'min-h-0 text-sm text-emerald-400' : 'min-h-0 text-sm text-red-400';
+    updateSignupButtons();
   }
 
   function showSignupStep(step) {
@@ -140,6 +167,7 @@
     if (busy) return;
     const modal = getModal();
     const name = modal.querySelector('#guestAuthName').value.trim();
+    const handle = modal.querySelector('#guestAuthHandle').value.trim().toLowerCase();
     const email = (mode === 'login' ? modal.querySelector('#guestAuthLoginEmail') : modal.querySelector('#guestAuthEmail')).value.trim();
     const password = (mode === 'login' ? modal.querySelector('#guestAuthLoginPassword') : modal.querySelector('#guestAuthPassword')).value;
     const submit = mode === 'signup'
@@ -157,6 +185,11 @@
       showSignupStep(2);
       return;
     }
+    if (mode === 'signup' && signupStep === 2 && !(await window.ByGetherAuth.usernameAvailable(supabaseClient, handle))) {
+      errorBox.textContent = 'Elige un @ válido y disponible.';
+      modal.querySelector('#guestAuthHandle').focus();
+      return;
+    }
     if (mode === 'signup' && signupStep === 2 && password.length < 8) {
       errorBox.textContent = 'La contraseña debe tener al menos 8 caracteres.';
       modal.querySelector('#guestAuthPassword').focus();
@@ -169,7 +202,7 @@
       await window.byGetherAuthReady;
       if (mode === 'signup') {
         const { data, error } = await window.ByGetherAuth.signUp(supabaseClient, {
-          name, email, password,
+          name, username: handle, email, password,
           redirectTo: window.location.origin + '/dashboard.html'
         });
         if (error) throw error;
@@ -311,7 +344,9 @@
             <button data-auth-step1-submit type="button" class="mt-3 w-full rounded-xl bg-emerald-600 px-4 py-3 font-bold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40">Continuar</button>
           </div>
           <div data-auth-step2 class="hidden space-y-3">
-            <label class="block"><span class="mb-1.5 block text-sm text-slate-300">Nombre de usuario</span><input id="guestAuthName" type="text" autocomplete="username" class="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-base text-white outline-none transition placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" placeholder="Nombre de usuario"></label>
+            <label class="block"><span class="mb-1.5 block text-sm text-slate-300">Nombre visible</span><input id="guestAuthName" type="text" autocomplete="name" class="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-base text-white outline-none transition placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" placeholder="Tu nombre"></label>
+            <label class="block"><span class="mb-1.5 block text-sm text-slate-300">Tu @ público</span><input id="guestAuthHandle" type="text" autocomplete="username" maxlength="20" class="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-base text-white outline-none transition placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" placeholder="ejemplo_123"></label>
+            <p data-auth-handle-status role="status" aria-live="polite" class="min-h-0 text-sm text-slate-400"></p>
             <label class="block"><span class="mb-1.5 block text-sm text-slate-300">Contraseña</span><span class="relative block"><input id="guestAuthPassword" type="password" autocomplete="new-password" class="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 pr-12 text-base text-white outline-none transition placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" placeholder="Contraseña"><button type="button" data-auth-toggle-password aria-label="Mostrar contraseña" class="absolute inset-y-0 right-2 flex items-center justify-center rounded-md px-2 text-slate-400 hover:text-white"><svg data-eye-open class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><svg data-eye-closed class="hidden h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m3 3 18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.2A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.1 3.8M6.2 6.2C3.5 8 2 12 2 12s3.5 7 10 7c1.5 0 2.8-.4 4-1"/></svg></button></span></label>
             <p data-auth-step2-error role="alert" aria-live="polite" class="min-h-0 text-sm text-red-400"></p>
             <button data-auth-step2-submit type="submit" class="w-full rounded-xl bg-emerald-600 px-4 py-3 font-bold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40">Continuar</button>
@@ -347,10 +382,11 @@
       const button = event.target.closest('[data-switch-auth]');
       if (button) setMode(button.dataset.switchAuth);
     });
-    ['#guestAuthEmail','#guestAuthName','#guestAuthPassword'].forEach(selector => {
+    ['#guestAuthEmail','#guestAuthName','#guestAuthHandle','#guestAuthPassword'].forEach(selector => {
       modal.querySelector(selector).addEventListener('input', () => {
         modal.querySelector('[data-auth-error]').textContent = '';
         modal.querySelector('[data-auth-step2-error]').textContent = '';
+        if (selector === '#guestAuthHandle') checkGuestHandle();
         updateSignupButtons();
       });
     });

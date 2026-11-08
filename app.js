@@ -25,6 +25,30 @@ const title = document.getElementById('modalTitle');
 const subtitle = document.getElementById('modalSubtitle');
 const submit = document.getElementById('formSubmit');
 const nameField = document.getElementById('nameField');
+const usernameField = document.getElementById('usernameField');
+const usernameStatus = document.getElementById('usernameStatus');
+let usernameCheckSeq = 0;
+async function validateSignupUsername() {
+  if (!usernameField) return false;
+  const value = usernameField.value.trim().toLowerCase();
+  const seq = ++usernameCheckSeq;
+  if (!/^[a-z0-9_]{3,20}$/.test(value)) {
+    usernameStatus.textContent = 'Usa 3–20 caracteres: letras minúsculas, números o _. ';
+    usernameStatus.className = 'text-xs mt-1 text-red-500';
+    usernameField.dataset.available = 'false';
+    return false;
+  }
+  usernameStatus.textContent = 'Comprobando disponibilidad…';
+  usernameStatus.className = 'text-xs mt-1 text-gray-500';
+  await window.byGetherAuthReady;
+  const available = await window.ByGetherAuth.usernameAvailable(supabaseClient, value);
+  if (seq !== usernameCheckSeq) return false;
+  usernameField.dataset.available = available ? 'true' : 'false';
+  usernameStatus.textContent = available ? '@' + value + ' está disponible' : 'Ese @ no está disponible o está reservado.';
+  usernameStatus.className = available ? 'text-xs mt-1 text-emerald-600' : 'text-xs mt-1 text-red-500';
+  return available;
+}
+if (usernameField) usernameField.addEventListener('input', () => { validateSignupUsername(); });
 const emailField = document.getElementById('emailField');
 const passwordField = document.getElementById('passwordField');
 const togglePasswordBtn = document.getElementById('togglePassword');
@@ -61,6 +85,11 @@ function openModal(mode) {
   if (nameField) {
     nameField.style.display = signup ? 'block' : 'none';
     nameField.required = signup; // Solo es obligatorio al registrarse
+    if (usernameField) {
+      usernameField.style.display = signup ? 'block' : 'none';
+      usernameField.required = signup;
+      if (usernameStatus) usernameStatus.style.display = signup ? 'block' : 'none';
+    }
   }
 
   // En modo "recover" solo pedimos el correo; ocultamos la contraseña.
@@ -129,6 +158,7 @@ document.getElementById('demoForm').addEventListener('submit', async e => {
 const email = emailField.value;
   const password = passwordField.value;
   const name = nameField ? nameField.value : '';
+const username = usernameField ? usernameField.value.trim().toLowerCase() : '';
 
   submit.disabled = true;
   submit.textContent = 'Processing...';
@@ -149,8 +179,14 @@ const email = emailField.value;
       }
     } else if (currentMode === 'signup') {
       await window.byGetherAuthReady;
+      if (!(await validateSignupUsername())) {
+        usernameField && usernameField.focus();
+        alert('Elige un @ válido y disponible antes de continuar.');
+        return;
+      }
       const { data, error } = await window.ByGetherAuth.signUp(supabaseClient, {
         name,
+        username,
         email,
         password,
         redirectTo: window.location.origin + '/dashboard.html'
