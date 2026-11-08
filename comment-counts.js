@@ -47,9 +47,8 @@ async function ccFetchProfilesByIds(profileIds) {
 // Render único del identificador público, compartido por perfil y feed.
 // El ID interno tiene prioridad; user_name solo se usa como respaldo público.
 function ccProfileHandleHtml(profileId, profileMap, displayName, fallbackProfileMap) {
-  const profile = (profileId ? profileMap?.[profileId] : null) ||
-    (displayName ? fallbackProfileMap?.[displayName] : null);
-  const handle = profile?.username;
+  const handle = (profileId ? profileMap?.[profileId]?.username : null) ||
+    (displayName ? fallbackProfileMap?.[displayName]?.username : null);
   if (!handle) return '';
   return '<a href="perfil.html?user=' + encodeURIComponent(displayName || '') + '" data-user-card="' + connEscape(displayName || '') + '" class="ml-1 min-w-0 max-w-[110px] truncate text-xs font-normal text-gray-500 dark:text-gray-400 hover:underline">@' + connEscape(handle) + '</a>';
 }
