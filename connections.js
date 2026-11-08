@@ -149,14 +149,13 @@ async function connResolveEmail(userName) {
   return null;
 }
 
-// { following: a cuántos sigue este usuario, followers: cuántos lo siguen }
-async function connCounts(email) {
-  if (!email) return { following: 0, followers: 0 };
-  const [a, b] = await Promise.all([
-    supabaseClient.from('connections').select('id', { count: 'exact', head: true }).eq('follower_email', email),
-    supabaseClient.from('connections').select('id', { count: 'exact', head: true }).eq('following_email', email)
-  ]);
-  return { following: a.count || 0, followers: b.count || 0 };
+// Contadores públicos por nombre; esta función nunca devuelve correos.
+async function connCounts(userName) {
+  if (!userName) return { following: 0, followers: 0 };
+  const { data, error } = await supabaseClient.rpc('connections_counts_by_username', { p_user_name: userName });
+  if (error) { console.error('Contadores de conexiones:', error); return { following: 0, followers: 0 }; }
+  const row = Array.isArray(data) ? data[0] : data;
+  return { following: Number(row?.following || 0), followers: Number(row?.followers || 0) };
 }
 
 // Para cada correo: { iFollow: yo lo sigo, followsMe: él me sigue }
