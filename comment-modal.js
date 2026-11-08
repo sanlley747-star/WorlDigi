@@ -189,11 +189,11 @@
     }
 
     // La publicación (si es un repost, se muestra lo mismo que se ve en la tarjeta: la publicación original)
-    var publicPostColumns = 'id, created_at, image_url, likes, content, user_name, repost_of, quote_text, repost_of_comment_id';
-    var pr = await supabaseClient.from('posts').select(window.byGetherGuestMode ? publicPostColumns : '*').eq('id', postId).maybeSingle();
+    var publicPostColumns = 'id, created_at, image_url, likes, content, user_name, author_id, repost_of, quote_text, repost_of_comment_id, metadata';
+    var pr = await supabaseClient.from('posts').select(publicPostColumns).eq('id', postId).maybeSingle();
     var post = pr.data;
     if (post && post.repost_of) {
-      var orig = await supabaseClient.from('posts').select(window.byGetherGuestMode ? publicPostColumns : '*').eq('id', post.repost_of).maybeSingle();
+      var orig = await supabaseClient.from('posts').select(publicPostColumns).eq('id', post.repost_of).maybeSingle();
       if (orig.data) post = orig.data;
     }
     if (currentPostId !== mySeq) return;
@@ -205,9 +205,9 @@
 
     var author = post.user_name || 'Usuario';
     var avatar = post.avatar_url || fallbackAvatar(author);
-    var ar = window.byGetherGuestMode
-      ? await supabaseClient.from('profiles').select('avatar_url').eq('user_name', author).maybeSingle()
-      : await supabaseClient.from('profiles').select('avatar_url').eq('user_email', post.user_email).maybeSingle();
+    var ar = post.author_id
+      ? await supabaseClient.from('profiles').select('avatar_url').eq('profile_id', post.author_id).maybeSingle()
+      : await supabaseClient.from('profiles').select('avatar_url').eq('user_name', author).maybeSingle();
     if (ar.data && ar.data.avatar_url) avatar = ar.data.avatar_url;
     if (currentPostId !== mySeq) return;
 
