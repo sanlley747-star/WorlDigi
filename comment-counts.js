@@ -18,18 +18,29 @@ async function ccGetMyProfileId() {
   return ccMyProfileIdPromise;
 }
 
-// Resuelve nombre, avatar y el indicador público mínimo de canal por profile_id.
+// Caché simple por profile_id: resuelve username, nombre, avatar y canal en una sola consulta por lote.
+const ccProfilesByIdCache = Object.create(null);
 async function ccFetchProfilesByIds(profileIds) {
-  const ids = [...new Set((profileIds || []).filter(Boolean))];
+  const ids = [...new Set((profileIds || []).filter(Boolean).map(String))];
   if (!ids.length) return {};
-  const { data, error } = await supabaseClient
-    .from('profiles').select('profile_id,user_name,avatar_url,es_canal').in('profile_id', ids);
-  if (error) {
-    console.error('No se pudieron resolver perfiles por ID:', error);
-    return {};
+  const missingIds = ids.filter(id => !Object.prototype.hasOwnProperty.call(ccProfilesByIdCache, id));
+  if (missingIds.length) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('profiles').select('profile_id,user_name,username,avatar_url,es_canal').in('profile_id', missingIds);
+      if (error) throw error;
+      (data || []).forEach(profile => { ccProfilesByIdCache[String(profile.profile_id)] = profile; });
+      // Un resultado vacío también se cachea para evitar consultas repetidas por perfiles inexistentes.
+      missingIds.forEach(id => {
+        if (!Object.prototype.hasOwnProperty.call(ccProfilesByIdCache, id)) ccProfilesByIdCache[id] = null;
+      });
+    } catch (error) {
+      console.error('No se pudieron resolver perfiles por ID:', error);
+      return {};
+    }
   }
   const map = {};
-  (data || []).forEach(profile => { map[profile.profile_id] = profile; });
+  ids.forEach(id => { if (ccProfilesByIdCache[id]) map[id] = ccProfilesByIdCache[id]; });
   return map;
 }
 

@@ -151,6 +151,7 @@
     <div class="pt-12 sm:pl-24 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div class="text-center sm:text-left">
         <h2 id="profileName" class="text-xl font-bold text-gray-900 dark:text-white">Cargando...</h2>
+        <a id="profileHandle" href="#" class="hidden mt-0.5 inline-block max-w-full truncate text-sm text-gray-500 dark:text-gray-400 hover:underline"></a>
         <div class="mt-1 flex items-center justify-center sm:justify-start gap-5 text-sm text-gray-600 dark:text-gray-400">
           <a id="connFollowingLink" href="#" class="hover:underline"><strong id="connFollowingCount" class="text-gray-900 dark:text-white">–</strong> Siguiendo</a>
           <a id="connFollowersLink" href="#" class="hover:underline"><strong id="connFollowersCount" class="text-gray-900 dark:text-white">–</strong> Seguidores</a>
@@ -275,6 +276,7 @@
     let currentUserEmail = null;
     let currentProfileId = null;
     let viewedProfileId = null;
+    let viewedProfileUsername = null;
     let loggedUserName = null;
     let isOwnProfile = false;
 
@@ -294,8 +296,10 @@
 
       const { data: { user } } = await supabaseClient.auth.getUser();
       const { data: targetProfile, error: profileError } = await supabaseClient
-        .from('profiles').select('profile_id,es_canal').eq('user_name', username).maybeSingle();
+        .from('profiles').select('profile_id,es_canal,username').eq('user_name', username).maybeSingle();
       viewedProfileId = !profileError ? targetProfile?.profile_id || null : null;
+      viewedProfileUsername = !profileError ? targetProfile?.username || null : null;
+      renderProfileHandle(viewedProfileUsername);
       if (user) {
         currentUserEmail = user.email;
         currentProfileId = await ccGetMyProfileId();
@@ -309,6 +313,22 @@
       initConnections(username);
       await loadProfileImages(username);
       loadUserPosts(username);
+    }
+
+    function profileHandleHtml(profileId, profileMap, displayName) {
+      const handle = profileMap?.[profileId]?.username;
+      if (!handle) return '';
+      return '<a href="perfil.html?user=' + encodeURIComponent(displayName || '') + '" data-user-card="' + connEscape(displayName || '') + '" class="ml-1 min-w-0 max-w-[110px] truncate text-xs font-normal text-gray-500 dark:text-gray-400 hover:underline">@' + connEscape(handle) + '</a>';
+    }
+
+    function renderProfileHandle(handle) {
+      const el = document.getElementById('profileHandle');
+      if (!el) return;
+      if (!handle) { el.textContent = ''; el.classList.add('hidden'); return; }
+      el.textContent = '@' + handle;
+      el.href = 'perfil.html?user=' + encodeURIComponent(currentUsername || '');
+      el.setAttribute('data-user-card', currentUsername || '');
+      el.classList.remove('hidden');
     }
 
     // ===== CONEXIONES: contadores Siguiendo / Seguidores y botón Conectar =====
@@ -419,6 +439,8 @@
       const coverImg = document.getElementById('profileCover');
       document.getElementById('editCoverPreview').src = coverImg.style.display !== 'none' ? coverImg.src : '';
       document.getElementById('editAvatarPreview').src = document.getElementById('profileAvatar').src;
+      document.getElementById('editProfileUsername').value = viewedProfileUsername || '';
+      document.getElementById('editProfileUsernameStatus').textContent = '';
       pendingCoverFile = null;
       pendingAvatarFile = null;
 
@@ -435,6 +457,7 @@
       pendingAvatarFile = null;
       document.getElementById('editCoverInput').value = '';
       document.getElementById('editAvatarInput').value = '';
+      document.getElementById('editProfileUsernameStatus').textContent = '';
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -473,7 +496,10 @@
     }
 
     async function saveProfileChanges() {
-      if (!pendingAvatarFile && !pendingCoverFile) {
+      const usernameInput = document.getElementById('editProfileUsername');
+      const nextUsername = (usernameInput?.value || '').trim().toLowerCase();
+      const usernameChanged = nextUsername !== (viewedProfileUsername || '');
+      if (!pendingAvatarFile && !pendingCoverFile && !usernameChanged) {
         closeEditProfileModal();
         return;
       }
@@ -495,6 +521,13 @@
           newCoverUrl = await uploadProfileImage(pendingCoverFile, 'cover');
           updates.cover_url = newCoverUrl;
         }
+        if (usernameChanged) {
+          if (!/^[a-z0-9_]{3,20}$/.test(nextUsername)) throw new Error('El @ debe tener entre 3 y 20 caracteres: letras, números o guion bajo.');
+          const { data: available, error: availabilityError } = await supabaseClient.rpc('username_disponible', { p_username: nextUsername });
+          if (availabilityError) throw new Error('No se pudo comprobar la disponibilidad del @.');
+          if (available !== true) throw new Error('Ese @ no está disponible o está reservado.');
+          updates.username = nextUsername;
+        }
 
         const { error: dbError } = await supabaseClient
           .from('profiles')
@@ -507,6 +540,13 @@
           const coverImg = document.getElementById('profileCover');
           coverImg.src = newCoverUrl;
           coverImg.style.display = 'block';
+        }
+        if (usernameChanged) {
+          viewedProfileUsername = nextUsername;
+          renderProfileHandle(viewedProfileUsername);
+          if (typeof ccProfilesByIdCache !== 'undefined' && currentProfileId) {
+            ccProfilesByIdCache[String(currentProfileId)] = { ...(ccProfilesByIdCache[String(currentProfileId)] || {}), profile_id: currentProfileId, username: nextUsername };
+          }
         }
 
         closeEditProfileModal();
@@ -546,15 +586,6 @@
         (originals || []).forEach(p => { postsById[p.id] = p; });
       }
 
-      const originalAuthors = [...new Set(Object.values(postsById).map(p => p.user_name).filter(Boolean))];
-      const avatarByUser = {};
-      if (originalAuthors.length) {
-        const { data: profiles } = await supabaseClient
-          .from('profiles')
-          .select('user_name, avatar_url')
-          .in('user_name', originalAuthors);
-        (profiles || []).forEach(p => { avatarByUser[p.user_name] = p.avatar_url; });
-      }
 
       // Publicaciones que el usuario que ve el perfil ya reposteó (sin cita), para pintar el botón en verde
       let myPlainReposts = new Set();
@@ -580,12 +611,14 @@
       if (commentRepostIds.length) {
         const { data: quotedComments } = await supabaseClient.from('comments').select('id, post_id, author_id, user_name, content, created_at, reply_to').in('id', commentRepostIds);
         (quotedComments || []).forEach(c => { commentsById[c.id] = c; });
-        const cAuthors = [...new Set(quotedComments.map(c => c.user_name).filter(Boolean))];
-        if (cAuthors.length) {
-          const { data: cProfiles } = await supabaseClient.from('profiles').select('user_name, avatar_url').in('user_name', cAuthors);
-          (cProfiles || []).forEach(p => { avatarByUser[p.user_name] = p.avatar_url; });
-        }
       }
+
+      // Una consulta por lote para autores de publicaciones, originales y comentarios visibles.
+      const profileById = await ccFetchProfilesByIds([
+        ...posts.map(p => p.author_id),
+        ...Object.values(postsById).map(p => p.author_id),
+        ...Object.values(commentsById).map(c => c.author_id)
+      ]);
 
       feed.innerHTML = posts.map(post => {
 
@@ -594,20 +627,20 @@
           const c = commentsById[post.repost_of_comment_id];
           if (!c) return '';
           const cAuthor = c.user_name || 'Usuario';
-          const cAvatar = avatarByUser[cAuthor] || `https://ui-avatars.com/api/?name=${encodeURIComponent(cAuthor)}&background=random`;
+          const cAvatar = profileById[c.author_id]?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(cAuthor)}&background=random`;
           const author = post.user_name || username;
           return `
             <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 space-y-3">
               <div class="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 font-semibold">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0 text-green-600"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
-                <span data-user-card="${connEscape(author)}" class="hover:underline">${connEscape(author)}</span> ${post.quote_text ? 'citó un comentario' : 'reposteó un comentario'}
+                <span data-user-card="${connEscape(author)}" class="hover:underline">${connEscape(author)}</span>${profileHandleHtml(post.author_id, profileById, author)} ${post.quote_text ? 'citó un comentario' : 'reposteó un comentario'}
               </div>
               ${post.quote_text ? `<div>\n  <p data-expandable-post-text class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line"\n     style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;max-height:4.5em;overflow:hidden;">${linkifyContent(post.quote_text)}</p>\n  <button type="button" data-rm-btn data-expanded="false" class="rm-btn hidden"\n     onclick="event.stopPropagation();togglePostText(this)">Ver más...</button>\n</div>` : ''}
               <a href="publicacion.html?id=${c.post_id}#comentario-${c.id}" class="block border border-gray-200 dark:border-slate-700 rounded-xl p-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition">
                 <div class="flex items-center gap-2 mb-1">
                   <img src="${connEscape(safeUrl(cAvatar))}" class="w-6 h-6 rounded-full object-cover flex-shrink-0" alt="${connEscape(cAuthor)}">
-                  <span class="font-bold text-sm text-gray-900 dark:text-white">${connEscape(cAuthor)}</span>
-                  <span class="text-xs text-gray-400">· ${formatCompactTime(c.created_at)}</span>
+                  <span class="min-w-0 max-w-[45%] truncate font-bold text-sm text-gray-900 dark:text-white">${connEscape(cAuthor)}</span>${profileHandleHtml(c.author_id, profileById, cAuthor)}
+                  <span class="shrink-0 whitespace-nowrap text-xs text-gray-400">· ${formatCompactTime(c.created_at)}</span>
                 </div>
                 <p class="text-sm text-gray-700 dark:text-gray-300 break-words whitespace-pre-line">${linkifyContent(c.content)}</p>
               </a>
@@ -634,7 +667,7 @@
         const displayPost = originalPost || post;
         const originalAuthor = displayPost.user_name || username;
         const originalAvatarUrl = post.repost_of
-          ? (avatarByUser[originalAuthor] || `https://ui-avatars.com/api/?name=${encodeURIComponent(originalAuthor)}&background=random`)
+          ? (profileById[displayPost.author_id]?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(originalAuthor)}&background=random`)
           : avatarUrl;
 
         return `
@@ -667,10 +700,10 @@
               <a href="perfil.html?user=${encodeURIComponent(originalAuthor)}">
                 <img src="${connEscape(safeUrl(originalAvatarUrl))}" class="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700 hover:opacity-80 transition cursor-pointer">
               </a>
-              <div class="flex items-center space-x-2">
-                <a href="perfil.html?user=${encodeURIComponent(originalAuthor)}" class="font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(originalAuthor)}</a>
-                <span class="text-gray-400 text-sm">·</span>
-                <span class="text-sm text-gray-500 dark:text-gray-400">${post.repost_of ? formatCompactTime(displayPost.created_at) : compactTime}</span>
+              <div class="flex min-w-0 flex-1 items-center gap-2">
+                <a href="perfil.html?user=${encodeURIComponent(originalAuthor)}" class="min-w-0 max-w-[45%] truncate font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(originalAuthor)}</a>${profileHandleHtml(displayPost.author_id, profileById, originalAuthor)}
+                <span class="shrink-0 text-gray-400 text-sm">·</span>
+                <span class="shrink-0 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${post.repost_of ? formatCompactTime(displayPost.created_at) : compactTime}</span>
               </div>
             </div>
 
@@ -1011,7 +1044,7 @@
         <div class="flex items-start gap-2">
           <img src="${connEscape(safeUrl(commentProfiles[c.author_id]?.avatar_url || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(c.user_name) + '&background=random')))}" class="w-8 h-8 rounded-full object-cover flex-shrink-0">
           <div class="bg-gray-100 dark:bg-slate-800 rounded-xl px-3 py-2 flex-1">
-            <div class="text-xs font-bold text-gray-900 dark:text-white" data-user-card="${connEscape(c.user_name)}">${connEscape(c.user_name)}</div>
+            <div class="text-xs font-bold text-gray-900 dark:text-white" data-user-card="${connEscape(c.user_name)}">${connEscape(c.user_name)}</div>${profileHandleHtml(c.author_id, commentProfiles, c.user_name)}
             <div class="text-sm text-gray-700 dark:text-gray-200 break-words">${linkifyContent(c.content)}</div>
           </div>
         </div>
@@ -1081,7 +1114,15 @@
         <button id="saveProfileBtn" onclick="saveProfileChanges()" class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-bold py-1.5 px-4 rounded-full transition">Guardar</button>
       </div>
 
-      <div class="p-4">
+      <div class="p-4 space-y-4">
+        <div>
+          <label for="editProfileUsername" class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">Tu @</label>
+          <div class="flex items-center rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3">
+            <span class="text-gray-500 dark:text-gray-400">@</span>
+            <input id="editProfileUsername" type="text" maxlength="20" autocomplete="off" autocapitalize="none" spellcheck="false" class="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-gray-900 dark:text-white outline-none" placeholder="tu_usuario">
+          </div>
+          <p id="editProfileUsernameStatus" class="mt-1 text-xs text-gray-500 dark:text-gray-400">3–20 caracteres: letras, números y guion bajo.</p>
+        </div>
         <!-- Portada -->
         <div class="relative w-full h-40 bg-slate-800 rounded-lg overflow-hidden">
           <img id="editCoverPreview" class="w-full h-full object-cover" alt="">

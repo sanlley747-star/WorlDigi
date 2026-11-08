@@ -571,6 +571,12 @@
       }
     }
 
+    function dashboardHandleHtml(profileId, profileMap, displayName) {
+      const handle = profileMap?.[profileId]?.username;
+      if (!handle) return '';
+      return '<a href="perfil.html?user=' + encodeURIComponent(displayName || '') + '" data-user-card="' + connEscape(displayName || '') + '" class="ml-1 min-w-0 max-w-[110px] truncate text-xs font-normal text-gray-500 dark:text-gray-400 hover:underline">@' + connEscape(handle) + '</a>';
+    }
+
     function formatCompactTime(dateString) {
       const date = new Date(dateString);
       const now = new Date();
@@ -898,16 +904,8 @@ let feedRestoringState = false;
     .range(from, to);
 
   if (requestGeneration !== feedRequestGeneration) return;
-
-     const profileColumns = 'profile_id,user_name,avatar_url,es_canal';
-      const { data: profiles } = await supabaseClient.from('profiles').select(profileColumns);
       const profileById = {};
-      const avatarByUser = {};
-      (profiles || []).forEach(p => {
-        profileById[p.profile_id] = p;
-        if (p.user_name && p.avatar_url) avatarByUser[p.user_name] = p.avatar_url;
-      });
-     // La clasificación de canales llega en profiles.es_canal.
+      // Perfiles públicos resueltos por author_id en lote.
 
   if (requestGeneration !== feedRequestGeneration) return;
 
@@ -952,8 +950,6 @@ let feedRestoringState = false;
       .filter(id => id !== null && id !== undefined);
     saltosResueltos++;
   }
-
-  Object.assign(profileById, await ccFetchProfilesByIds(Object.values(feedPostsById).map(p => p.author_id)));
   const postsById = feedPostsById;
 
   // Publicaciones que el usuario actual ya reposteó (sin cita), para pintar el botón en verde
@@ -977,6 +973,10 @@ let feedRestoringState = false;
     const { data: quotedComments } = await supabaseClient.from('comments').select('id, post_id, author_id, user_name, content, created_at, reply_to').in('id', commentRepostIds);
     (quotedComments || []).forEach(c => { commentsById[c.id] = c; });
   }
+  Object.assign(profileById, await ccFetchProfilesByIds([
+    ...Object.values(feedPostsById).map(p => p.author_id),
+    ...Object.values(commentsById).map(c => c.author_id)
+  ]));
 
   const pageHtml = posts.map(post => {
 
@@ -985,13 +985,13 @@ let feedRestoringState = false;
       const c = commentsById[post.repost_of_comment_id];
       if (!c) return '';
       const cAuthor = c.user_name || 'Usuario';
-      const cAvatar = avatarByUser[cAuthor] || `https://ui-avatars.com/api/?name=${encodeURIComponent(cAuthor)}&background=random`;
+      const cAvatar = profileById[c.author_id]?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(cAuthor)}&background=random`;
       const author = post.user_name || 'Usuario';
       return `
         <div id="post-${post.id}" class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 space-y-3">
           <div class="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 font-semibold">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0 text-green-600"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
-            <span data-user-card="${connEscape(author)}" class="hover:underline">${connEscape(author)}</span> ${post.quote_text ? 'citó un comentario' : 'reposteó un comentario'}
+            <span data-user-card="${connEscape(author)}" class="hover:underline">${connEscape(author)}</span>${dashboardHandleHtml(post.author_id, profileById, author)} ${post.quote_text ? 'citó un comentario' : 'reposteó un comentario'}
           </div>
           ${post.quote_text ? `<div>
   <p data-expandable-post-text class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line"
@@ -1002,8 +1002,8 @@ let feedRestoringState = false;
           <a href="publicacion.html?id=${c.post_id}#comentario-${c.id}" class="block border border-gray-200 dark:border-slate-700 rounded-xl p-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition">
             <div class="flex items-center gap-2 mb-1">
               <img src="${connEscape(safeUrl(cAvatar))}" class="w-6 h-6 rounded-full object-cover flex-shrink-0" alt="${connEscape(cAuthor)}">
-              <span class="font-bold text-sm text-gray-900 dark:text-white">${connEscape(cAuthor)}</span>
-              <span class="text-xs text-gray-400">· ${formatCompactTime(c.created_at)}</span>
+              <span class="min-w-0 max-w-[45%] truncate font-bold text-sm text-gray-900 dark:text-white">${connEscape(cAuthor)}</span>${dashboardHandleHtml(c.author_id, profileById, cAuthor)}
+              <span class="shrink-0 whitespace-nowrap text-xs text-gray-400">· ${formatCompactTime(c.created_at)}</span>
             </div>
             <p class="text-sm text-gray-700 dark:text-gray-300 break-words whitespace-pre-line">${linkifyContent(c.content)}</p>
           </a>
@@ -1023,7 +1023,7 @@ let feedRestoringState = false;
 
     const author = post.user_name || 'Usuario';
     const compactTime = formatCompactTime(post.created_at);
-    const avatarUrl = profileById[post.author_id]?.avatar_url || avatarByUser[author] || post.avatar_url ||
+    const avatarUrl = profileById[post.author_id]?.avatar_url || post.avatar_url ||
       `https://ui-avatars.com/api/?name=${encodeURIComponent(author)}&background=random`;
 
     // Si es un repost, resolvemos toda la cadena hasta la publicación original
@@ -1038,7 +1038,7 @@ let feedRestoringState = false;
 
     const originalAuthor = displayPost.user_name || 'Usuario';
 
-   const originalAvatarUrl = avatarByUser[originalAuthor] || displayPost.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(originalAuthor)}&background=random`;
+   const originalAvatarUrl = profileById[displayPost.author_id]?.avatar_url || displayPost.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(originalAuthor)}&background=random`;
 
     return `
       <div id="post-${post.id}"
@@ -1052,7 +1052,7 @@ let feedRestoringState = false;
               <img src="${connEscape(safeUrl(avatarUrl))}" class="w-12 h-12 rounded-full object-cover border border-gray-300 dark:border-slate-700" alt="${connEscape(author)}">
             </a>
             <div class="min-w-0 flex-1">
-              <a href="perfil.html?user=${encodeURIComponent(author)}" data-user-card="${connEscape(author)}" class="font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(author)}</a>
+              <a href="perfil.html?user=${encodeURIComponent(author)}" data-user-card="${connEscape(author)}" class="font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(author)}</a>${dashboardHandleHtml(post.author_id, profileById, author)}
               <div>
   <p data-expandable-post-text class="mt-1 text-gray-800 dark:text-gray-200 text-sm break-words whitespace-pre-line"
      style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;max-height:4.5em;overflow:hidden;">${connEscape(post.quote_text)}</p>
@@ -1065,7 +1065,7 @@ let feedRestoringState = false;
         ` : `
           <div class="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 font-semibold">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0 text-green-600"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
-            <span data-user-card="${connEscape(author)}" class="hover:underline">${connEscape(author)}</span> repostó
+            <span data-user-card="${connEscape(author)}" class="hover:underline">${connEscape(author)}</span>${dashboardHandleHtml(post.author_id, profileById, author)} repostó
           </div>
         `) : ''}
 
@@ -1080,18 +1080,19 @@ let feedRestoringState = false;
               alt="${connEscape(originalAuthor)}">
           </a>
 
-          <div class="flex items-center space-x-2">
+          <div class="flex min-w-0 flex-1 items-center gap-2">
 
             <a
               href="perfil.html?user=${encodeURIComponent(originalAuthor)}"
-              class="font-bold text-gray-900 dark:text-white text-sm hover:underline">
+              class="min-w-0 max-w-[45%] truncate font-bold text-gray-900 dark:text-white text-sm hover:underline">
               ${connEscape(originalAuthor)}
             </a>
+            ${dashboardHandleHtml(displayPost.author_id, profileById, originalAuthor)}
             ${profileById[displayPost.author_id]?.es_canal === true ? connChannelChip(true) : ''}
 
-            <span class="text-gray-400 text-sm">·</span>
+            <span class="shrink-0 text-gray-400 text-sm">·</span>
 
-            <span class="text-sm text-gray-500 dark:text-gray-400">
+            <span class="shrink-0 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
               ${post.repost_of ? formatCompactTime(displayPost.created_at) : compactTime}
             </span>
 
@@ -1256,15 +1257,8 @@ let feedRestoringState = false;
       }
     }
   }
-     const profileColumns = 'profile_id,user_name,avatar_url,es_canal';
-      const { data: profiles } = await supabaseClient.from('profiles').select(profileColumns);
       const profileById = {};
-      const avatarByUser = {};
-      (profiles || []).forEach(p => {
-        profileById[p.profile_id] = p;
-        if (p.user_name && p.avatar_url) avatarByUser[p.user_name] = p.avatar_url;
-      });
-     // La clasificación de canales llega en profiles.es_canal.
+      // Perfiles públicos resueltos por author_id en lote.
 
   if (feedRequestGeneration !== requestGeneration) return;
 
@@ -1309,8 +1303,6 @@ let feedRestoringState = false;
       .filter(id => id !== null && id !== undefined);
     saltosResueltos++;
   }
-
-  Object.assign(profileById, await ccFetchProfilesByIds(Object.values(feedPostsById).map(p => p.author_id)));
   const postsById = feedPostsById;
 
   // Publicaciones que el usuario actual ya reposteó (sin cita), para pintar el botón en verde
@@ -1334,6 +1326,10 @@ let feedRestoringState = false;
     const { data: quotedComments } = await supabaseClient.from('comments').select('id, post_id, author_id, user_name, content, created_at, reply_to').in('id', commentRepostIds);
     (quotedComments || []).forEach(c => { commentsById[c.id] = c; });
   }
+  Object.assign(profileById, await ccFetchProfilesByIds([
+    ...Object.values(feedPostsById).map(p => p.author_id),
+    ...Object.values(commentsById).map(c => c.author_id)
+  ]));
 
   const pageHtml = posts.map(post => {
 
@@ -1342,13 +1338,13 @@ let feedRestoringState = false;
       const c = commentsById[post.repost_of_comment_id];
       if (!c) return '';
       const cAuthor = c.user_name || 'Usuario';
-      const cAvatar = avatarByUser[cAuthor] || `https://ui-avatars.com/api/?name=${encodeURIComponent(cAuthor)}&background=random`;
+      const cAvatar = profileById[c.author_id]?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(cAuthor)}&background=random`;
       const author = post.user_name || 'Usuario';
       return `
         <div id="post-${post.id}" class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 space-y-3">
           <div class="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 font-semibold">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0 text-green-600"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
-            <span data-user-card="${connEscape(author)}" class="hover:underline">${connEscape(author)}</span> ${post.quote_text ? 'citó un comentario' : 'reposteó un comentario'}
+            <span data-user-card="${connEscape(author)}" class="hover:underline">${connEscape(author)}</span>${dashboardHandleHtml(post.author_id, profileById, author)} ${post.quote_text ? 'citó un comentario' : 'reposteó un comentario'}
           </div>
           ${post.quote_text ? `<div>
   <p data-expandable-post-text class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line"
@@ -1359,7 +1355,7 @@ let feedRestoringState = false;
           <a href="publicacion.html?id=${c.post_id}#comentario-${c.id}" class="block border border-gray-200 dark:border-slate-700 rounded-xl p-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition">
             <div class="flex items-center gap-2 mb-1">
               <img src="${connEscape(safeUrl(cAvatar))}" class="w-6 h-6 rounded-full object-cover flex-shrink-0" alt="${connEscape(cAuthor)}">
-              <span class="font-bold text-sm text-gray-900 dark:text-white">${connEscape(cAuthor)}</span>
+              <span class="font-bold text-sm text-gray-900 dark:text-white">${connEscape(cAuthor)}</span>${dashboardHandleHtml(c.author_id, profileById, cAuthor)}
               <span class="text-xs text-gray-400">· ${formatCompactTime(c.created_at)}</span>
             </div>
             <p class="text-sm text-gray-700 dark:text-gray-300 break-words whitespace-pre-line">${linkifyContent(c.content)}</p>
@@ -1380,7 +1376,7 @@ let feedRestoringState = false;
 
     const author = post.user_name || 'Usuario';
     const compactTime = formatCompactTime(post.created_at);
-    const avatarUrl = profileById[post.author_id]?.avatar_url || avatarByUser[author] || post.avatar_url ||
+    const avatarUrl = profileById[post.author_id]?.avatar_url || post.avatar_url ||
       `https://ui-avatars.com/api/?name=${encodeURIComponent(author)}&background=random`;
 
     // Si es un repost, resolvemos toda la cadena hasta la publicación original
@@ -1395,7 +1391,7 @@ let feedRestoringState = false;
 
     const originalAuthor = displayPost.user_name || 'Usuario';
 
-   const originalAvatarUrl = avatarByUser[originalAuthor] || displayPost.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(originalAuthor)}&background=random`;
+   const originalAvatarUrl = profileById[displayPost.author_id]?.avatar_url || displayPost.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(originalAuthor)}&background=random`;
 
     return `
       <div id="post-${post.id}"
@@ -1409,7 +1405,7 @@ let feedRestoringState = false;
               <img src="${connEscape(safeUrl(avatarUrl))}" class="w-12 h-12 rounded-full object-cover border border-gray-300 dark:border-slate-700" alt="${connEscape(author)}">
             </a>
             <div class="min-w-0 flex-1">
-              <a href="perfil.html?user=${encodeURIComponent(author)}" data-user-card="${connEscape(author)}" class="font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(author)}</a>
+              <a href="perfil.html?user=${encodeURIComponent(author)}" data-user-card="${connEscape(author)}" class="font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(author)}</a>${dashboardHandleHtml(post.author_id, profileById, author)}
               <div>
   <p data-expandable-post-text class="mt-1 text-gray-800 dark:text-gray-200 text-sm break-words whitespace-pre-line"
      style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;max-height:4.5em;overflow:hidden;">${connEscape(post.quote_text)}</p>
@@ -1422,7 +1418,7 @@ let feedRestoringState = false;
         ` : `
           <div class="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 font-semibold">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0 text-green-600"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
-            <span data-user-card="${connEscape(author)}" class="hover:underline">${connEscape(author)}</span> repostó
+            <span data-user-card="${connEscape(author)}" class="hover:underline">${connEscape(author)}</span>${dashboardHandleHtml(post.author_id, profileById, author)} repostó
           </div>
         `) : ''}
 
@@ -1444,6 +1440,7 @@ let feedRestoringState = false;
               class="font-bold text-gray-900 dark:text-white text-sm hover:underline">
               ${connEscape(originalAuthor)}
             </a>
+            ${dashboardHandleHtml(displayPost.author_id, profileById, originalAuthor)}
             ${profileById[displayPost.author_id]?.es_canal === true ? connChannelChip(true) : ''}
 
             <span class="text-gray-400 text-sm">·</span>
@@ -2077,8 +2074,8 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
 
       const { data: profileRow } = await supabaseClient
         .from('profiles')
-        .select('avatar_url')
-        .eq('user_name', post.user_name)
+        .select('avatar_url,username')
+         .eq('profile_id', post.author_id)
         .maybeSingle();
 
       const avatarUrl = profileRow?.avatar_url || post.avatar_url ||
@@ -2087,6 +2084,15 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
       document.getElementById('postViewerAvatar').src = safeUrl(avatarUrl);
       document.getElementById('postViewerAuthor').textContent = post.user_name || 'Usuario';
       document.getElementById('postViewerAuthor').setAttribute('data-user-card', post.user_name || '');
+      const viewerHandle = document.getElementById('postViewerHandle');
+      if (profileRow?.username) {
+        viewerHandle.textContent = '@' + profileRow.username;
+        viewerHandle.href = 'perfil.html?user=' + encodeURIComponent(post.user_name || '');
+        viewerHandle.classList.remove('hidden');
+      } else {
+        viewerHandle.textContent = '';
+        viewerHandle.classList.add('hidden');
+      }
       document.getElementById('postViewerTime').textContent = formatCompactTime(post.created_at);
       document.getElementById('postViewerContent').innerHTML = post.content ? linkifyContent(post.content) : '';
 
@@ -2145,7 +2151,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
         <div class="flex items-start gap-2">
           <img src="${connEscape(safeUrl(commentProfiles[c.author_id]?.avatar_url || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(c.user_name) + '&background=random')))}" class="w-8 h-8 rounded-full object-cover flex-shrink-0">
           <div class="bg-gray-100 dark:bg-slate-800 rounded-xl px-3 py-2 flex-1">
-            <div class="text-xs font-bold text-gray-900 dark:text-white" data-user-card="${connEscape(c.user_name)}">${connEscape(c.user_name)}</div>
+            <div class="text-xs font-bold text-gray-900 dark:text-white" data-user-card="${connEscape(c.user_name)}">${connEscape(c.user_name)}</div>${dashboardHandleHtml(c.author_id, commentProfiles, c.user_name)}
             <div class="text-sm text-gray-700 dark:text-gray-200 break-words">${linkifyContent(c.content)}</div>
           </div>
         </div>
@@ -2227,6 +2233,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
             <img id="postViewerAvatar" src="" class="w-10 h-10 rounded-full object-cover">
             <div>
               <div id="postViewerAuthor" class="font-bold text-gray-900 dark:text-white text-sm"></div>
+              <a id="postViewerHandle" href="#" class="hidden text-xs text-gray-500 dark:text-gray-400 hover:underline"></a>
               <div id="postViewerTime" class="text-xs text-gray-500 dark:text-gray-400"></div>
             </div>
           </div>
