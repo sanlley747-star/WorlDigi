@@ -266,7 +266,7 @@
 
     // ---------- Publicación ----------
     async function loadPost() {
-      const { data: post, error } = await supabaseClient.from('posts').select('*').eq('id', postId).maybeSingle();
+      const { data: post, error } = await supabaseClient.from('posts').select('id,created_at,user_name,author_id,content,image_url,likes,repost_of,quote_text,repost_of_comment_id,metadata').eq('id', postId).maybeSingle();
       if (error || !post) { showNotFound(); return; }
 
       // Si alguien abre un repost, se muestra la publicación original
@@ -275,20 +275,21 @@
         return;
       }
       displayedPost = post;
+      const myProfileId = await ccGetMyProfileId();
 
       const [profRes, channelSet, commentCounts, repostCounts, myRepostRes, myLikes] = await Promise.all([
-        supabaseClient.from('profiles').select('avatar_url').eq('user_email', post.user_email).maybeSingle(),
+        supabaseClient.from('profiles').select('avatar_url,user_email').eq('profile_id', post.author_id).maybeSingle(),
         connFetchChannelSet(),
         ccFetchCounts([post.id]),
         ccFetchRepostCounts([post.id]),
-        supabaseClient.from('posts').select('id').eq('repost_of', post.id).eq('user_email', currentUser.email).is('quote_text', null).limit(1),
-        ccFetchMyLikes([post.id], currentUser.email)
+        supabaseClient.from('posts').select('id,author_id').eq('repost_of', post.id).eq('author_id', myProfileId).is('quote_text', null).limit(1),
+        ccFetchMyLikes([post.id])
       ]);
 
       const author = post.user_name || 'Usuario';
       const avatarUrl = (profRes.data && profRes.data.avatar_url) || post.avatar_url || connAvatarFallback(author);
       const isReposted = !!(myRepostRes.data && myRepostRes.data.length);
-      const isChannel = connIsChannelEmail(channelSet, post.user_email);
+      const isChannel = connIsChannelEmail(channelSet, profRes.data?.user_email);
       const isLiked = myLikes.has(post.id);
 
       document.title = 'TuNetFy - Publicación de ' + author;
@@ -398,7 +399,7 @@
     async function undoRepost() {
       const { error } = await supabaseClient.from('posts').delete()
         .eq('repost_of', postId)
-        .eq('user_email', currentUser.email)
+        .eq('author_id', await ccGetMyProfileId())
         .is('quote_text', null);
       if (error) { console.error(error); return; }
       await loadPost();
@@ -437,7 +438,7 @@
 
       const { data: comments, error } = await supabaseClient
         .from('comments')
-        .select('*')
+        .select('id,post_id,author_id,user_name,content,created_at,reply_to')
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
 
@@ -453,13 +454,8 @@
         return;
       }
 
-      // Fotos de perfil de quienes comentaron (por su correo)
-      const emails = [...new Set(comments.map(c => c.user_email).filter(Boolean))];
-      const avatarByEmail = {};
-      if (emails.length) {
-        const { data: profs } = await supabaseClient.from('profiles').select('user_email, avatar_url').in('user_email', emails);
-        (profs || []).forEach(p => { if (p.avatar_url) avatarByEmail[p.user_email] = p.avatar_url; });
-      }
+      // Avatares y etiqueta de canal resueltos por el ID interno del perfil.
+      const commentProfiles = await ccFetchProfilesByIds(comments.map(c => c.author_id), true);
       const channelSet = await connFetchChannelSet();
 
       // Datos para los botones de cada comentario (me gusta, respuestas y reposts)
@@ -491,7 +487,7 @@
 
       function renderComment(c, isReply) {
         const name = c.user_name || 'Usuario';
-        const avatar = avatarByEmail[c.user_email] || connAvatarFallback(name);
+        const avatar = commentProfiles[c.author_id]?.avatar_url || connAvatarFallback(name);
         const actions = ccCommentActionsHtml(c, {
           likes: likeCounts[c.id] || 0,
           replies: replyCounts[c.id] || 0,
@@ -510,7 +506,7 @@
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2">
                 <a href="perfil.html?user=${encodeURIComponent(name)}" data-user-card="${connEscape(name)}" class="font-bold text-sm text-gray-900 dark:text-white hover:underline">${connEscape(name)}</a>
-                ${connIsChannelEmail(channelSet, c.user_email) ? connChannelChip(true) : ''}
+                ${connIsChannelEmail(channelSet, commentProfiles[c.author_id]?.user_email) ? connChannelChip(true) : ''}
                 <span class="text-gray-400 text-sm">·</span>
                 <span class="text-xs text-gray-500 dark:text-gray-400">${formatCompactTime(c.created_at)}</span>
               </div>
