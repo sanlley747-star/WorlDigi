@@ -281,7 +281,7 @@
       const myProfileId = await ccGetMyProfileId();
 
       const [profRes, commentCounts, repostCounts, myRepostRes, myLikes] = await Promise.all([
-        supabaseClient.from('profiles').select('avatar_url,es_canal').eq('profile_id', post.author_id).maybeSingle(),
+        supabaseClient.from('profiles').select('avatar_url,es_canal,username').eq('profile_id', post.author_id).maybeSingle(),
         ccFetchCounts([post.id]),
         ccFetchRepostCounts([post.id]),
         supabaseClient.from('posts').select('id,author_id').eq('repost_of', post.id).eq('author_id', myProfileId).is('quote_text', null).limit(1),
@@ -289,16 +289,23 @@
       ]);
 
       const author = post.user_name || 'Usuario';
+      const username = profRes.data?.username || null;
       const avatarUrl = (profRes.data && profRes.data.avatar_url) || post.avatar_url || connAvatarFallback(author);
       const isReposted = !!(myRepostRes.data && myRepostRes.data.length);
       const isChannel = profRes.data?.es_canal === true;
       const isLiked = myLikes.has(post.id);
 
       document.title = 'TuNetFy - Publicación de ' + author;
-      renderPost(post, { author, avatarUrl, isReposted, isChannel, isLiked, commentCount: commentCounts[post.id] || 0, repostCount: repostCounts[post.id] || 0 });
+      renderPost(post, { author, username, avatarUrl, isReposted, isChannel, isLiked, commentCount: commentCounts[post.id] || 0, repostCount: repostCounts[post.id] || 0 });
 
       document.getElementById('commentsSection').classList.remove('hidden');
       await loadComments();
+    }
+
+    function publicacionHandleHtml(handle, displayName) {
+      if (!handle) return '';
+      const safeName = connEscape(displayName || '');
+      return '<a href="perfil.html?user=' + encodeURIComponent(displayName || '') + '" data-user-card="' + safeName + '" class="ml-1 min-w-0 max-w-[110px] truncate text-xs text-gray-500 dark:text-gray-400 hover:underline">@' + connEscape(handle) + '</a>';
     }
 
     function renderPost(post, v) {
@@ -315,11 +322,12 @@
               <img src="${connEscape(safeUrl(v.avatarUrl))}" class="w-12 h-12 rounded-full object-cover border border-gray-300 dark:border-slate-700 hover:opacity-80 transition" alt="${connEscape(v.author)}">
             </a>
             <div>
-              <div class="flex items-center space-x-2">
-                <a href="perfil.html?user=${encodeURIComponent(v.author)}" class="font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(v.author)}</a>
+              <div class="flex min-w-0 flex-1 items-center gap-2">
+                <a href="perfil.html?user=${encodeURIComponent(v.author)}" data-user-card="${connEscape(v.author)}" class="min-w-0 max-w-[45%] truncate font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(v.author)}</a>
+                ${publicacionHandleHtml(v.username, v.author)}
                 ${v.isChannel ? connChannelChip(true) : ''}
               </div>
-              <div class="text-xs text-gray-500 dark:text-gray-400">${formatCompactTime(post.created_at)}</div>
+              <div class="shrink-0 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">${formatCompactTime(post.created_at)}</div>
             </div>
           </div>
 
@@ -505,11 +513,12 @@
               <img src="${connEscape(safeUrl(avatar))}" class="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover border border-gray-200 dark:border-slate-700 hover:opacity-80 transition" alt="${connEscape(name)}">
             </a>
             <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2">
-                <a href="perfil.html?user=${encodeURIComponent(name)}" data-user-card="${connEscape(name)}" class="font-bold text-sm text-gray-900 dark:text-white hover:underline">${connEscape(name)}</a>
+              <div class="flex min-w-0 items-center gap-2">
+                <a href="perfil.html?user=${encodeURIComponent(name)}" data-user-card="${connEscape(name)}" class="min-w-0 max-w-[45%] truncate font-bold text-sm text-gray-900 dark:text-white hover:underline">${connEscape(name)}</a>
+                 ${publicacionHandleHtml(commentProfiles[c.author_id]?.username, name)}
                 ${commentProfiles[c.author_id]?.es_canal === true ? connChannelChip(true) : ''}
                 <span class="text-gray-400 text-sm">·</span>
-                <span class="text-xs text-gray-500 dark:text-gray-400">${formatCompactTime(c.created_at)}</span>
+                <span class="shrink-0 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">${formatCompactTime(c.created_at)}</span>
               </div>
               <p class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line md:mt-0.5">${linkifyContent(c.content)}</p>
               <div class="publicacion-comment-actions">${actions}</div>
