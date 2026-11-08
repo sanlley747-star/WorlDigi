@@ -1,3 +1,41 @@
+// Perfil interno del usuario autenticado. No consulta user_email en las tablas de contenido.
+let ccMyProfileIdPromise = null;
+async function ccGetMyProfileId() {
+  if (ccMyProfileIdPromise) return ccMyProfileIdPromise;
+  ccMyProfileIdPromise = (async () => {
+    try {
+      const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+      if (userError || !user) { ccMyProfileIdPromise = null; return null; }
+      const { data, error } = await supabaseClient.rpc('mi_perfil_id');
+      if (error) throw error;
+      return data || null;
+    } catch (error) {
+      console.error('No se pudo resolver el perfil interno:', error);
+      ccMyProfileIdPromise = null;
+      return null;
+    }
+  })();
+  return ccMyProfileIdPromise;
+}
+
+// Resuelve avatar/nombre por profile_id. El correo solo se incluye en páginas
+// autenticadas para conservar etiquetas de cuentas canal sin leerlo desde posts/comments.
+async function ccFetchProfilesByIds(profileIds, includeEmail = false) {
+  const ids = [...new Set((profileIds || []).filter(Boolean))];
+  if (!ids.length) return {};
+  const columns = includeEmail
+    ? 'profile_id,user_name,avatar_url,user_email'
+    : 'profile_id,user_name,avatar_url';
+  const { data, error } = await supabaseClient.from('profiles').select(columns).in('profile_id', ids);
+  if (error) {
+    console.error('No se pudieron resolver perfiles por ID:', error);
+    return {};
+  }
+  const map = {};
+  (data || []).forEach(profile => { map[profile.profile_id] = profile; });
+  return map;
+}
+
 // ===== CONTADOR DE COMENTARIOS =====
 // Archivo aislado: solo LEE la cantidad de comentarios por publicación.
 // Requiere que la página ya haya definido `supabaseClient` antes de USAR estas funciones.
@@ -47,14 +85,15 @@ async function ccFetchRepostCounts(postIds) {
 // Devuelve un Set con los post_id que el usuario (userEmail) ya marcó con "me gusta",
 // de entre la lista de ids indicada. Se usa para pintar el corazón en rojo relleno
 // y para saber si el clic debe sumar o quitar el like (evita likes repetidos).
-async function ccFetchMyLikes(postIds, userEmail) {
+async function ccFetchMyLikes(postIds) {
   const ids = Array.from(new Set((postIds || []).filter(id => id !== null && id !== undefined)));
-  if (!ids.length || !userEmail) return new Set();
+  const profileId = await ccGetMyProfileId();
+  if (!ids.length || !profileId) return new Set();
   try {
     const { data, error } = await supabaseClient
       .from('post_likes')
-      .select('post_id')
-      .eq('user_email', userEmail)
+      .select('post_id,author_id')
+      .eq('author_id', profileId)
       .in('post_id', ids);
     if (error) throw error;
     return new Set((data || []).map(r => r.post_id));
@@ -140,6 +179,8 @@ async function ccToggleLike(btn) {
 
   // Invitados o botones sin identidad autenticada: nunca escribir en Supabase.
   if (!userEmail || !id || !supabaseClient) return;
+  const profileId = await ccGetMyProfileId();
+  if (!profileId) return;
 
   const counterElement = document.getElementById(`likes-count-${id}`);
   const heartPath = btn.querySelector('[data-heart-icon]');
@@ -167,11 +208,11 @@ async function ccToggleLike(btn) {
         .from('post_likes')
         .delete()
         .eq('post_id', id)
-        .eq('user_email', userEmail);
+        .eq('author_id', profileId);
     } else {
       response = await supabaseClient
         .from('post_likes')
-        .insert({ post_id: id, user_email: userEmail, user_name: userName });
+        .insert({ post_id: id, author_id: profileId, user_email: userEmail, user_name: userName });
     }
 
     if (response.error) {
@@ -244,14 +285,15 @@ async function ccFetchCommentRepostCounts(commentIds) {
 }
 
 // Qué comentarios de la lista ya tienen "me gusta" del usuario actual (para pintar el corazón).
-async function ccFetchMyCommentLikes(commentIds, userEmail) {
+async function ccFetchMyCommentLikes(commentIds) {
   const ids = Array.from(new Set((commentIds || []).filter(id => id !== null && id !== undefined)));
-  if (!ids.length || !userEmail) return new Set();
+  const profileId = await ccGetMyProfileId();
+  if (!ids.length || !profileId) return new Set();
   try {
     const { data, error } = await supabaseClient
       .from('comment_likes')
-      .select('comment_id')
-      .eq('user_email', userEmail)
+      .select('comment_id,author_id')
+      .eq('author_id', profileId)
       .in('comment_id', ids);
     if (error) throw error;
     return new Set((data || []).map(r => r.comment_id));
@@ -262,14 +304,15 @@ async function ccFetchMyCommentLikes(commentIds, userEmail) {
 }
 
 // Qué comentarios de la lista ya reposteó (sin cita) el usuario actual (para pintar el icono en verde).
-async function ccFetchMyCommentReposts(commentIds, userEmail) {
+async function ccFetchMyCommentReposts(commentIds) {
   const ids = Array.from(new Set((commentIds || []).filter(id => id !== null && id !== undefined)));
-  if (!ids.length || !userEmail) return new Set();
+  const profileId = await ccGetMyProfileId();
+  if (!ids.length || !profileId) return new Set();
   try {
     const { data, error } = await supabaseClient
       .from('posts')
-      .select('repost_of_comment_id')
-      .eq('user_email', userEmail)
+      .select('repost_of_comment_id,author_id')
+      .eq('author_id', profileId)
       .is('quote_text', null)
       .in('repost_of_comment_id', ids);
     if (error) throw error;
@@ -357,6 +400,8 @@ async function ccToggleCommentLike(btn, id, currentLikes, isLiked, userEmail, us
     return;
   }
   if (!userEmail) return;
+  const profileId = await ccGetMyProfileId();
+  if (!profileId) return;
 
   const counterElement = document.getElementById(`c-likes-count-${id}`);
   const heartPath = btn.querySelector('[data-heart-icon]');
@@ -384,11 +429,11 @@ async function ccToggleCommentLike(btn, id, currentLikes, isLiked, userEmail, us
         .from('comment_likes')
         .delete()
         .eq('comment_id', id)
-        .eq('user_email', userEmail);
+        .eq('author_id', profileId);
     } else {
       response = await supabaseClient
         .from('comment_likes')
-        .insert({ comment_id: id, user_email: userEmail, user_name: userName });
+        .insert({ comment_id: id, author_id: profileId, user_email: userEmail, user_name: userName });
     }
 
     // 2. Si Supabase devuelve error, revertir UI

@@ -141,11 +141,6 @@ async function connResolveEmail(userName) {
     .from('profiles').select('user_email').eq('user_name', userName).limit(1);
   if (prof.data && prof.data.length) return prof.data[0].user_email;
 
-  // Quien aún no tiene fila en profiles se identifica por sus publicaciones
-  const post = await supabaseClient
-    .from('posts').select('user_email').eq('user_name', userName).limit(1);
-  if (post.data && post.data.length) return post.data[0].user_email;
-
   return null;
 }
 
