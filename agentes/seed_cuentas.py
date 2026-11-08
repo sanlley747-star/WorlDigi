@@ -22,7 +22,8 @@ Uso:
   python seed_cuentas.py --purge --yes     # borra TODAS las cuentas automaticas y lo que generaron
 """
 import argparse
-import json\nimport hashlib
+import json
+import hashlib
 import os
 import random
 import re
@@ -221,7 +222,8 @@ def crear(count, dry_run):
                 fallidas += 1
                 continue
             filas.append({
-                "user_email": ident["email"], "user_name": ident["nombre"],\n                "username": (slugify(ident["nombre"])[:14] + "_" + hashlib.sha256(ident["handle"].encode()).hexdigest()[:5])[:20],
+                "user_email": ident["email"], "user_name": ident["nombre"],
+                "username": (slugify(ident["nombre"])[:14] + "_" + hashlib.sha256(ident["handle"].encode()).hexdigest()[:5])[:20],
                 "avatar_url": avatar_url, "cover_url": cover_url,
                 "is_cuenta_automatica": True, "persona_id": ident["persona_id"],
                 "config_cuenta_automatica": {
