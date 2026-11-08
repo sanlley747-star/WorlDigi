@@ -893,13 +893,20 @@ let feedRestoringState = false;
   const from = feedOffset;
   const to = from + feedPageSize - 1;
   const { data: posts, error } = await supabaseClient
-    .from('posts').select('id, created_at, image_url, likes, content, user_name, repost_of, quote_text, repost_of_comment_id')
+    .from('posts').select('id, created_at, image_url, likes, content, user_name, author_id, repost_of, quote_text, repost_of_comment_id, metadata')
     .order('created_at', { ascending: false })
     .range(from, to);
 
   if (requestGeneration !== feedRequestGeneration) return;
 
-     const { data: profiles } = await supabaseClient.from('profiles').select('user_name, avatar_url'); const avatarByUser = {}; (profiles || []).forEach(p => { if (p.user_name && p.avatar_url) avatarByUser[p.user_name] = p.avatar_url; });
+     const profileColumns = currentUser ? 'profile_id,user_name,avatar_url,user_email' : 'profile_id,user_name,avatar_url';
+      const { data: profiles } = await supabaseClient.from('profiles').select(profileColumns);
+      const profileById = {};
+      const avatarByUser = {};
+      (profiles || []).forEach(p => {
+        profileById[p.profile_id] = p;
+        if (p.user_name && p.avatar_url) avatarByUser[p.user_name] = p.avatar_url;
+      });
      const channelSet = isGuestMode ? new Set() : await connFetchChannelSet();
 
   if (requestGeneration !== feedRequestGeneration) return;
@@ -937,7 +944,7 @@ let feedRestoringState = false;
     const idsFaltantes = idsPendientesDeResolver.filter(id => !feedPostsById[id]);
     if (!idsFaltantes.length) break;
     const { data: postsOriginales } = await supabaseClient
-      .from('posts').select('id, created_at, image_url, likes, content, user_name, repost_of, quote_text, repost_of_comment_id')
+      .from('posts').select('id, created_at, image_url, likes, content, user_name, author_id, repost_of, quote_text, repost_of_comment_id, metadata')
       .in('id', idsFaltantes);
     (postsOriginales || []).forEach(p => { feedPostsById[p.id] = p; });
     idsPendientesDeResolver = (postsOriginales || [])
@@ -949,23 +956,24 @@ let feedRestoringState = false;
   const postsById = feedPostsById;
 
   // Publicaciones que el usuario actual ya reposteó (sin cita), para pintar el botón en verde
+  const myProfileId = currentUser ? await ccGetMyProfileId() : null;
   const myPlainReposts = new Set(
     posts
-      .filter(p => p.repost_of && p.user_email === (currentUser?.email || '') && !p.quote_text)
+      .filter(p => p.repost_of && p.author_id === myProfileId && !p.quote_text)
       .map(p => p.repost_of)
   );
 
   // Cantidad de comentarios de cada publicación (una sola consulta)
   const commentCounts = await ccFetchCounts(posts.map(p => p.id));
   const repostCounts = await ccFetchRepostCounts(posts.map(p => p.id));
-  const myLikes = currentUser ? await ccFetchMyLikes(posts.map(p => p.id), currentUser.email) : new Set();
+  const myLikes = currentUser ? await ccFetchMyLikes(posts.map(p => p.id)) : new Set();
   const likerName = currentUser?.user_metadata?.full_name || (currentUser?.email || '').split('@')[0];
 
   // Si alguien reposteó/citó un comentario, traemos ese comentario para mostrarlo dentro de la tarjeta
   const commentRepostIds = [...new Set(posts.filter(p => p.repost_of_comment_id).map(p => p.repost_of_comment_id))];
   const commentsById = {};
   if (commentRepostIds.length) {
-    const { data: quotedComments } = await supabaseClient.from('comments').select('id, post_id, user_name, content, created_at, reply_to').in('id', commentRepostIds);
+    const { data: quotedComments } = await supabaseClient.from('comments').select('id, post_id, author_id, user_name, content, created_at, reply_to').in('id', commentRepostIds);
     (quotedComments || []).forEach(c => { commentsById[c.id] = c; });
   }
 
@@ -1014,7 +1022,7 @@ let feedRestoringState = false;
 
     const author = post.user_name || 'Usuario';
     const compactTime = formatCompactTime(post.created_at);
-    const avatarUrl = avatarByUser[post.user_email] || avatarByUser[author] || post.avatar_url ||
+    const avatarUrl = profileById[post.author_id]?.avatar_url || avatarByUser[author] || post.avatar_url ||
       `https://ui-avatars.com/api/?name=${encodeURIComponent(author)}&background=random`;
 
     // Si es un repost, resolvemos toda la cadena hasta la publicación original
@@ -1078,7 +1086,7 @@ let feedRestoringState = false;
               class="font-bold text-gray-900 dark:text-white text-sm hover:underline">
               ${connEscape(originalAuthor)}
             </a>
-            ${connIsChannelEmail(channelSet, displayPost.user_email) ? connChannelChip(true) : ''}
+            ${connIsChannelEmail(channelSet, profileById[displayPost.author_id]?.user_email) ? connChannelChip(true) : ''}
 
             <span class="text-gray-400 text-sm">·</span>
 
@@ -1247,7 +1255,14 @@ let feedRestoringState = false;
       }
     }
   }
-     const { data: profiles } = await supabaseClient.from('profiles').select('user_name, avatar_url'); const avatarByUser = {}; (profiles || []).forEach(p => { if (p.user_name && p.avatar_url) avatarByUser[p.user_name] = p.avatar_url; });
+     const profileColumns = currentUser ? 'profile_id,user_name,avatar_url,user_email' : 'profile_id,user_name,avatar_url';
+      const { data: profiles } = await supabaseClient.from('profiles').select(profileColumns);
+      const profileById = {};
+      const avatarByUser = {};
+      (profiles || []).forEach(p => {
+        profileById[p.profile_id] = p;
+        if (p.user_name && p.avatar_url) avatarByUser[p.user_name] = p.avatar_url;
+      });
      const channelSet = isGuestMode ? new Set() : await connFetchChannelSet();
 
   if (feedRequestGeneration !== requestGeneration) return;
@@ -1285,7 +1300,7 @@ let feedRestoringState = false;
     const idsFaltantes = idsPendientesDeResolver.filter(id => !feedPostsById[id]);
     if (!idsFaltantes.length) break;
     const { data: postsOriginales } = await supabaseClient
-      .from('posts').select('id, created_at, image_url, likes, content, user_name, repost_of, quote_text, repost_of_comment_id')
+      .from('posts').select('id, created_at, image_url, likes, content, user_name, author_id, repost_of, quote_text, repost_of_comment_id, metadata')
       .in('id', idsFaltantes);
     (postsOriginales || []).forEach(p => { feedPostsById[p.id] = p; });
     idsPendientesDeResolver = (postsOriginales || [])
@@ -1297,23 +1312,24 @@ let feedRestoringState = false;
   const postsById = feedPostsById;
 
   // Publicaciones que el usuario actual ya reposteó (sin cita), para pintar el botón en verde
+  const myProfileId = currentUser ? await ccGetMyProfileId() : null;
   const myPlainReposts = new Set(
     posts
-      .filter(p => p.repost_of && p.user_email === (currentUser?.email || '') && !p.quote_text)
+      .filter(p => p.repost_of && p.author_id === myProfileId && !p.quote_text)
       .map(p => p.repost_of)
   );
 
   // Cantidad de comentarios de cada publicación (una sola consulta)
   const commentCounts = await ccFetchCounts(posts.map(p => p.id));
   const repostCounts = await ccFetchRepostCounts(posts.map(p => p.id));
-  const myLikes = currentUser ? await ccFetchMyLikes(posts.map(p => p.id), currentUser.email) : new Set();
+  const myLikes = currentUser ? await ccFetchMyLikes(posts.map(p => p.id)) : new Set();
   const likerName = currentUser?.user_metadata?.full_name || (currentUser?.email || '').split('@')[0];
 
   // Si alguien reposteó/citó un comentario, traemos ese comentario para mostrarlo dentro de la tarjeta
   const commentRepostIds = [...new Set(posts.filter(p => p.repost_of_comment_id).map(p => p.repost_of_comment_id))];
   const commentsById = {};
   if (commentRepostIds.length) {
-    const { data: quotedComments } = await supabaseClient.from('comments').select('id, post_id, user_name, content, created_at, reply_to').in('id', commentRepostIds);
+    const { data: quotedComments } = await supabaseClient.from('comments').select('id, post_id, author_id, user_name, content, created_at, reply_to').in('id', commentRepostIds);
     (quotedComments || []).forEach(c => { commentsById[c.id] = c; });
   }
 
@@ -1362,7 +1378,7 @@ let feedRestoringState = false;
 
     const author = post.user_name || 'Usuario';
     const compactTime = formatCompactTime(post.created_at);
-    const avatarUrl = avatarByUser[post.user_email] || avatarByUser[author] || post.avatar_url ||
+    const avatarUrl = profileById[post.author_id]?.avatar_url || avatarByUser[author] || post.avatar_url ||
       `https://ui-avatars.com/api/?name=${encodeURIComponent(author)}&background=random`;
 
     // Si es un repost, resolvemos toda la cadena hasta la publicación original
@@ -1426,7 +1442,7 @@ let feedRestoringState = false;
               class="font-bold text-gray-900 dark:text-white text-sm hover:underline">
               ${connEscape(originalAuthor)}
             </a>
-            ${connIsChannelEmail(channelSet, displayPost.user_email) ? connChannelChip(true) : ''}
+            ${connIsChannelEmail(channelSet, profileById[displayPost.author_id]?.user_email) ? connChannelChip(true) : ''}
 
             <span class="text-gray-400 text-sm">·</span>
 
@@ -1830,7 +1846,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
         .from('posts')
         .delete()
         .eq('repost_of', postId)
-        .eq('user_email', currentUser.email)
+        .eq('author_id', await ccGetMyProfileId())
         .is('quote_text', null);
 
       if (error) {
@@ -1913,7 +1929,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
 
       let { data: post, error } = await supabaseClient
         .from('posts')
-        .select('*')
+        .select('id, created_at, user_name, author_id, content, image_url, likes, repost_of, quote_text, repost_of_comment_id, metadata')
         .eq('id', postId)
         .single();
 
@@ -1928,7 +1944,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
         visitedQuotePosts.add(resolvedPost.id);
         const { data: nextPost, error: nextError } = await supabaseClient
           .from('posts')
-          .select('*')
+          .select('id, created_at, user_name, author_id, content, image_url, likes, repost_of, quote_text, repost_of_comment_id, metadata')
           .eq('id', resolvedPost.repost_of)
           .single();
         if (nextError || !nextPost) break;
@@ -1937,12 +1953,10 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
       post = resolvedPost;
 
       const author = post.user_name || 'Usuario';
-      const { data: authorProfile } = await supabaseClient
-        .from('profiles')
-        .select('avatar_url')
-        .or(`user_email.eq.${post.user_email},user_name.eq.${author}`)
-        .limit(1)
-        .maybeSingle();
+      const authorProfileQuery = post.author_id
+        ? supabaseClient.from('profiles').select('avatar_url').eq('profile_id', post.author_id)
+        : supabaseClient.from('profiles').select('avatar_url').eq('user_name', author);
+      const { data: authorProfile } = await authorProfileQuery.maybeSingle();
       const authorAvatar = authorProfile?.avatar_url || post.avatar_url ||
         `https://ui-avatars.com/api/?name=${encodeURIComponent(author)}&background=random`;
 
@@ -2053,7 +2067,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
 
       const { data: post, error } = await supabaseClient
         .from('posts')
-        .select('*')
+        .select('id, created_at, user_name, author_id, content, image_url, likes, repost_of, quote_text, repost_of_comment_id, metadata')
         .eq('id', postId)
         .single();
 
@@ -2110,7 +2124,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
 
       const { data: comments, error } = await supabaseClient
         .from('comments')
-        .select(isGuestMode ? 'id, post_id, user_name, content, created_at, reply_to' : '*')
+        .select('id, post_id, author_id, user_name, content, created_at, reply_to')
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
 
@@ -2122,20 +2136,12 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
 
       ccSetCount(postId, comments.length);
 
-      // Fotos de perfil de quienes comentaron (por su correo); quien no tiene foto conserva su avatar de iniciales
-      const commenterEmails = [...new Set(comments.map(c => c.user_email).filter(Boolean))];
-      const commentAvatarByEmail = {};
-      if (commenterEmails.length) {
-        const { data: commenterProfiles } = await supabaseClient
-          .from('profiles')
-          .select('user_email, avatar_url')
-          .in('user_email', commenterEmails);
-        (commenterProfiles || []).forEach(p => { if (p.avatar_url) commentAvatarByEmail[p.user_email] = p.avatar_url; });
-      }
+      // Avatares de comentarios resueltos por el ID interno del perfil.
+      const commentProfiles = await ccFetchProfilesByIds(comments.map(c => c.author_id), !!currentUser);
 
       container.innerHTML = comments.map(c => `
         <div class="flex items-start gap-2">
-          <img src="${connEscape(safeUrl(commentAvatarByEmail[c.user_email] || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(c.user_name) + '&background=random')))}" class="w-8 h-8 rounded-full object-cover flex-shrink-0">
+          <img src="${connEscape(safeUrl(commentProfiles[c.author_id]?.avatar_url || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(c.user_name) + '&background=random')))}" class="w-8 h-8 rounded-full object-cover flex-shrink-0">
           <div class="bg-gray-100 dark:bg-slate-800 rounded-xl px-3 py-2 flex-1">
             <div class="text-xs font-bold text-gray-900 dark:text-white" data-user-card="${connEscape(c.user_name)}">${connEscape(c.user_name)}</div>
             <div class="text-sm text-gray-700 dark:text-gray-200 break-words">${linkifyContent(c.content)}</div>
