@@ -977,10 +977,6 @@ let feedRestoringState = false;
     ...Object.values(feedPostsById).map(p => p.author_id),
     ...Object.values(commentsById).map(c => c.author_id)
   ]));
-  Object.assign(profileById, await ccFetchProfilesByIds([
-    ...Object.values(feedPostsById).map(p => p.author_id),
-    ...Object.values(commentsById).map(c => c.author_id)
-  ]));
 
   const pageHtml = posts.map(post => {
 
@@ -1069,7 +1065,7 @@ let feedRestoringState = false;
         ` : `
           <div class="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 font-semibold">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0 text-green-600"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
-            <span data-user-card="${connEscape(author)}" class="hover:underline">${connEscape(author)}</span> repostó
+            <span data-user-card="${connEscape(author)}" class="hover:underline">${connEscape(author)}</span>${dashboardHandleHtml(post.author_id, profileById, author)} repostó
           </div>
         `) : ''}
 
@@ -1330,6 +1326,10 @@ let feedRestoringState = false;
     const { data: quotedComments } = await supabaseClient.from('comments').select('id, post_id, author_id, user_name, content, created_at, reply_to').in('id', commentRepostIds);
     (quotedComments || []).forEach(c => { commentsById[c.id] = c; });
   }
+  Object.assign(profileById, await ccFetchProfilesByIds([
+    ...Object.values(feedPostsById).map(p => p.author_id),
+    ...Object.values(commentsById).map(c => c.author_id)
+  ]));
 
   const pageHtml = posts.map(post => {
 
@@ -1338,7 +1338,7 @@ let feedRestoringState = false;
       const c = commentsById[post.repost_of_comment_id];
       if (!c) return '';
       const cAuthor = c.user_name || 'Usuario';
-      const cAvatar = avatarByUser[cAuthor] || `https://ui-avatars.com/api/?name=${encodeURIComponent(cAuthor)}&background=random`;
+      const cAvatar = profileById[c.author_id]?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(cAuthor)}&background=random`;
       const author = post.user_name || 'Usuario';
       return `
         <div id="post-${post.id}" class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 space-y-3">
@@ -1376,7 +1376,7 @@ let feedRestoringState = false;
 
     const author = post.user_name || 'Usuario';
     const compactTime = formatCompactTime(post.created_at);
-    const avatarUrl = profileById[post.author_id]?.avatar_url || avatarByUser[author] || post.avatar_url ||
+    const avatarUrl = profileById[post.author_id]?.avatar_url || post.avatar_url ||
       `https://ui-avatars.com/api/?name=${encodeURIComponent(author)}&background=random`;
 
     // Si es un repost, resolvemos toda la cadena hasta la publicación original
@@ -1391,7 +1391,7 @@ let feedRestoringState = false;
 
     const originalAuthor = displayPost.user_name || 'Usuario';
 
-   const originalAvatarUrl = avatarByUser[originalAuthor] || displayPost.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(originalAuthor)}&background=random`;
+   const originalAvatarUrl = profileById[displayPost.author_id]?.avatar_url || displayPost.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(originalAuthor)}&background=random`;
 
     return `
       <div id="post-${post.id}"
