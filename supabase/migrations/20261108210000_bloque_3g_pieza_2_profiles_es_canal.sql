@@ -49,7 +49,7 @@ BEGIN
     WHERE lower(c.user_email) = lower(v_email)
   )
   WHERE lower(p.user_email) = lower(v_email);
-  RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
+  RETURN NULL;
 END;
 $$;
 
