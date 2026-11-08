@@ -24,8 +24,8 @@ async function ccFetchProfilesByIds(profileIds, includeEmail = false) {
   const ids = [...new Set((profileIds || []).filter(Boolean))];
   if (!ids.length) return {};
   const columns = includeEmail
-    ? 'profile_id,user_name,avatar_url,user_email,is_cuenta_automatica'
-    : 'profile_id,user_name,avatar_url,is_cuenta_automatica';
+    ? 'profile_id,user_name,avatar_url,user_email'
+    : 'profile_id,user_name,avatar_url';
   const { data, error } = await supabaseClient.from('profiles').select(columns).in('profile_id', ids);
   if (error) {
     console.error('No se pudieron resolver perfiles por ID:', error);
