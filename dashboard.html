@@ -1138,11 +1138,11 @@ let feedRestoringState = false;
 
             <button
               onclick="toggleRepostMenu(${post.id})"
-              data-repost-toggle
+              data-repost-toggle data-reposted="${myPlainReposts.has(post.id)}"
               title="Repostear"
               class="post-action-btn flex items-center gap-1.5 text-gray-400 dark:text-gray-500 font-semibold transition">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
-              <span id="reposts-count-${post.id}" class="${(repostCounts[post.id] || 0) > 0 ? '' : 'hidden'}">${repostCounts[post.id] || 0}</span>
+              <span id="reposts-count-${post.id}" data-repost-count class="${(repostCounts[post.id] || 0) > 0 ? '' : 'hidden'}">${repostCounts[post.id] || 0}</span>
             </button>
 
             <div
@@ -1496,11 +1496,11 @@ let feedRestoringState = false;
 
             <button
               onclick="toggleRepostMenu(${post.id})"
-              data-repost-toggle
+              data-repost-toggle data-reposted="${myPlainReposts.has(post.id)}"
               title="Repostear"
               class="post-action-btn flex items-center gap-1.5 text-gray-400 dark:text-gray-500 font-semibold transition">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
-              <span id="reposts-count-${post.id}" class="${(repostCounts[post.id] || 0) > 0 ? '' : 'hidden'}">${repostCounts[post.id] || 0}</span>
+              <span id="reposts-count-${post.id}" data-repost-count class="${(repostCounts[post.id] || 0) > 0 ? '' : 'hidden'}">${repostCounts[post.id] || 0}</span>
             </button>
 
             <div
