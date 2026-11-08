@@ -314,7 +314,7 @@ function connNotifState(st) {
       // ver sus notificaciones, sin importar quién intente entrar a esta página.
       const { data: notifs, error } = await supabaseClient
         .from('notifications')
-        .select('*')
+        .select('id,recipient_email,actor_id,actor_name,type,post_id,comment_id,is_read,created_at')
         .eq('recipient_email', currentUser.email)
         .order('created_at', { ascending: false })
         .limit(50);
@@ -325,8 +325,8 @@ function connNotifState(st) {
       }
 
       // Datos comunes de las notificaciones.
-      const actorNames = [...new Set(notifs.map(n => n.actor_name).filter(Boolean))];
-      const connActorNames = [...new Set(notifs.filter(n => n.type === 'connection').map(n => n.actor_name).filter(Boolean))];
+      const actorIds = [...new Set(notifs.map(n => n.actor_id).filter(Boolean))];
+      const connActorIds = [...new Set(notifs.filter(n => n.type === 'connection').map(n => n.actor_id).filter(Boolean))];
       const commentNotifs = notifs.filter(n => n.type === 'comment' && n.comment_id);
       const commentIds = [...new Set(commentNotifs.map(n => n.comment_id))];
       const postIds = [...new Set(notifs.map(n => n.post_id).filter(Boolean))];
@@ -344,17 +344,16 @@ function connNotifState(st) {
         postIds.length
           ? supabaseClient.from('posts').select('id,user_name,author_id').in('id', postIds)
           : Promise.resolve({ data: [] }),
-        actorNames.length
-          ? supabaseClient.from('profiles').select('profile_id,user_name,avatar_url').in('user_name', actorNames)
+        actorIds.length
+          ? supabaseClient.from('profiles').select('profile_id,user_name,avatar_url').in('profile_id', actorIds)
           : Promise.resolve({ data: [] })
       ]);
 
-      const actorProfileByName = {};
-      (profileRes.data || []).forEach(p => { actorProfileByName[p.user_name] = p; });
+      const actorProfileById = {};
+      (profileRes.data || []).forEach(p => { actorProfileById[p.profile_id] = p; });
       const currentUserProfileId = await connGetMyProfileId();
-      const connActorProfileIds = [...new Set(connActorNames.map(name => actorProfileByName[name]?.profile_id).filter(Boolean))];
-      const connStates = connActorProfileIds.length
-        ? await connFetchStates(currentUserProfileId, connActorProfileIds)
+      const connStates = connActorIds.length
+        ? await connFetchStates(currentUserProfileId, connActorIds)
         : {};
       window.__bygetherNotifConnStates = connStates;
 
@@ -367,8 +366,8 @@ function connNotifState(st) {
       const postById = {};
       (postRes.data || []).forEach(p => { postById[p.id] = p; });
 
-      const avatarByName = {};
-      (profileRes.data || []).forEach(p => { avatarByName[p.user_name] = p.avatar_url; });
+      const avatarById = {};
+      (profileRes.data || []).forEach(p => { avatarById[p.profile_id] = p.avatar_url; });
 
       // Datos de los botones de cada comentario, cargados en lote.
       const [likeCounts, replyCounts, repostCounts, myCommentLikes, myCommentReposts] = commentIds.length
@@ -390,14 +389,15 @@ function connNotifState(st) {
       });
 
       wall.innerHTML = notifs.map(n => {
-        const actorName = n.actor_name || 'Usuario';
+        const actorProfile = actorProfileById[n.actor_id];
+        const actorName = actorProfile?.user_name || n.actor_name || 'Usuario';
         const safeActorName = connEscape(actorName);
-        const avatarUrl = avatarByName[actorName] || connAvatarFallback(actorName);
+        const avatarUrl = avatarById[n.actor_id] || connAvatarFallback(actorName);
         const safeAvatarUrl = connEscape(safeUrl(avatarUrl));
         const unreadClass = n.is_read ? '' : 'bg-blue-50 dark:bg-slate-800/70';
 
         if (n.type === 'connection') {
-          const actorProfileId = actorProfileByName[actorName]?.profile_id;
+          const actorProfileId = n.actor_id;
           const st = connStates[actorProfileId] || { iFollow: false, followsMe: true };
           const connIconHtml = connNotifIconHtml(connNotifState(st))
             .replace('<span data-conn-icon ', '<span data-notif-conn-icon data-conn-icon data-profile-id="' + connEscape(actorProfileId || '') + '" ');
