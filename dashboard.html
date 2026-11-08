@@ -1080,20 +1080,20 @@ let feedRestoringState = false;
               alt="${connEscape(originalAuthor)}">
           </a>
 
-          <div class="flex items-center space-x-2">
+          <div class="flex min-w-0 flex-1 items-center gap-2">
 
             <a
               href="perfil.html?user=${encodeURIComponent(originalAuthor)}"
-              class="font-bold text-gray-900 dark:text-white text-sm hover:underline">
+              class="min-w-0 max-w-[45%] truncate font-bold text-gray-900 dark:text-white text-sm hover:underline">
               ${connEscape(originalAuthor)}
             </a>
             ${dashboardHandleHtml(displayPost.author_id, profileById, originalAuthor)}
             ${dashboardHandleHtml(displayPost.author_id, profileById, originalAuthor)}
             ${profileById[displayPost.author_id]?.es_canal === true ? connChannelChip(true) : ''}
 
-            <span class="text-gray-400 text-sm">·</span>
+            <span class="shrink-0 text-gray-400 text-sm">·</span>
 
-            <span class="text-sm text-gray-500 dark:text-gray-400">
+            <span class="shrink-0 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
               ${post.repost_of ? formatCompactTime(displayPost.created_at) : compactTime}
             </span>
 
@@ -2075,8 +2075,8 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
 
       const { data: profileRow } = await supabaseClient
         .from('profiles')
-        .select('avatar_url')
-        .eq('user_name', post.user_name)
+        .select('avatar_url,username')
+         .eq('profile_id', post.author_id)
         .maybeSingle();
 
       const avatarUrl = profileRow?.avatar_url || post.avatar_url ||
@@ -2085,6 +2085,15 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
       document.getElementById('postViewerAvatar').src = safeUrl(avatarUrl);
       document.getElementById('postViewerAuthor').textContent = post.user_name || 'Usuario';
       document.getElementById('postViewerAuthor').setAttribute('data-user-card', post.user_name || '');
+      const viewerHandle = document.getElementById('postViewerHandle');
+      if (profileRow?.username) {
+        viewerHandle.textContent = '@' + profileRow.username;
+        viewerHandle.href = 'perfil.html?user=' + encodeURIComponent(post.user_name || '');
+        viewerHandle.classList.remove('hidden');
+      } else {
+        viewerHandle.textContent = '';
+        viewerHandle.classList.add('hidden');
+      }
       document.getElementById('postViewerTime').textContent = formatCompactTime(post.created_at);
       document.getElementById('postViewerContent').innerHTML = post.content ? linkifyContent(post.content) : '';
 
@@ -2143,7 +2152,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
         <div class="flex items-start gap-2">
           <img src="${connEscape(safeUrl(commentProfiles[c.author_id]?.avatar_url || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(c.user_name) + '&background=random')))}" class="w-8 h-8 rounded-full object-cover flex-shrink-0">
           <div class="bg-gray-100 dark:bg-slate-800 rounded-xl px-3 py-2 flex-1">
-            <div class="text-xs font-bold text-gray-900 dark:text-white" data-user-card="${connEscape(c.user_name)}">${connEscape(c.user_name)}</div>
+            <div class="text-xs font-bold text-gray-900 dark:text-white" data-user-card="${connEscape(c.user_name)}">${connEscape(c.user_name)}</div>${dashboardHandleHtml(c.author_id, commentProfiles, c.user_name)}
             <div class="text-sm text-gray-700 dark:text-gray-200 break-words">${linkifyContent(c.content)}</div>
           </div>
         </div>
@@ -2225,6 +2234,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
             <img id="postViewerAvatar" src="" class="w-10 h-10 rounded-full object-cover">
             <div>
               <div id="postViewerAuthor" class="font-bold text-gray-900 dark:text-white text-sm"></div>
+              <a id="postViewerHandle" href="#" class="hidden text-xs text-gray-500 dark:text-gray-400 hover:underline"></a>
               <div id="postViewerTime" class="text-xs text-gray-500 dark:text-gray-400"></div>
             </div>
           </div>
