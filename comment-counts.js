@@ -173,7 +173,7 @@ function ccLikeButtonHtml(id, likes, isLiked, userEmail, userName) {
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0">
           <path data-heart-icon fill="${isLiked ? '#ef4444' : 'none'}" stroke="${isLiked ? '#ef4444' : 'currentColor'}" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"></path>
         </svg>
-        <span id="likes-count-${id}" class="${count > 0 ? '' : 'hidden'}">${count}</span>
+        <span id="likes-count-${id}" data-like-count class="${count > 0 ? '' : 'hidden'}">${count}</span>
       </button>
       <span data-like-tooltip class="hidden pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 whitespace-nowrap bg-gray-900 text-white text-[11px] font-semibold px-2 py-1 rounded-md shadow-lg z-10">Cancelar like</span>
     </div>
@@ -401,7 +401,7 @@ function ccCommentActionsHtml(c, v) {
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0">
             <path data-heart-icon fill="${v.isLiked ? 'currentColor' : 'none'}" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"></path>
           </svg>
-          <span id="c-likes-count-${id}" class="${(v.likes || 0) > 0 ? '' : 'hidden'}">${v.likes || 0}</span>
+          <span id="c-likes-count-${id}" data-like-count class="${(v.likes || 0) > 0 ? '' : 'hidden'}">${v.likes || 0}</span>
         </button>
         <span data-like-tooltip class="hidden pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 whitespace-nowrap bg-gray-900 text-white text-[11px] font-semibold px-2 py-1 rounded-md shadow-lg z-10">Cancelar like</span>
       </div>
@@ -412,10 +412,10 @@ function ccCommentActionsHtml(c, v) {
       </button>
 
       <div class="relative">
-        <button type="button" data-repost-toggle onclick="ccToggleCommentRepostMenu(${id})" title="Repostear"
+        <button type="button" data-repost-toggle data-reposted="${v.isReposted ? &#39;true&#39; : &#39;false&#39;}" onclick="ccToggleCommentRepostMenu(${id})" title="Repostear"
           class="flex items-center gap-1 text-gray-400 dark:text-gray-500 font-semibold transition">
           ${repostIcon}
-          <span id="c-reposts-count-${id}" class="${(v.reposts || 0) > 0 ? '' : 'hidden'}">${v.reposts || 0}</span>
+          <span id="c-reposts-count-${id}" data-repost-count class="${(v.reposts || 0) > 0 ? '' : 'hidden'}">${v.reposts || 0}</span>
         </button>
         <div id="c-repost-menu-${id}" class="hidden absolute left-0 bottom-full mb-2 w-44 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg overflow-hidden z-40">
           ${v.isReposted ? `
