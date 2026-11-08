@@ -701,7 +701,7 @@ function connNotifState(st) {
       }
 
       // Avatares resueltos por author_id; no se lee user_email de comments.
-      const commentProfiles = await ccFetchProfilesByIds(comments.map(c => c.author_id), true);
+      const commentProfiles = await ccFetchProfilesByIds(comments.map(c => c.author_id), false);
 
       container.innerHTML = comments.map(c => `
         <div class="flex items-start gap-2">
