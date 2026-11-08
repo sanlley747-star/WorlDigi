@@ -243,7 +243,7 @@ begin
   join public.posts p on p.id = x.post_id
   order by x.ord;
 end;
-$function$
+$function$;
 
 
 GRANT EXECUTE ON FUNCTION public.feed_ranking_page(text, bigint[], integer, integer) TO anon, authenticated;
