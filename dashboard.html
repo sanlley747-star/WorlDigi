@@ -1002,7 +1002,7 @@ let feedRestoringState = false;
           <a href="publicacion.html?id=${c.post_id}#comentario-${c.id}" class="block border border-gray-200 dark:border-slate-700 rounded-xl p-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition">
             <div class="flex items-center gap-2 mb-1">
               <img src="${connEscape(safeUrl(cAvatar))}" class="w-6 h-6 rounded-full object-cover flex-shrink-0" alt="${connEscape(cAuthor)}">
-              <span class="font-bold text-sm text-gray-900 dark:text-white">${connEscape(cAuthor)}</span>${dashboardHandleHtml(c.author_id, profileById, cAuthor)}
+              <span class="font-bold text-sm text-gray-900 dark:text-white">${connEscape(cAuthor)}</span>${dashboardHandleHtml(c.author_id, profileById, cAuthor)}${dashboardHandleHtml(c.author_id, profileById, cAuthor)}
               <span class="text-xs text-gray-400">· ${formatCompactTime(c.created_at)}</span>
             </div>
             <p class="text-sm text-gray-700 dark:text-gray-300 break-words whitespace-pre-line">${linkifyContent(c.content)}</p>
@@ -1052,7 +1052,7 @@ let feedRestoringState = false;
               <img src="${connEscape(safeUrl(avatarUrl))}" class="w-12 h-12 rounded-full object-cover border border-gray-300 dark:border-slate-700" alt="${connEscape(author)}">
             </a>
             <div class="min-w-0 flex-1">
-              <a href="perfil.html?user=${encodeURIComponent(author)}" data-user-card="${connEscape(author)}" class="font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(author)}</a>${dashboardHandleHtml(post.author_id, profileById, author)}
+              <a href="perfil.html?user=${encodeURIComponent(author)}" data-user-card="${connEscape(author)}" class="font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(author)}</a>${dashboardHandleHtml(post.author_id, profileById, author)}${dashboardHandleHtml(post.author_id, profileById, author)}
               <div>
   <p data-expandable-post-text class="mt-1 text-gray-800 dark:text-gray-200 text-sm break-words whitespace-pre-line"
      style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;max-height:4.5em;overflow:hidden;">${connEscape(post.quote_text)}</p>
@@ -1087,6 +1087,7 @@ let feedRestoringState = false;
               class="font-bold text-gray-900 dark:text-white text-sm hover:underline">
               ${connEscape(originalAuthor)}
             </a>
+            ${dashboardHandleHtml(displayPost.author_id, profileById, originalAuthor)}
             ${dashboardHandleHtml(displayPost.author_id, profileById, originalAuthor)}
             ${profileById[displayPost.author_id]?.es_canal === true ? connChannelChip(true) : ''}
 
@@ -1355,7 +1356,7 @@ let feedRestoringState = false;
           <a href="publicacion.html?id=${c.post_id}#comentario-${c.id}" class="block border border-gray-200 dark:border-slate-700 rounded-xl p-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition">
             <div class="flex items-center gap-2 mb-1">
               <img src="${connEscape(safeUrl(cAvatar))}" class="w-6 h-6 rounded-full object-cover flex-shrink-0" alt="${connEscape(cAuthor)}">
-              <span class="font-bold text-sm text-gray-900 dark:text-white">${connEscape(cAuthor)}</span>
+              <span class="font-bold text-sm text-gray-900 dark:text-white">${connEscape(cAuthor)}</span>${dashboardHandleHtml(c.author_id, profileById, cAuthor)}
               <span class="text-xs text-gray-400">· ${formatCompactTime(c.created_at)}</span>
             </div>
             <p class="text-sm text-gray-700 dark:text-gray-300 break-words whitespace-pre-line">${linkifyContent(c.content)}</p>
@@ -1405,7 +1406,7 @@ let feedRestoringState = false;
               <img src="${connEscape(safeUrl(avatarUrl))}" class="w-12 h-12 rounded-full object-cover border border-gray-300 dark:border-slate-700" alt="${connEscape(author)}">
             </a>
             <div class="min-w-0 flex-1">
-              <a href="perfil.html?user=${encodeURIComponent(author)}" data-user-card="${connEscape(author)}" class="font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(author)}</a>
+              <a href="perfil.html?user=${encodeURIComponent(author)}" data-user-card="${connEscape(author)}" class="font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(author)}</a>${dashboardHandleHtml(post.author_id, profileById, author)}
               <div>
   <p data-expandable-post-text class="mt-1 text-gray-800 dark:text-gray-200 text-sm break-words whitespace-pre-line"
      style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;max-height:4.5em;overflow:hidden;">${connEscape(post.quote_text)}</p>
@@ -1418,7 +1419,7 @@ let feedRestoringState = false;
         ` : `
           <div class="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 font-semibold">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0 text-green-600"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
-            <span data-user-card="${connEscape(author)}" class="hover:underline">${connEscape(author)}</span> repostó
+            <span data-user-card="${connEscape(author)}" class="hover:underline">${connEscape(author)}</span>${dashboardHandleHtml(post.author_id, profileById, author)} repostó
           </div>
         `) : ''}
 
@@ -1440,6 +1441,7 @@ let feedRestoringState = false;
               class="font-bold text-gray-900 dark:text-white text-sm hover:underline">
               ${connEscape(originalAuthor)}
             </a>
+            ${dashboardHandleHtml(displayPost.author_id, profileById, originalAuthor)}
             ${profileById[displayPost.author_id]?.es_canal === true ? connChannelChip(true) : ''}
 
             <span class="text-gray-400 text-sm">·</span>
