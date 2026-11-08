@@ -577,7 +577,7 @@
         .from('posts')
         .delete()
         .eq('repost_of_comment_id', commentId)
-        .eq('user_email', currentUser.email)
+        .eq('author_id', await ccGetMyProfileId())
         .is('quote_text', null);
       if (error) { alert('Error al deshacer el repost: ' + error.message); return; }
       await loadComments();
