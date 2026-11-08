@@ -109,34 +109,30 @@
     if (hit && Date.now() - hit.t < CACHE_MS) return hit.info;
 
     var info = {
-      name: name, profileId: null, email: null, avatar: null, me: null, isMe: false, channel: false,
+      name: name, profileId: null, avatar: null, me: null, isMe: false, channel: false,
       counts: { following: 0, followers: 0 }, state: { iFollow: false, followsMe: false }
     };
     try {
       // Sesión y perfil son consultas independientes: arrancan al mismo tiempo.
       var mePromise = getMe();
       var profPromise = supabaseClient.from('profiles')
-        .select('profile_id, avatar_url').eq('user_name', name).limit(1);
+        .select('profile_id, avatar_url, es_canal').eq('user_name', name).limit(1);
       info.me = await mePromise;
 
       var prof = await profPromise;
       if (prof.data && prof.data.length) {
         info.profileId = prof.data[0].profile_id || null;
         info.avatar = prof.data[0].avatar_url || null;
+        info.channel = prof.data[0].es_canal === true;
       }
-      // Este correo se conserva temporalmente solo para la detección de canal; la Pieza 2 lo elimina.
-      var channelProfile = await supabaseClient.from('profiles').select('user_email').eq('user_name', name).limit(1).maybeSingle();
-      info.email = channelProfile.data?.user_email || null;
       info.counts = await connCounts(name);
 
       if (info.profileId) {
         info.isMe = !!(info.me && info.me.profileId === info.profileId);
-        var results = await Promise.all([
-          connIsChannel(info.email),
-          (info.me && !info.isMe) ? connFetchStates(info.me.profileId, [info.profileId]) : Promise.resolve(null)
-        ]);
-        info.channel = results[0];
-        if (results[1] && results[1][info.profileId]) info.state = results[1][info.profileId];
+        if (info.me && !info.isMe) {
+          var states = await connFetchStates(info.me.profileId, [info.profileId]);
+          if (states[info.profileId]) info.state = states[info.profileId];
+        }
       }
     } catch (e) {
       console.error('Tarjeta de usuario:', e);
