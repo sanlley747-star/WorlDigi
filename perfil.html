@@ -483,7 +483,7 @@
       saveBtn.textContent = 'Guardando...';
 
       try {
-        const updates = { user_email: currentUserEmail, user_name: currentUsername };
+        const updates = {};
         let newAvatarUrl = null;
         let newCoverUrl = null;
 
@@ -498,7 +498,8 @@
 
         const { error: dbError } = await supabaseClient
           .from('profiles')
-          .upsert(updates, { onConflict: 'user_email' });
+          .update(updates)
+          .eq('profile_id', currentProfileId);
         if (dbError) throw new Error('Error al guardar en la base de datos: ' + dbError.message);
 
         if (newAvatarUrl) document.getElementById('profileAvatar').src = newAvatarUrl;
