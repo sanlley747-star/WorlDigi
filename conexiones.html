@@ -187,7 +187,7 @@
       currentUser = user || null;
       myName = user ? (user.user_metadata?.full_name || user.email.split('@')[0]) : null;
       if (user) {
-        currentUserProfileId = await connResolveProfileId(myName);
+        currentUserProfileId = await connGetMyProfileId();
         document.getElementById('myProfileLink').href = connProfileUrl(myName);
         document.getElementById('mobileMyProfileLink').href = connProfileUrl(myName);
       } else {
