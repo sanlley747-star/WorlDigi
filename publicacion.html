@@ -249,10 +249,13 @@
       if (!postId) { showNotFound(); return; }
 
       // Mi foto (para el cuadro de comentar)
-      supabaseClient.from('profiles').select('avatar_url').eq('user_email', currentUser.email).maybeSingle()
-        .then(({ data }) => {
-          document.getElementById('myCommentAvatar').src = safeUrl(data && data.avatar_url) || connAvatarFallback(currentName);
-        });
+      const myProfileId = await ccGetMyProfileId();
+      if (myProfileId) {
+        supabaseClient.from('profiles').select('avatar_url').eq('profile_id', myProfileId).maybeSingle()
+          .then(({ data }) => {
+            document.getElementById('myCommentAvatar').src = safeUrl(data && data.avatar_url) || connAvatarFallback(currentName);
+          });
+      }
 
       await loadPost();
     }
@@ -277,9 +280,8 @@
       displayedPost = post;
       const myProfileId = await ccGetMyProfileId();
 
-      const [profRes, channelSet, commentCounts, repostCounts, myRepostRes, myLikes] = await Promise.all([
-        supabaseClient.from('profiles').select('avatar_url,user_email').eq('profile_id', post.author_id).maybeSingle(),
-        connFetchChannelSet(),
+      const [profRes, commentCounts, repostCounts, myRepostRes, myLikes] = await Promise.all([
+        supabaseClient.from('profiles').select('avatar_url,es_canal').eq('profile_id', post.author_id).maybeSingle(),
         ccFetchCounts([post.id]),
         ccFetchRepostCounts([post.id]),
         supabaseClient.from('posts').select('id,author_id').eq('repost_of', post.id).eq('author_id', myProfileId).is('quote_text', null).limit(1),
@@ -289,7 +291,7 @@
       const author = post.user_name || 'Usuario';
       const avatarUrl = (profRes.data && profRes.data.avatar_url) || post.avatar_url || connAvatarFallback(author);
       const isReposted = !!(myRepostRes.data && myRepostRes.data.length);
-      const isChannel = connIsChannelEmail(channelSet, profRes.data?.user_email);
+      const isChannel = profRes.data?.es_canal === true;
       const isLiked = myLikes.has(post.id);
 
       document.title = 'TuNetFy - Publicación de ' + author;
@@ -455,8 +457,7 @@
       }
 
       // Avatares y etiqueta de canal resueltos por el ID interno del perfil.
-      const commentProfiles = await ccFetchProfilesByIds(comments.map(c => c.author_id), true);
-      const channelSet = await connFetchChannelSet();
+      const commentProfiles = await ccFetchProfilesByIds(comments.map(c => c.author_id));
 
       // Datos para los botones de cada comentario (me gusta, respuestas y reposts)
       const commentIds = comments.map(c => c.id);
@@ -506,7 +507,7 @@
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2">
                 <a href="perfil.html?user=${encodeURIComponent(name)}" data-user-card="${connEscape(name)}" class="font-bold text-sm text-gray-900 dark:text-white hover:underline">${connEscape(name)}</a>
-                ${connIsChannelEmail(channelSet, commentProfiles[c.author_id]?.user_email) ? connChannelChip(true) : ''}
+                ${commentProfiles[c.author_id]?.es_canal === true ? connChannelChip(true) : ''}
                 <span class="text-gray-400 text-sm">·</span>
                 <span class="text-xs text-gray-500 dark:text-gray-400">${formatCompactTime(c.created_at)}</span>
               </div>
