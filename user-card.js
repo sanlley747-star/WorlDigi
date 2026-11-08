@@ -97,7 +97,7 @@
       var res = await supabaseClient.auth.getSession();
       var u = res && res.data && res.data.session && res.data.session.user;
       var name = u ? ((u.user_metadata && u.user_metadata.full_name) || (u.email || '').split('@')[0]) : null;
-      meCache = u ? { profileId: await connResolveProfileId(name), name: name } : null;
+      meCache = u ? { profileId: await connGetMyProfileId(), name: name } : null;
     } catch (e) {
       meCache = null;
     }
