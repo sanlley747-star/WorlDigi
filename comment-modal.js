@@ -69,7 +69,7 @@
     wrap.className = 'hidden fixed inset-0 bg-black/70 z-[100] items-start md:items-center justify-center p-4 overflow-y-auto';
     wrap.innerHTML =
       '<div class="relative bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-xl shadow-lg w-full max-w-xl p-4 my-auto">' +
-        '<button type="button" data-cm="close" aria-label="Cerrar" class="absolute top-3 right-3 text-2xl text-gray-500 hover:text-gray-800 dark:hover:text-white leading-none">&times;</button>' +
+        '<button type="button" data-cm="close" aria-label="Cerrar" class="absolute top-3 right-3 flex h-11 w-11 items-center justify-center rounded-full bg-gray-500/20 hover:bg-gray-700/40 text-[38px] text-gray-500 hover:text-gray-800 dark:hover:text-white leading-none">&times;</button>' +
 
         // La publicación
         '<div data-cm="post" class="pr-8 cm-thread-post"></div>' +
@@ -80,7 +80,7 @@
           '<textarea data-cm="input" maxlength="' + MAX + '" rows="2" aria-label="Escribe tu comentario" class="cm-input"></textarea>' +
         '</div>' +
 
-        '<div class="flex items-center justify-end gap-3 mt-2">' +
+        '<div class="flex items-center justify-start gap-3 mt-2">' +
           '<div data-cm="lim" class="cm-lim" role="img" aria-label="Límite de caracteres">' +
             '<svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
               '<path class="cm-track" d="M15 1.5H21.5A7 7 0 0 1 28.5 8.5V21.5A7 7 0 0 1 21.5 28.5H8.5A7 7 0 0 1 1.5 21.5V8.5A7 7 0 0 1 8.5 1.5Z"></path>' +
