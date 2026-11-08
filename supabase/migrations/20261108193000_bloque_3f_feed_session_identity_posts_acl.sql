@@ -18,7 +18,7 @@ CREATE FUNCTION public.feed_ranking_page(p_user_email text, p_exclude_ids bigint
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public'
-AS $function$;
+AS $function$
 #variable_conflict use_column
 declare
   v_session_email text;
@@ -262,7 +262,7 @@ begin
   join public.posts p on p.id = x.post_id
   order by x.ord;
 end;
-$function$
+$function$;
 
 
 
