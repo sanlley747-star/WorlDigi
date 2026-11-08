@@ -203,7 +203,7 @@ function ccBurstLikeSparks(btn) {
     const angle = (Math.PI * 2 * i) / 8 + Math.random() * .18;
     const distance = 17 + Math.random() * 12;
     requestAnimationFrame(() => {
-      spark.style.transform = `translate(${Math.cos(angle) * distance - 50}%,${Math.sin(angle) * distance - 50}%) scale(.45)`;
+      spark.style.transform = `translate(calc(-50% + ${Math.cos(angle) * distance}px),calc(-50% + ${Math.sin(angle) * distance}px)) scale(.45)`;
       spark.style.opacity = '0';
     });
     setTimeout(() => spark.remove(), 460);
