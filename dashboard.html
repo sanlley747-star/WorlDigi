@@ -1224,7 +1224,7 @@ let feedRestoringState = false;
       p_user_email: (currentUser?.email || ''),
       p_exclude_ids: [],
       p_limit: feedPageSize
-    });
+    }).select('id,created_at,user_name,author_id,content,image_url,likes,repost_of,quote_text,repost_of_comment_id,metadata');
     posts = rpcResult.data;
     error = rpcResult.error;
   } else {
@@ -1233,7 +1233,7 @@ let feedRestoringState = false;
       p_user_email: (currentUser?.email || ''),
       p_exclude_ids: excludeIds,
       p_limit: feedPageSize
-    });
+    }).select('id,created_at,user_name,author_id,content,image_url,likes,repost_of,quote_text,repost_of_comment_id,metadata');
     posts = rpcResult.data;
     error = rpcResult.error;
 
@@ -1247,7 +1247,7 @@ let feedRestoringState = false;
         p_user_email: (currentUser?.email || ''),
         p_exclude_ids: excludeIdsCompletas,
         p_limit: Math.max(10, faltantes)
-      });
+      }).select('id,created_at,user_name,author_id,content,image_url,likes,repost_of,quote_text,repost_of_comment_id,metadata');
 
       if (!completionResult.error && completionResult.data && completionResult.data.length) {
         posts = [...posts, ...completionResult.data.slice(0, faltantes)];
