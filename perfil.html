@@ -151,6 +151,7 @@
     <div class="pt-12 sm:pl-24 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div class="text-center sm:text-left">
         <h2 id="profileName" class="text-xl font-bold text-gray-900 dark:text-white">Cargando...</h2>
+        <a id="profileHandle" href="#" class="hidden mt-0.5 inline-block max-w-full truncate text-sm text-gray-500 dark:text-gray-400 hover:underline"></a>
         <div class="mt-1 flex items-center justify-center sm:justify-start gap-5 text-sm text-gray-600 dark:text-gray-400">
           <a id="connFollowingLink" href="#" class="hover:underline"><strong id="connFollowingCount" class="text-gray-900 dark:text-white">–</strong> Siguiendo</a>
           <a id="connFollowersLink" href="#" class="hover:underline"><strong id="connFollowersCount" class="text-gray-900 dark:text-white">–</strong> Seguidores</a>
@@ -275,6 +276,7 @@
     let currentUserEmail = null;
     let currentProfileId = null;
     let viewedProfileId = null;
+    let viewedProfileUsername = null;
     let loggedUserName = null;
     let isOwnProfile = false;
 
@@ -294,8 +296,10 @@
 
       const { data: { user } } = await supabaseClient.auth.getUser();
       const { data: targetProfile, error: profileError } = await supabaseClient
-        .from('profiles').select('profile_id,es_canal').eq('user_name', username).maybeSingle();
+        .from('profiles').select('profile_id,es_canal,username').eq('user_name', username).maybeSingle();
       viewedProfileId = !profileError ? targetProfile?.profile_id || null : null;
+      viewedProfileUsername = !profileError ? targetProfile?.username || null : null;
+      renderProfileHandle(viewedProfileUsername);
       if (user) {
         currentUserEmail = user.email;
         currentProfileId = await ccGetMyProfileId();
@@ -309,6 +313,15 @@
       initConnections(username);
       await loadProfileImages(username);
       loadUserPosts(username);
+    }
+
+    function renderProfileHandle(handle) {
+      const el = document.getElementById('profileHandle');
+      if (!el) return;
+      if (!handle) { el.textContent = ''; el.classList.add('hidden'); return; }
+      el.textContent = '@' + handle;
+      el.href = 'perfil.html?user=' + encodeURIComponent(currentUsername || '');
+      el.classList.remove('hidden');
     }
 
     // ===== CONEXIONES: contadores Siguiendo / Seguidores y botón Conectar =====
@@ -419,6 +432,8 @@
       const coverImg = document.getElementById('profileCover');
       document.getElementById('editCoverPreview').src = coverImg.style.display !== 'none' ? coverImg.src : '';
       document.getElementById('editAvatarPreview').src = document.getElementById('profileAvatar').src;
+      document.getElementById('editProfileUsername').value = viewedProfileUsername || '';
+      document.getElementById('editProfileUsernameStatus').textContent = '';
       pendingCoverFile = null;
       pendingAvatarFile = null;
 
@@ -435,6 +450,7 @@
       pendingAvatarFile = null;
       document.getElementById('editCoverInput').value = '';
       document.getElementById('editAvatarInput').value = '';
+      document.getElementById('editProfileUsernameStatus').textContent = '';
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -473,7 +489,10 @@
     }
 
     async function saveProfileChanges() {
-      if (!pendingAvatarFile && !pendingCoverFile) {
+      const usernameInput = document.getElementById('editProfileUsername');
+      const nextUsername = (usernameInput?.value || '').trim().toLowerCase();
+      const usernameChanged = nextUsername !== (viewedProfileUsername || '');
+      if (!pendingAvatarFile && !pendingCoverFile && !usernameChanged) {
         closeEditProfileModal();
         return;
       }
@@ -495,6 +514,13 @@
           newCoverUrl = await uploadProfileImage(pendingCoverFile, 'cover');
           updates.cover_url = newCoverUrl;
         }
+        if (usernameChanged) {
+          if (!/^[a-z0-9_]{3,20}$/.test(nextUsername)) throw new Error('El @ debe tener entre 3 y 20 caracteres: letras, números o guion bajo.');
+          const { data: available, error: availabilityError } = await supabaseClient.rpc('username_disponible', { p_username: nextUsername });
+          if (availabilityError) throw new Error('No se pudo comprobar la disponibilidad del @.');
+          if (available !== true) throw new Error('Ese @ no está disponible o está reservado.');
+          updates.username = nextUsername;
+        }
 
         const { error: dbError } = await supabaseClient
           .from('profiles')
@@ -507,6 +533,13 @@
           const coverImg = document.getElementById('profileCover');
           coverImg.src = newCoverUrl;
           coverImg.style.display = 'block';
+        }
+        if (usernameChanged) {
+          viewedProfileUsername = nextUsername;
+          renderProfileHandle(viewedProfileUsername);
+          if (typeof ccProfilesByIdCache !== 'undefined' && currentProfileId) {
+            ccProfilesByIdCache[String(currentProfileId)] = { ...(ccProfilesByIdCache[String(currentProfileId)] || {}), profile_id: currentProfileId, username: nextUsername };
+          }
         }
 
         closeEditProfileModal();
@@ -1081,7 +1114,15 @@
         <button id="saveProfileBtn" onclick="saveProfileChanges()" class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-bold py-1.5 px-4 rounded-full transition">Guardar</button>
       </div>
 
-      <div class="p-4">
+      <div class="p-4 space-y-4">
+        <div>
+          <label for="editProfileUsername" class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">Tu @</label>
+          <div class="flex items-center rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3">
+            <span class="text-gray-500 dark:text-gray-400">@</span>
+            <input id="editProfileUsername" type="text" maxlength="20" autocomplete="off" autocapitalize="none" spellcheck="false" class="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-gray-900 dark:text-white outline-none" placeholder="tu_usuario">
+          </div>
+          <p id="editProfileUsernameStatus" class="mt-1 text-xs text-gray-500 dark:text-gray-400">3–20 caracteres: letras, números y guion bajo.</p>
+        </div>
         <!-- Portada -->
         <div class="relative w-full h-40 bg-slate-800 rounded-lg overflow-hidden">
           <img id="editCoverPreview" class="w-full h-full object-cover" alt="">
