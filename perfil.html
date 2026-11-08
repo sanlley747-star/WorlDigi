@@ -315,6 +315,12 @@
       loadUserPosts(username);
     }
 
+    function profileHandleHtml(profileId, profileMap, displayName) {
+      const handle = profileMap?.[profileId]?.username;
+      if (!handle) return '';
+      return '<a href="perfil.html?user=' + encodeURIComponent(displayName || '') + '" data-user-card="' + connEscape(displayName || '') + '" class="ml-1 min-w-0 max-w-[110px] truncate text-xs font-normal text-gray-500 dark:text-gray-400 hover:underline">@' + connEscape(handle) + '</a>';
+    }
+
     function renderProfileHandle(handle) {
       const el = document.getElementById('profileHandle');
       if (!el) return;
@@ -622,8 +628,6 @@
           const cAuthor = c.user_name || 'Usuario';
           const cAvatar = profileById[c.author_id]?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(cAuthor)}&background=random`;
           const author = post.user_name || username;
-          const authorHandle = profileById[post.author_id]?.username;
-          const commentHandle = profileById[c.author_id]?.username;
           return `
             <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 space-y-3">
               <div class="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 font-semibold">
