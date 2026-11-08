@@ -1001,7 +1001,7 @@
       ccSetCount(postId, comments.length);
 
       // Avatares resueltos por author_id, sin leer user_email de comments.
-      const commentProfiles = await ccFetchProfilesByIds(comments.map(c => c.author_id), !!currentUserEmail);
+      const commentProfiles = await ccFetchProfilesByIds(comments.map(c => c.author_id), false);
 
       container.innerHTML = comments.map(c => `
         <div class="flex items-start gap-2">
