@@ -893,7 +893,7 @@ let feedRestoringState = false;
   const from = feedOffset;
   const to = from + feedPageSize - 1;
   const { data: posts, error } = await supabaseClient
-    .from('posts').select('id, created_at, image_url, likes, content, user_name, author_id, repost_of, quote_text, repost_of_comment_id, metadata')
+    .from('posts').select('id, created_at, image_url, likes, content, user_name, author_id, repost_of, quote_text, repost_of_comment_id')
     .order('created_at', { ascending: false })
     .range(from, to);
 
@@ -944,7 +944,7 @@ let feedRestoringState = false;
     const idsFaltantes = idsPendientesDeResolver.filter(id => !feedPostsById[id]);
     if (!idsFaltantes.length) break;
     const { data: postsOriginales } = await supabaseClient
-      .from('posts').select('id, created_at, image_url, likes, content, user_name, author_id, repost_of, quote_text, repost_of_comment_id, metadata')
+      .from('posts').select('id, created_at, image_url, likes, content, user_name, author_id, repost_of, quote_text, repost_of_comment_id')
       .in('id', idsFaltantes);
     (postsOriginales || []).forEach(p => { feedPostsById[p.id] = p; });
     idsPendientesDeResolver = (postsOriginales || [])
@@ -1224,7 +1224,7 @@ let feedRestoringState = false;
       p_user_email: (currentUser?.email || ''),
       p_exclude_ids: [],
       p_limit: feedPageSize
-    }).select('id,created_at,user_name,author_id,content,image_url,likes,repost_of,quote_text,repost_of_comment_id,metadata');
+    }).select('id,created_at,user_name,author_id,content,image_url,likes,repost_of,quote_text,repost_of_comment_id');
     posts = rpcResult.data;
     error = rpcResult.error;
   } else {
@@ -1233,7 +1233,7 @@ let feedRestoringState = false;
       p_user_email: (currentUser?.email || ''),
       p_exclude_ids: excludeIds,
       p_limit: feedPageSize
-    }).select('id,created_at,user_name,author_id,content,image_url,likes,repost_of,quote_text,repost_of_comment_id,metadata');
+    }).select('id,created_at,user_name,author_id,content,image_url,likes,repost_of,quote_text,repost_of_comment_id');
     posts = rpcResult.data;
     error = rpcResult.error;
 
@@ -1247,7 +1247,7 @@ let feedRestoringState = false;
         p_user_email: (currentUser?.email || ''),
         p_exclude_ids: excludeIdsCompletas,
         p_limit: Math.max(10, faltantes)
-      }).select('id,created_at,user_name,author_id,content,image_url,likes,repost_of,quote_text,repost_of_comment_id,metadata');
+      }).select('id,created_at,user_name,author_id,content,image_url,likes,repost_of,quote_text,repost_of_comment_id');
 
       if (!completionResult.error && completionResult.data && completionResult.data.length) {
         posts = [...posts, ...completionResult.data.slice(0, faltantes)];
@@ -1301,7 +1301,7 @@ let feedRestoringState = false;
     const idsFaltantes = idsPendientesDeResolver.filter(id => !feedPostsById[id]);
     if (!idsFaltantes.length) break;
     const { data: postsOriginales } = await supabaseClient
-      .from('posts').select('id, created_at, image_url, likes, content, user_name, author_id, repost_of, quote_text, repost_of_comment_id, metadata')
+      .from('posts').select('id, created_at, image_url, likes, content, user_name, author_id, repost_of, quote_text, repost_of_comment_id')
       .in('id', idsFaltantes);
     (postsOriginales || []).forEach(p => { feedPostsById[p.id] = p; });
     idsPendientesDeResolver = (postsOriginales || [])
@@ -1931,7 +1931,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
 
       let { data: post, error } = await supabaseClient
         .from('posts')
-        .select('id, created_at, user_name, author_id, content, image_url, likes, repost_of, quote_text, repost_of_comment_id, metadata')
+        .select('id, created_at, user_name, author_id, content, image_url, likes, repost_of, quote_text, repost_of_comment_id')
         .eq('id', postId)
         .single();
 
@@ -1946,7 +1946,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
         visitedQuotePosts.add(resolvedPost.id);
         const { data: nextPost, error: nextError } = await supabaseClient
           .from('posts')
-          .select('id, created_at, user_name, author_id, content, image_url, likes, repost_of, quote_text, repost_of_comment_id, metadata')
+          .select('id, created_at, user_name, author_id, content, image_url, likes, repost_of, quote_text, repost_of_comment_id')
           .eq('id', resolvedPost.repost_of)
           .single();
         if (nextError || !nextPost) break;
@@ -2069,7 +2069,7 @@ document.getElementById('feedHomeButton')?.addEventListener('click', async (even
 
       const { data: post, error } = await supabaseClient
         .from('posts')
-        .select('id, created_at, user_name, author_id, content, image_url, likes, repost_of, quote_text, repost_of_comment_id, metadata')
+        .select('id, created_at, user_name, author_id, content, image_url, likes, repost_of, quote_text, repost_of_comment_id')
         .eq('id', postId)
         .single();
 
