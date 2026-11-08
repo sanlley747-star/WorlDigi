@@ -526,7 +526,7 @@
       }
       const { data: posts, error } = await supabaseClient
         .from('posts')
-        .select('id, created_at, user_name, author_id, content, image_url, likes, repost_of, quote_text, repost_of_comment_id, metadata')
+        .select('id, created_at, user_name, author_id, content, image_url, likes, repost_of, quote_text, repost_of_comment_id')
         .eq('author_id', viewedProfileId)
         .order('created_at', { ascending: false });
 
@@ -542,7 +542,7 @@
       if (repostIds.length) {
         const { data: originals } = await supabaseClient
           .from('posts')
-          .select('id, created_at, user_name, author_id, content, image_url, likes, repost_of, quote_text, repost_of_comment_id, metadata')
+          .select('id, created_at, user_name, author_id, content, image_url, likes, repost_of, quote_text, repost_of_comment_id')
           .in('id', repostIds);
         (originals || []).forEach(p => { postsById[p.id] = p; });
       }
@@ -936,7 +936,7 @@
 
       const { data: post, error } = await supabaseClient
         .from('posts')
-        .select('id, created_at, user_name, author_id, content, image_url, likes, repost_of, quote_text, repost_of_comment_id, metadata')
+        .select('id, created_at, user_name, author_id, content, image_url, likes, repost_of, quote_text, repost_of_comment_id')
         .eq('id', postId)
         .single();
 
