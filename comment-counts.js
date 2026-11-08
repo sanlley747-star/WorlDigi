@@ -18,15 +18,12 @@ async function ccGetMyProfileId() {
   return ccMyProfileIdPromise;
 }
 
-// Resuelve avatar/nombre por profile_id. El correo solo se incluye en páginas
-// autenticadas para conservar etiquetas de cuentas canal sin leerlo desde posts/comments.
-async function ccFetchProfilesByIds(profileIds, includeEmail = false) {
+// Resuelve nombre, avatar y el indicador público mínimo de canal por profile_id.
+async function ccFetchProfilesByIds(profileIds) {
   const ids = [...new Set((profileIds || []).filter(Boolean))];
   if (!ids.length) return {};
-  const columns = includeEmail
-    ? 'profile_id,user_name,avatar_url,user_email'
-    : 'profile_id,user_name,avatar_url';
-  const { data, error } = await supabaseClient.from('profiles').select(columns).in('profile_id', ids);
+  const { data, error } = await supabaseClient
+    .from('profiles').select('profile_id,user_name,avatar_url,es_canal').in('profile_id', ids);
   if (error) {
     console.error('No se pudieron resolver perfiles por ID:', error);
     return {};

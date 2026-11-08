@@ -184,8 +184,11 @@
 
     // Mi foto
     if (user) {
-      supabaseClient.from('profiles').select('avatar_url').eq('user_email', user.email).maybeSingle()
-        .then(function (r) { if (currentPostId === mySeq && r.data && r.data.avatar_url) els.myAvatar.src = safeUrl(r.data.avatar_url); });
+      const { data: myProfileId } = await supabaseClient.rpc('mi_perfil_id');
+      if (myProfileId) {
+        supabaseClient.from('profiles').select('avatar_url').eq('profile_id', myProfileId).maybeSingle()
+          .then(function (r) { if (currentPostId === mySeq && r.data && r.data.avatar_url) els.myAvatar.src = safeUrl(r.data.avatar_url); });
+      }
     }
 
     // La publicación (si es un repost, se muestra lo mismo que se ve en la tarjeta: la publicación original)

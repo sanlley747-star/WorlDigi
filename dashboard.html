@@ -899,7 +899,7 @@ let feedRestoringState = false;
 
   if (requestGeneration !== feedRequestGeneration) return;
 
-     const profileColumns = 'profile_id,user_name,avatar_url';
+     const profileColumns = 'profile_id,user_name,avatar_url,es_canal';
       const { data: profiles } = await supabaseClient.from('profiles').select(profileColumns);
       const profileById = {};
       const avatarByUser = {};
@@ -907,7 +907,7 @@ let feedRestoringState = false;
         profileById[p.profile_id] = p;
         if (p.user_name && p.avatar_url) avatarByUser[p.user_name] = p.avatar_url;
       });
-     const channelSet = isGuestMode ? new Set() : await connFetchChannelSet();
+     // La clasificación de canales llega en profiles.es_canal.
 
   if (requestGeneration !== feedRequestGeneration) return;
 
@@ -953,7 +953,7 @@ let feedRestoringState = false;
     saltosResueltos++;
   }
 
-  Object.assign(profileById, await ccFetchProfilesByIds(Object.values(feedPostsById).map(p => p.author_id), !!currentUser));
+  Object.assign(profileById, await ccFetchProfilesByIds(Object.values(feedPostsById).map(p => p.author_id)));
   const postsById = feedPostsById;
 
   // Publicaciones que el usuario actual ya reposteó (sin cita), para pintar el botón en verde
@@ -1087,7 +1087,7 @@ let feedRestoringState = false;
               class="font-bold text-gray-900 dark:text-white text-sm hover:underline">
               ${connEscape(originalAuthor)}
             </a>
-            ${connIsChannelEmail(channelSet, profileById[displayPost.author_id]?.user_email) ? connChannelChip(true) : ''}
+            ${profileById[displayPost.author_id]?.es_canal === true ? connChannelChip(true) : ''}
 
             <span class="text-gray-400 text-sm">·</span>
 
@@ -1256,7 +1256,7 @@ let feedRestoringState = false;
       }
     }
   }
-     const profileColumns = 'profile_id,user_name,avatar_url';
+     const profileColumns = 'profile_id,user_name,avatar_url,es_canal';
       const { data: profiles } = await supabaseClient.from('profiles').select(profileColumns);
       const profileById = {};
       const avatarByUser = {};
@@ -1264,7 +1264,7 @@ let feedRestoringState = false;
         profileById[p.profile_id] = p;
         if (p.user_name && p.avatar_url) avatarByUser[p.user_name] = p.avatar_url;
       });
-     const channelSet = isGuestMode ? new Set() : await connFetchChannelSet();
+     // La clasificación de canales llega en profiles.es_canal.
 
   if (feedRequestGeneration !== requestGeneration) return;
 
@@ -1310,7 +1310,7 @@ let feedRestoringState = false;
     saltosResueltos++;
   }
 
-  Object.assign(profileById, await ccFetchProfilesByIds(Object.values(feedPostsById).map(p => p.author_id), !!currentUser));
+  Object.assign(profileById, await ccFetchProfilesByIds(Object.values(feedPostsById).map(p => p.author_id)));
   const postsById = feedPostsById;
 
   // Publicaciones que el usuario actual ya reposteó (sin cita), para pintar el botón en verde
@@ -1444,7 +1444,7 @@ let feedRestoringState = false;
               class="font-bold text-gray-900 dark:text-white text-sm hover:underline">
               ${connEscape(originalAuthor)}
             </a>
-            ${connIsChannelEmail(channelSet, profileById[displayPost.author_id]?.user_email) ? connChannelChip(true) : ''}
+            ${profileById[displayPost.author_id]?.es_canal === true ? connChannelChip(true) : ''}
 
             <span class="text-gray-400 text-sm">·</span>
 
