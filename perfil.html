@@ -519,23 +519,23 @@
           profileHandle = newHandle;
           document.getElementById('profileHandle').textContent = '@' + profileHandle;
         }
-        const updates = { user_email: currentUserEmail, user_name: currentUsername };
         let newAvatarUrl = null;
         let newCoverUrl = null;
-
-        if (pendingAvatarFile) {
-          newAvatarUrl = await uploadProfileImage(pendingAvatarFile, 'avatar');
-          updates.avatar_url = newAvatarUrl;
+        if (pendingAvatarFile || pendingCoverFile) {
+          const updates = { user_email: currentUserEmail, user_name: currentUsername };
+          if (pendingAvatarFile) {
+            newAvatarUrl = await uploadProfileImage(pendingAvatarFile, 'avatar');
+            updates.avatar_url = newAvatarUrl;
+          }
+          if (pendingCoverFile) {
+            newCoverUrl = await uploadProfileImage(pendingCoverFile, 'cover');
+            updates.cover_url = newCoverUrl;
+          }
+          const { error: dbError } = await supabaseClient
+            .from('profiles')
+            .upsert(updates, { onConflict: 'user_email' });
+          if (dbError) throw new Error('Error al guardar en la base de datos: ' + dbError.message);
         }
-        if (pendingCoverFile) {
-          newCoverUrl = await uploadProfileImage(pendingCoverFile, 'cover');
-          updates.cover_url = newCoverUrl;
-        }
-
-        const { error: dbError } = await supabaseClient
-          .from('profiles')
-          .upsert(updates, { onConflict: 'user_email' });
-        if (dbError) throw new Error('Error al guardar en la base de datos: ' + dbError.message);
 
         if (newAvatarUrl) document.getElementById('profileAvatar').src = newAvatarUrl;
         if (newCoverUrl) {
