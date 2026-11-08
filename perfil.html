@@ -151,7 +151,6 @@
     <div class="pt-12 sm:pl-24 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div class="text-center sm:text-left">
         <h2 id="profileName" class="text-xl font-bold text-gray-900 dark:text-white">Cargando...</h2>
-        <p id="profileHandle" class="mt-0.5 text-sm text-gray-500 dark:text-gray-400"></p>
         <div class="mt-1 flex items-center justify-center sm:justify-start gap-5 text-sm text-gray-600 dark:text-gray-400">
           <a id="connFollowingLink" href="#" class="hover:underline"><strong id="connFollowingCount" class="text-gray-900 dark:text-white">–</strong> Siguiendo</a>
           <a id="connFollowersLink" href="#" class="hover:underline"><strong id="connFollowersCount" class="text-gray-900 dark:text-white">–</strong> Seguidores</a>
@@ -273,9 +272,6 @@
     }
 
        let currentUsername = null;
-    let profileHandle = null;
-    let editHandleAvailable = false;
-    let editHandleCheckSeq = 0;
     let currentUserEmail = null;
     let loggedUserName = null;
     let isOwnProfile = false;
@@ -290,69 +286,26 @@
       }
 
       currentUsername = username;
-
-      // El encabezado no depende de ninguna petición a Supabase.
       document.getElementById('profileName').textContent = username;
       document.getElementById('profileTopName').textContent = username;
       document.getElementById('profileName').setAttribute('data-user-card', username);
 
-      // Cada bloque carga de forma independiente: una consulta lenta de avatar,
-      // sesión o conexiones no debe impedir que aparezcan las publicaciones.
-      const handleTask = (async () => {
-        try {
-          const { data: publicProfile, error } = await supabaseClient
-            .from('profiles').select('username').eq('user_name', username).maybeSingle();
-          if (error) throw error;
-          profileHandle = publicProfile?.username || null;
-          document.getElementById('profileHandle').textContent = profileHandle ? '@' + profileHandle : '';
-        } catch (error) {
-          console.error('Handle público del perfil:', error);
-          document.getElementById('profileHandle').textContent = '';
-        }
-      })();
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (user) {
+        currentUserEmail = user.email;
+        loggedUserName = user.user_metadata?.full_name || user.email.split('@')[0];
+        const { data: targetProfile, error: profileError } = await supabaseClient
+          .from('profiles').select('user_email').eq('user_name', username).maybeSingle();
+        isOwnProfile = !profileError && Boolean(targetProfile?.user_email) &&
+          targetProfile.user_email.toLowerCase() === user.email.toLowerCase();
+      }
 
-      const authTask = (async () => {
-        try {
-          const { data: { user } } = await supabaseClient.auth.getUser();
-          if (user) {
-            currentUserEmail = user.email || null;
-            loggedUserName = user.user_metadata?.full_name || (user.email || '').split('@')[0];
-            // user_email solo se consulta con una sesión autenticada.
-            if (currentUserEmail) {
-              const { data: targetProfile, error: profileError } = await supabaseClient
-                .from('profiles').select('user_email').eq('user_name', username).maybeSingle();
-              isOwnProfile = !profileError && Boolean(targetProfile?.user_email) &&
-                targetProfile.user_email.toLowerCase() === currentUserEmail.toLowerCase();
-            }
-          }
-        } catch (error) {
-          console.error('Sesión del perfil:', error);
-        } finally {
-          document.getElementById('editProfileBtn').style.display = isOwnProfile ? 'block' : 'none';
-          initNotifications(currentUserEmail);
-        }
-      })();
+      document.getElementById('editProfileBtn').style.display = isOwnProfile ? 'block' : 'none';
 
-      const imagesTask = loadProfileImages(username).catch(error => {
-        console.error('Imágenes del perfil:', error);
-        const avatar = document.getElementById('profileAvatar');
-        avatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random`;
-        document.getElementById('profileCover').style.display = 'none';
-      });
-
-      const postsTask = loadUserPosts(username).catch(error => {
-        console.error('Publicaciones del perfil:', error);
-        document.getElementById('userFeed').innerHTML =
-          '<p class="text-center text-red-500 bg-white dark:bg-slate-900 p-6 rounded-xl shadow">No se pudieron cargar las publicaciones. Recarga el perfil para intentarlo de nuevo.</p>';
-      });
-
-      profileUserName = username;
-      const countsTask = refreshConnCounts().catch(error => {
-        console.error('Contadores del perfil:', error);
-      });
-      const connectionsTask = authTask.then(() => initConnections(username));
-
-      await Promise.allSettled([handleTask, authTask, imagesTask, postsTask, countsTask, connectionsTask]);
+      initNotifications(currentUserEmail);
+      initConnections(username);
+      await loadProfileImages(username);
+      loadUserPosts(username);
     }
 
     // ===== CONEXIONES: contadores Siguiendo / Seguidores y botón Conectar =====
@@ -467,10 +420,6 @@
       document.getElementById('editAvatarPreview').src = document.getElementById('profileAvatar').src;
       pendingCoverFile = null;
       pendingAvatarFile = null;
-      const handleInput = document.getElementById('editUsernameInput');
-      handleInput.value = profileHandle || '';
-      document.getElementById('editUsernameStatus').textContent = 'Elige un @ único de 3 a 20 caracteres.';
-      editHandleAvailable = true;
 
       const modal = document.getElementById('editProfileModal');
       modal.classList.remove('hidden');
@@ -503,23 +452,6 @@
       });
     });
 
-    async function checkEditUsername() {
-      const input = document.getElementById('editUsernameInput');
-      const status = document.getElementById('editUsernameStatus');
-      const value = input.value.trim().toLowerCase();
-      const seq = ++editHandleCheckSeq;
-      if (value === profileHandle) { editHandleAvailable = true; status.textContent = 'Tu @ actual'; status.className = 'block mt-1 text-xs text-gray-500'; return true; }
-      if (!/^[a-z0-9_]{3,20}$/.test(value)) { editHandleAvailable = false; status.textContent = 'Usa 3–20 caracteres: letras minúsculas, números o _.'; status.className = 'block mt-1 text-xs text-red-500'; return false; }
-      status.textContent = 'Comprobando disponibilidad…';
-      const { data, error } = await supabaseClient.rpc('username_disponible', { p_username: value });
-      if (seq !== editHandleCheckSeq) return false;
-      editHandleAvailable = !error && data === true;
-      status.textContent = editHandleAvailable ? '@' + value + ' está disponible' : 'Ese @ no está disponible o está reservado.';
-      status.className = editHandleAvailable ? 'block mt-1 text-xs text-emerald-600' : 'block mt-1 text-xs text-red-500';
-      return editHandleAvailable;
-    }
-    document.getElementById('editUsernameInput').addEventListener('input', () => { checkEditUsername(); });
-
     async function uploadProfileImage(file, tipo) {
       const ext = file.name.split('.').pop();
       const filePath = `${currentUserEmail}/${tipo}.${ext}`;
@@ -540,9 +472,7 @@
     }
 
     async function saveProfileChanges() {
-      const newHandle = document.getElementById('editUsernameInput').value.trim().toLowerCase();
-      const handleChanged = newHandle !== profileHandle;
-      if (!pendingAvatarFile && !pendingCoverFile && !handleChanged) {
+      if (!pendingAvatarFile && !pendingCoverFile) {
         closeEditProfileModal();
         return;
       }
@@ -552,30 +482,23 @@
       saveBtn.textContent = 'Guardando...';
 
       try {
-        if (handleChanged) {
-          if (!(await checkEditUsername())) throw new Error('Elige un @ válido y disponible.');
-          const { error: handleError } = await supabaseClient.from('profiles').update({ username: newHandle }).eq('user_email', currentUserEmail);
-          if (handleError) throw new Error('No se pudo actualizar el @: ' + handleError.message);
-          profileHandle = newHandle;
-          document.getElementById('profileHandle').textContent = '@' + profileHandle;
-        }
+        const updates = { user_email: currentUserEmail, user_name: currentUsername };
         let newAvatarUrl = null;
         let newCoverUrl = null;
-        if (pendingAvatarFile || pendingCoverFile) {
-          const updates = { user_email: currentUserEmail, user_name: currentUsername };
-          if (pendingAvatarFile) {
-            newAvatarUrl = await uploadProfileImage(pendingAvatarFile, 'avatar');
-            updates.avatar_url = newAvatarUrl;
-          }
-          if (pendingCoverFile) {
-            newCoverUrl = await uploadProfileImage(pendingCoverFile, 'cover');
-            updates.cover_url = newCoverUrl;
-          }
-          const { error: dbError } = await supabaseClient
-            .from('profiles')
-            .upsert(updates, { onConflict: 'user_email' });
-          if (dbError) throw new Error('Error al guardar en la base de datos: ' + dbError.message);
+
+        if (pendingAvatarFile) {
+          newAvatarUrl = await uploadProfileImage(pendingAvatarFile, 'avatar');
+          updates.avatar_url = newAvatarUrl;
         }
+        if (pendingCoverFile) {
+          newCoverUrl = await uploadProfileImage(pendingCoverFile, 'cover');
+          updates.cover_url = newCoverUrl;
+        }
+
+        const { error: dbError } = await supabaseClient
+          .from('profiles')
+          .upsert(updates, { onConflict: 'user_email' });
+        if (dbError) throw new Error('Error al guardar en la base de datos: ' + dbError.message);
 
         if (newAvatarUrl) document.getElementById('profileAvatar').src = newAvatarUrl;
         if (newCoverUrl) {
@@ -596,12 +519,12 @@
     async function loadUserPosts(username) {
       const { data: posts, error } = await supabaseClient
         .from('posts')
-        .select('id, created_at, image_url, likes, content, user_name, repost_of, quote_text, repost_of_comment_id')
+        .select('*')
         .eq('user_name', username)
         .order('created_at', { ascending: false });
 
       const feed = document.getElementById('userFeed');
-      if (error || !posts || !posts.length) {
+      if (error || !posts.length) {
         feed.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-900 p-6 rounded-xl shadow border border-gray-200 dark:border-slate-800">Este usuario aún no ha realizado publicaciones.</p>';
         return;
       }
@@ -612,7 +535,7 @@
       if (repostIds.length) {
         const { data: originals } = await supabaseClient
           .from('posts')
-          .select('id, created_at, image_url, likes, content, user_name, repost_of, quote_text, repost_of_comment_id')
+          .select('*')
           .in('id', repostIds);
         (originals || []).forEach(p => { postsById[p.id] = p; });
       }
@@ -649,7 +572,7 @@
       const commentRepostIds = [...new Set(posts.filter(p => p.repost_of_comment_id).map(p => p.repost_of_comment_id))];
       const commentsById = {};
       if (commentRepostIds.length) {
-        const { data: quotedComments } = await supabaseClient.from('comments').select('id, post_id, user_name, content, created_at, reply_to').in('id', commentRepostIds);
+        const { data: quotedComments } = await supabaseClient.from('comments').select('*').in('id', commentRepostIds);
         (quotedComments || []).forEach(c => { commentsById[c.id] = c; });
         const cAuthors = [...new Set(quotedComments.map(c => c.user_name).filter(Boolean))];
         if (cAuthors.length) {
@@ -1006,7 +929,7 @@
 
       const { data: post, error } = await supabaseClient
         .from('posts')
-        .select('id, created_at, image_url, likes, content, user_name, repost_of, quote_text, repost_of_comment_id')
+        .select('*')
         .eq('id', postId)
         .single();
 
@@ -1063,7 +986,7 @@
 
       const { data: comments, error } = await supabaseClient
         .from('comments')
-        .select('id, post_id, user_name, content, created_at, reply_to')
+        .select('*')
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
 
@@ -1075,21 +998,20 @@
 
       ccSetCount(postId, comments.length);
 
-      // Los comentarios públicos solo exponen nombre y contenido; los avatares
-      // se resuelven por user_name, sin consultar ni necesitar correos privados.
-      const commenterNames = [...new Set(comments.map(c => c.user_name).filter(Boolean))];
-      const commentAvatarByUser = {};
-      if (commenterNames.length) {
+      // Fotos de perfil de quienes comentaron (por su correo); quien no tiene foto conserva su avatar de iniciales
+      const commenterEmails = [...new Set(comments.map(c => c.user_email).filter(Boolean))];
+      const commentAvatarByEmail = {};
+      if (commenterEmails.length) {
         const { data: commenterProfiles } = await supabaseClient
           .from('profiles')
-          .select('user_name, avatar_url')
-          .in('user_name', commenterNames);
-        (commenterProfiles || []).forEach(p => { if (p.avatar_url) commentAvatarByUser[p.user_name] = p.avatar_url; });
+          .select('user_email, avatar_url')
+          .in('user_email', commenterEmails);
+        (commenterProfiles || []).forEach(p => { if (p.avatar_url) commentAvatarByEmail[p.user_email] = p.avatar_url; });
       }
 
       container.innerHTML = comments.map(c => `
         <div class="flex items-start gap-2">
-          <img src="${connEscape(safeUrl(commentAvatarByUser[c.user_name] || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(c.user_name) + '&background=random')))}" class="w-8 h-8 rounded-full object-cover flex-shrink-0">
+          <img src="${connEscape(safeUrl(commentAvatarByEmail[c.user_email] || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(c.user_name) + '&background=random')))}" class="w-8 h-8 rounded-full object-cover flex-shrink-0">
           <div class="bg-gray-100 dark:bg-slate-800 rounded-xl px-3 py-2 flex-1">
             <div class="text-xs font-bold text-gray-900 dark:text-white" data-user-card="${connEscape(c.user_name)}">${connEscape(c.user_name)}</div>
             <div class="text-sm text-gray-700 dark:text-gray-200 break-words">${linkifyContent(c.content)}</div>
@@ -1162,7 +1084,6 @@
       </div>
 
       <div class="p-4">
-        <label class="block mb-4"><span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tu @ público</span><input id="editUsernameInput" type="text" maxlength="20" autocomplete="username" class="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-gray-900 dark:text-white" placeholder="tu_usuario"><span id="editUsernameStatus" class="block mt-1 text-xs text-gray-500" aria-live="polite"></span></label>
         <!-- Portada -->
         <div class="relative w-full h-40 bg-slate-800 rounded-lg overflow-hidden">
           <img id="editCoverPreview" class="w-full h-full object-cover" alt="">
