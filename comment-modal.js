@@ -189,7 +189,7 @@
     }
 
     // La publicación (si es un repost, se muestra lo mismo que se ve en la tarjeta: la publicación original)
-    var publicPostColumns = 'id, created_at, image_url, likes, content, user_name, author_id, repost_of, quote_text, repost_of_comment_id, metadata';
+    var publicPostColumns = 'id, created_at, image_url, likes, content, user_name, author_id, repost_of, quote_text, repost_of_comment_id';
     var pr = await supabaseClient.from('posts').select(publicPostColumns).eq('id', postId).maybeSingle();
     var post = pr.data;
     if (post && post.repost_of) {
