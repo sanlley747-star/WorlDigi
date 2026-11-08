@@ -634,7 +634,7 @@ function connNotifState(st) {
 
       const { data: post, error } = await supabaseClient
         .from('posts')
-        .select('id,created_at,user_name,author_id,content,image_url,likes,repost_of,quote_text,repost_of_comment_id,metadata')
+        .select('id,created_at,user_name,author_id,content,image_url,likes,repost_of,quote_text,repost_of_comment_id')
         .eq('id', postId)
         .single();
 
