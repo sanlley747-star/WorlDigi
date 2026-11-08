@@ -166,14 +166,7 @@
 
     window.addEventListener('pagehide', hideForAuth);
 
-    window.addEventListener('pageshow', async () => {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (!session) {
-        window.location.replace('index.html');
-        return;
-      }
-      revealApp();
-    });
+    window.addEventListener('pageshow', () => revealApp());
 
     if (localStorage.getItem('theme') === 'light') {
       document.documentElement.classList.remove('dark');
@@ -190,14 +183,16 @@
 
     async function init() {
       const { data: { user } } = await supabaseClient.auth.getUser();
-      if (!user) {
-        window.location.replace('index.html');
-        return;
+      currentUser = user || null;
+      myName = user ? (user.user_metadata?.full_name || user.email.split('@')[0]) : null;
+      if (user) {
+        document.getElementById('myProfileLink').href = connProfileUrl(myName);
+        document.getElementById('mobileMyProfileLink').href = connProfileUrl(myName);
+      } else {
+        document.getElementById('myProfileLink')?.closest('a')?.classList.add('hidden');
+        document.getElementById('mobileMyProfileLink')?.classList.add('hidden');
+        document.getElementById('navMetricsBtn')?.classList.add('hidden');
       }
-      currentUser = user;
-      myName = user.user_metadata?.full_name || user.email.split('@')[0];
-      document.getElementById('myProfileLink').href = connProfileUrl(myName);
-      document.getElementById('mobileMyProfileLink').href = connProfileUrl(myName);
 
       const mobileMenuToggle = document.getElementById('mobileMenuToggle');
       const mobileFunctionMenu = document.getElementById('mobileFunctionMenu');
@@ -212,40 +207,32 @@
         }
       });
 
-      initNotifications(currentUser.email);
+      if (currentUser) initNotifications(currentUser.email);
 
       const params = new URLSearchParams(window.location.search);
       targetName = params.get('user') || myName;
       activeTab = params.get('tab') === 'seguidores' ? 'seguidores' : 'siguiendo';
 
-      targetEmail = targetName === myName ? currentUser.email : await connResolveEmail(targetName);
-
       const owner = document.getElementById('connOwner');
-      if (!targetEmail) {
+      if (!targetName) {
         owner.textContent = '';
         document.getElementById('connList').innerHTML =
           '<p class="p-6 text-sm text-gray-400 dark:text-gray-500 text-center">No encontramos a este usuario.</p>';
         return;
       }
 
-      if (targetEmail === currentUser.email) {
-        owner.textContent = 'Tus conexiones';
-      } else {
-        owner.innerHTML = 'Conexiones de <a class="font-semibold hover:underline" href="' + connProfileUrl(targetName) + '">' + connEscape(targetName) + '</a>';
-      }
+      targetEmail = currentUser && targetName === myName ? currentUser.email :
+        (currentUser ? await connResolveEmail(targetName) : null);
 
-      // Cuenta canal ajena: solo se ve la pestaña Seguidores (lo que ella sigue es privado)
-      if (targetEmail !== currentUser.email && await connIsChannel(targetEmail)) {
-        document.getElementById('tabSiguiendo').style.display = 'none';
-        activeTab = 'seguidores';
-      }
+      if (currentUser && targetEmail === currentUser.email) owner.textContent = 'Tus conexiones';
+      else owner.innerHTML = 'Conexiones de <a class="font-semibold hover:underline" href="' + connProfileUrl(targetName) + '">' + connEscape(targetName) + '</a>';
 
       await refreshCounts();
       setTab(activeTab);
     }
 
     async function refreshCounts() {
-      const counts = await connCounts(targetEmail);
+      const counts = await connCounts(targetName);
       document.getElementById('countSiguiendo').textContent = counts.following;
       document.getElementById('countSeguidores').textContent = counts.followers;
     }
@@ -287,24 +274,11 @@
     async function loadList() {
       const requestId = ++listRequestId;
       const list = document.getElementById('connList');
-      const isMine = targetEmail === currentUser.email;
+      const isMine = !!currentUser && targetName === myName;
       list.innerHTML = '<p class="p-6 text-sm text-gray-400 dark:text-gray-500 text-center">Cargando...</p>';
-
-      // Siguiendo: a quién conectó este usuario. Seguidores: quién conectó con este usuario.
-      const siguiendo = activeTab === 'siguiendo';
-      const ownCol = siguiendo ? 'follower_email' : 'following_email';
-      const otherCol = siguiendo ? 'following_email' : 'follower_email';
-      const nameCol = siguiendo ? 'following_name' : 'follower_name';
-
-      const { data, error } = await supabaseClient
-        .from('connections')
-        .select(otherCol + ', ' + nameCol + ', created_at')
-        .eq(ownCol, targetEmail)
-        .order('created_at', { ascending: false })
-        .limit(200);
-
-      if (requestId !== listRequestId) return; // el usuario cambió de pestaña mientras cargaba
-
+      const rpcName = activeTab === 'siguiendo' ? 'connections_following_by_username' : 'connections_followers_by_username';
+      const { data, error } = await supabaseClient.rpc(rpcName, { p_user_name: targetName, p_limit: 200, p_offset: 0 });
+      if (requestId !== listRequestId) return;
       if (error) {
         list.innerHTML = '<p class="p-6 text-sm text-gray-400 dark:text-gray-500 text-center">No se pudo cargar la lista. Intenta de nuevo.</p>';
         return;
@@ -313,47 +287,33 @@
         list.innerHTML = '<p class="p-6 text-sm text-gray-400 dark:text-gray-500 text-center">' + emptyMessage(activeTab, isMine) + '</p>';
         return;
       }
-
-      const emails = data.map(r => r[otherCol]);
-      const hints = {};
-      data.forEach(r => { if (r[nameCol]) hints[r[otherCol]] = r[nameCol]; });
-
-      const [people, states] = await Promise.all([
-        connFetchPeople(emails, hints),
-        connFetchStates(currentUser.email, emails)
-      ]);
+      const people = await Promise.all(data.map(async p => ({
+        name: p.user_name, avatar: p.avatar_url,
+        email: currentUser ? await connResolveEmail(p.user_name) : null
+      })));
+      const emails = people.map(p => p.email).filter(Boolean);
+      const states = currentUser && emails.length ? await connFetchStates(currentUser.email, emails) : {};
       if (requestId !== listRequestId) return;
-
-      list.innerHTML = data.map(r => {
-        const email = r[otherCol];
-        const p = people[email];
+      list.innerHTML = people.map(p => {
         const avatar = safeUrl(p.avatar) || connAvatarFallback(p.name);
-        const isMe = email === currentUser.email;
+        const isMe = !!currentUser && p.email === currentUser.email;
+        const canConnect = !!currentUser && !!p.email && !isMe;
         return `
           <div class="p-4 flex items-center gap-3">
             <a href="${connProfileUrl(p.name)}" class="flex items-center gap-3 flex-1 min-w-0">
               <img src="${connEscape(avatar)}" class="w-11 h-11 rounded-full object-cover flex-shrink-0 border border-gray-200 dark:border-slate-700" alt="${connEscape(p.name)}">
               <span class="font-semibold text-sm text-gray-900 dark:text-white truncate" data-user-card="${connEscape(p.name)}">${connEscape(p.name)}</span>
             </a>
-            ${isMe
-              ? '<span class="text-xs text-gray-400 flex-shrink-0">Tú</span>'
-              : '<div class="flex-shrink-0" data-conn-slot data-email="' + connEscape(email) + '" data-name="' + connEscape(p.name) + '"></div>'}
+            ${isMe ? '<span class="text-xs text-gray-400 flex-shrink-0">Tú</span>' :
+              (canConnect ? '<div class="flex-shrink-0" data-conn-slot data-email="' + connEscape(p.email) + '" data-name="' + connEscape(p.name) + '"></div>' : '')}
           </div>
         `;
       }).join('');
-
       list.querySelectorAll('[data-conn-slot]').forEach(slot => {
-        const email = slot.dataset.email;
-        const st = states[email] || { iFollow: false, followsMe: false };
+        const email = slot.dataset.email, st = states[email] || { iFollow: false, followsMe: false };
         slot.appendChild(connCreateButton({
-          myEmail: currentUser.email,
-          myName: myName,
-          otherEmail: email,
-          otherName: slot.dataset.name,
-          iFollow: st.iFollow,
-          followsMe: st.followsMe,
-          compact: true,
-          // Si estás viendo tus propias listas, tus contadores cambian al conectar o desconectar
+          myEmail: currentUser.email, myName: myName, otherEmail: email, otherName: slot.dataset.name,
+          iFollow: st.iFollow, followsMe: st.followsMe, compact: true,
           onChange: () => { if (isMine) refreshCounts(); }
         }));
       });
