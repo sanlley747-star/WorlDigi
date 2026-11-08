@@ -44,6 +44,37 @@ async function ccFetchProfilesByIds(profileIds) {
   return map;
 }
 
+// Render único del identificador público, compartido por perfil y feed.
+// El ID interno tiene prioridad; user_name solo se usa como respaldo público.
+function ccProfileHandleHtml(profileId, profileMap, displayName, fallbackProfileMap) {
+  const handle = (profileId ? profileMap?.[profileId]?.username : null) ||
+    (displayName ? fallbackProfileMap?.[displayName]?.username : null);
+  if (!handle) return '';
+  return '<a href="perfil.html?user=' + encodeURIComponent(displayName || '') + '" data-user-card="' + connEscape(displayName || '') + '" class="ml-1 min-w-0 max-w-[110px] truncate text-xs font-normal text-gray-500 dark:text-gray-400 hover:underline">@' + connEscape(handle) + '</a>';
+}
+
+// Respaldo por nombre visible: consulta únicamente columnas públicas de profiles.
+// No consulta user_email ni cambia permisos.
+async function ccFetchProfilesByUserNames(userNames) {
+  const names = [...new Set((userNames || []).filter(Boolean).map(name => String(name).trim()).filter(Boolean))];
+  if (!names.length) return {};
+  try {
+    const { data, error } = await supabaseClient
+      .from('profiles')
+      .select('user_name,username')
+      .in('user_name', names);
+    if (error) throw error;
+    const map = {};
+    (data || []).forEach(profile => {
+      if (profile.user_name && profile.username) map[profile.user_name] = profile;
+    });
+    return map;
+  } catch (error) {
+    console.error('No se pudieron resolver @ por nombre público:', error);
+    return {};
+  }
+}
+
 // ===== CONTADOR DE COMENTARIOS =====
 // Archivo aislado: solo LEE la cantidad de comentarios por publicación.
 // Requiere que la página ya haya definido `supabaseClient` antes de USAR estas funciones.

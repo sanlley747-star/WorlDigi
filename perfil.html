@@ -315,12 +315,6 @@
       loadUserPosts(username);
     }
 
-    function profileHandleHtml(profileId, profileMap, displayName) {
-      const handle = profileMap?.[profileId]?.username;
-      if (!handle) return '';
-      return '<a href="perfil.html?user=' + encodeURIComponent(displayName || '') + '" data-user-card="' + connEscape(displayName || '') + '" class="ml-1 min-w-0 max-w-[110px] truncate text-xs font-normal text-gray-500 dark:text-gray-400 hover:underline">@' + connEscape(handle) + '</a>';
-    }
-
     function renderProfileHandle(handle) {
       const el = document.getElementById('profileHandle');
       if (!el) return;
@@ -633,13 +627,13 @@
             <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 space-y-3">
               <div class="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 font-semibold">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0 text-green-600"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
-                <span data-user-card="${connEscape(author)}" class="hover:underline">${connEscape(author)}</span>${profileHandleHtml(post.author_id, profileById, author)} ${post.quote_text ? 'citó un comentario' : 'reposteó un comentario'}
+                <span data-user-card="${connEscape(author)}" class="hover:underline">${connEscape(author)}</span>${ccProfileHandleHtml(post.author_id, profileById, author)} ${post.quote_text ? 'citó un comentario' : 'reposteó un comentario'}
               </div>
               ${post.quote_text ? `<div>\n  <p data-expandable-post-text class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line"\n     style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;max-height:4.5em;overflow:hidden;">${linkifyContent(post.quote_text)}</p>\n  <button type="button" data-rm-btn data-expanded="false" class="rm-btn hidden"\n     onclick="event.stopPropagation();togglePostText(this)">Ver más...</button>\n</div>` : ''}
               <a href="publicacion.html?id=${c.post_id}#comentario-${c.id}" class="block border border-gray-200 dark:border-slate-700 rounded-xl p-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition">
                 <div class="flex items-center gap-2 mb-1">
                   <img src="${connEscape(safeUrl(cAvatar))}" class="w-6 h-6 rounded-full object-cover flex-shrink-0" alt="${connEscape(cAuthor)}">
-                  <span class="min-w-0 max-w-[45%] truncate font-bold text-sm text-gray-900 dark:text-white">${connEscape(cAuthor)}</span>${profileHandleHtml(c.author_id, profileById, cAuthor)}
+                  <span class="min-w-0 max-w-[45%] truncate font-bold text-sm text-gray-900 dark:text-white">${connEscape(cAuthor)}</span>${ccProfileHandleHtml(c.author_id, profileById, cAuthor)}
                   <span class="shrink-0 whitespace-nowrap text-xs text-gray-400">· ${formatCompactTime(c.created_at)}</span>
                 </div>
                 <p class="text-sm text-gray-700 dark:text-gray-300 break-words whitespace-pre-line">${linkifyContent(c.content)}</p>
@@ -701,7 +695,7 @@
                 <img src="${connEscape(safeUrl(originalAvatarUrl))}" class="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-slate-700 hover:opacity-80 transition cursor-pointer">
               </a>
               <div class="flex min-w-0 flex-1 items-center gap-2">
-                <a href="perfil.html?user=${encodeURIComponent(originalAuthor)}" class="min-w-0 max-w-[45%] truncate font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(originalAuthor)}</a>${profileHandleHtml(displayPost.author_id, profileById, originalAuthor)}
+                <a href="perfil.html?user=${encodeURIComponent(originalAuthor)}" class="min-w-0 max-w-[45%] truncate font-bold text-gray-900 dark:text-white text-sm hover:underline">${connEscape(originalAuthor)}</a>${ccProfileHandleHtml(displayPost.author_id, profileById, originalAuthor)}
                 <span class="shrink-0 text-gray-400 text-sm">·</span>
                 <span class="shrink-0 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${post.repost_of ? formatCompactTime(displayPost.created_at) : compactTime}</span>
               </div>
@@ -1044,7 +1038,7 @@
         <div class="flex items-start gap-2">
           <img src="${connEscape(safeUrl(commentProfiles[c.author_id]?.avatar_url || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(c.user_name) + '&background=random')))}" class="w-8 h-8 rounded-full object-cover flex-shrink-0">
           <div class="bg-gray-100 dark:bg-slate-800 rounded-xl px-3 py-2 flex-1">
-            <div class="text-xs font-bold text-gray-900 dark:text-white" data-user-card="${connEscape(c.user_name)}">${connEscape(c.user_name)}</div>${profileHandleHtml(c.author_id, commentProfiles, c.user_name)}
+            <div class="text-xs font-bold text-gray-900 dark:text-white" data-user-card="${connEscape(c.user_name)}">${connEscape(c.user_name)}</div>${ccProfileHandleHtml(c.author_id, commentProfiles, c.user_name)}
             <div class="text-sm text-gray-700 dark:text-gray-200 break-words">${linkifyContent(c.content)}</div>
           </div>
         </div>
