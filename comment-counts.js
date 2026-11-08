@@ -20,10 +20,10 @@ async function ccGetMyProfileId() {
 
 // Caché simple por profile_id: resuelve username, nombre, avatar y canal en una sola consulta por lote.
 const ccProfilesByIdCache = Object.create(null);
-async function ccFetchProfilesByIds(profileIds, useCache = true) {
+async function ccFetchProfilesByIds(profileIds) {
   const ids = [...new Set((profileIds || []).filter(Boolean).map(String))];
   if (!ids.length) return {};
-  const missingIds = useCache ? ids.filter(id => !Object.prototype.hasOwnProperty.call(ccProfilesByIdCache, id)) : ids;
+  const missingIds = ids.filter(id => !Object.prototype.hasOwnProperty.call(ccProfilesByIdCache, id));
   if (missingIds.length) {
     try {
       const { data, error } = await supabaseClient
