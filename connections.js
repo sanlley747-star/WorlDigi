@@ -137,6 +137,13 @@ function connChunks(list, size) {
 // El perfil se abre por nombre (perfil.html?user=Nombre): buscamos el correo de ese nombre.
 async function connResolveEmail(userName) {
   if (!userName) return null;
+
+  // Los correos son privados. Los visitantes anónimos no deben consultar
+  // profiles.user_email ni posts.user_email; las vistas públicas usan RPCs
+  // que devuelven únicamente nombres, avatares y contadores.
+  const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+  if (sessionError || !sessionData?.session?.user) return null;
+
   const prof = await supabaseClient
     .from('profiles').select('user_email').eq('user_name', userName).limit(1);
   if (prof.data && prof.data.length) return prof.data[0].user_email;

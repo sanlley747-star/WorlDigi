@@ -556,7 +556,7 @@
     async function loadUserPosts(username) {
       const { data: posts, error } = await supabaseClient
         .from('posts')
-        .select('*')
+        .select('id, created_at, image_url, likes, content, user_name, repost_of, quote_text, repost_of_comment_id')
         .eq('user_name', username)
         .order('created_at', { ascending: false });
 
@@ -572,7 +572,7 @@
       if (repostIds.length) {
         const { data: originals } = await supabaseClient
           .from('posts')
-          .select('*')
+          .select('id, created_at, image_url, likes, content, user_name, repost_of, quote_text, repost_of_comment_id')
           .in('id', repostIds);
         (originals || []).forEach(p => { postsById[p.id] = p; });
       }
@@ -609,7 +609,7 @@
       const commentRepostIds = [...new Set(posts.filter(p => p.repost_of_comment_id).map(p => p.repost_of_comment_id))];
       const commentsById = {};
       if (commentRepostIds.length) {
-        const { data: quotedComments } = await supabaseClient.from('comments').select('*').in('id', commentRepostIds);
+        const { data: quotedComments } = await supabaseClient.from('comments').select('id, post_id, user_name, content, created_at, reply_to').in('id', commentRepostIds);
         (quotedComments || []).forEach(c => { commentsById[c.id] = c; });
         const cAuthors = [...new Set(quotedComments.map(c => c.user_name).filter(Boolean))];
         if (cAuthors.length) {
@@ -966,7 +966,7 @@
 
       const { data: post, error } = await supabaseClient
         .from('posts')
-        .select('*')
+        .select('id, created_at, image_url, likes, content, user_name, repost_of, quote_text, repost_of_comment_id')
         .eq('id', postId)
         .single();
 
@@ -1023,7 +1023,7 @@
 
       const { data: comments, error } = await supabaseClient
         .from('comments')
-        .select('*')
+        .select('id, post_id, user_name, content, created_at, reply_to')
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
 
