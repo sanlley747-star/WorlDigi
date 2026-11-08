@@ -131,7 +131,7 @@
       if (info.email) {
         info.isMe = !!(info.me && info.me.email === info.email);
         var results = await Promise.all([
-          connCounts(info.email),
+          connCounts(name),
           connIsChannel(info.email),
           (info.me && !info.isMe) ? connFetchStates(info.me.email, [info.email]) : Promise.resolve(null)
         ]);
@@ -198,7 +198,7 @@
         compact: true,
         onChange: async function () {
           delete cache[name];
-          var c = await connCounts(info.email);
+          var c = await connCounts(name);
           if (card && card.classList.contains('uc-show') && statFollowing !== undefined) {
             if (statFollowing) statFollowing.textContent = c.following;
             if (statFollowers) statFollowers.textContent = c.followers;
