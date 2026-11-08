@@ -169,7 +169,7 @@ function ccLikeButtonHtml(id, likes, isLiked, userEmail, userName) {
         title="Me gusta"
         class="flex items-center gap-1.5 text-gray-400 dark:text-gray-500 font-semibold transition">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 flex-shrink-0">
-          <path data-heart-icon fill="${isLiked ? 'currentColor' : 'none'}" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"></path>
+          <path data-heart-icon fill="${isLiked ? '#ef4444' : 'none'}" stroke="${isLiked ? '#ef4444' : 'currentColor'}" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"></path>
         </svg>
         <span id="likes-count-${id}" class="${count > 0 ? '' : 'hidden'}">${count}</span>
       </button>
@@ -187,6 +187,29 @@ function ccLikeHover(wrapper, show) {
   tooltip.classList.toggle('hidden', !(show && btn.getAttribute('data-liked') === 'true'));
 }
 
+// Pequeña explosión de chispas rojas exclusiva del like de publicaciones.
+function ccBurstLikeSparks(btn) {
+  if (!btn) return;
+  if (window.matchMedia && window.matchMedia('(max-width: 1023px)').matches && navigator.vibrate) navigator.vibrate(10);
+  const rect = btn.getBoundingClientRect();
+  const originX = rect.left + rect.width / 2;
+  const originY = rect.top + rect.height / 2;
+  for (let i = 0; i < 8; i++) {
+    const spark = document.createElement('span');
+    spark.textContent = '✦';
+    spark.setAttribute('aria-hidden', 'true');
+    spark.style.cssText = `position:fixed;left:${originX}px;top:${originY}px;color:#ef4444;font-size:${8 + Math.random() * 5}px;line-height:1;pointer-events:none;z-index:9999;opacity:1;transform:translate(-50%,-50%) scale(.8);transition:transform .42s ease-out,opacity .42s ease-out;`;
+    document.body.appendChild(spark);
+    const angle = (Math.PI * 2 * i) / 8 + Math.random() * .18;
+    const distance = 17 + Math.random() * 12;
+    requestAnimationFrame(() => {
+      spark.style.transform = `translate(calc(-50% + ${Math.cos(angle) * distance}px),calc(-50% + ${Math.sin(angle) * distance}px)) scale(.45)`;
+      spark.style.opacity = '0';
+    });
+    setTimeout(() => spark.remove(), 460);
+  }
+}
+
 // Alterna el "me gusta" de una publicación para el usuario actual: si ya la había marcado,
 // se lo quita (borra su fila en post_likes y resta 1, corazón vuelve a estar vacío); si no,
 // se lo agrega (inserta fila y suma 1, corazón queda relleno en rojo). Así cada usuario solo
@@ -198,23 +221,6 @@ async function ccToggleLike(btn) {
   // En páginas que no declaran currentUser, conserva la identidad entregada al renderizar el botón.
   const activeUser = typeof currentUser !== 'undefined' ? currentUser : null;
   if (window.byGetherGuestMode || !btn) return;
-
-  if (window.matchMedia && window.matchMedia('(max-width: 1023px)').matches) {
-    if (navigator.vibrate) navigator.vibrate(10);
-    const rect = btn.getBoundingClientRect();
-    for (let i = 0; i < 8; i++) {
-      const spark = document.createElement('span');
-      spark.textContent = '✦';
-      spark.style.cssText = `position:fixed;left:${rect.left + rect.width / 2}px;top:${rect.top + rect.height / 2}px;color:#ef4444;font-size:${8 + Math.random() * 5}px;pointer-events:none;z-index:9999;transition:transform .45s ease,opacity .45s ease;`;
-      document.body.appendChild(spark);
-      const angle = (Math.PI * 2 * i) / 8;
-      requestAnimationFrame(() => {
-        spark.style.transform = `translate(${Math.cos(angle) * (14 + Math.random() * 8)}px,${Math.sin(angle) * (14 + Math.random() * 8)}px) scale(.7)`;
-        spark.style.opacity = '0';
-      });
-      setTimeout(() => spark.remove(), 500);
-    }
-  }
 
   const id = btn.getAttribute('data-post-id');
   const currentLikes = parseInt(btn.getAttribute('data-likes') || '0', 10);
@@ -238,11 +244,16 @@ async function ccToggleLike(btn) {
     ccSetActivityCount(counterElement, likesCount);
     btn.setAttribute('data-likes', likesCount.toString());
     btn.setAttribute('data-liked', likedState.toString());
-    btn.classList.remove('text-red-500', 'hover:text-red-500');
-    if (heartPath) heartPath.setAttribute('fill', likedState ? 'currentColor' : 'none');
+    if (heartPath) {
+      heartPath.setAttribute('fill', likedState ? '#ef4444' : 'none');
+      heartPath.setAttribute('stroke', likedState ? '#ef4444' : 'currentColor');
+    }
     const wrapper = btn.closest('[data-like-wrapper]');
     if (wrapper) ccLikeHover(wrapper, false);
   };
+
+  // La animación se ejecuta únicamente al dar un like nuevo, nunca al quitarlo.
+  if (newLiked) ccBurstLikeSparks(btn);
 
   // Actualización optimista; se revierte si Supabase rechaza la operación.
   updateUI(newLikes, newLiked);
