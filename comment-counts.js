@@ -412,7 +412,7 @@ function ccCommentActionsHtml(c, v) {
       </button>
 
       <div class="relative">
-        <button type="button" data-repost-toggle data-reposted="${v.isReposted ? &#39;true&#39; : &#39;false&#39;}" onclick="ccToggleCommentRepostMenu(${id})" title="Repostear"
+        <button type="button" data-repost-toggle data-reposted="${v.isReposted}" onclick="ccToggleCommentRepostMenu(${id})" title="Repostear"
           class="flex items-center gap-1 text-gray-400 dark:text-gray-500 font-semibold transition">
           ${repostIcon}
           <span id="c-reposts-count-${id}" data-repost-count class="${(v.reposts || 0) > 0 ? '' : 'hidden'}">${v.reposts || 0}</span>
