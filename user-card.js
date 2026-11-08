@@ -118,26 +118,22 @@
       // Sesión y perfil son consultas independientes: arrancan al mismo tiempo.
       var mePromise = getMe();
       var profPromise = supabaseClient.from('profiles')
-        .select('user_email, avatar_url').eq('user_name', name).limit(1);
+        .select('avatar_url').eq('user_name', name).limit(1);
       info.me = await mePromise;
 
       var prof = await profPromise;
-      if (prof.data && prof.data.length) {
-        info.email = prof.data[0].user_email;
-        info.avatar = prof.data[0].avatar_url || null;
-      }
-      if (!info.email) info.email = await connResolveEmail(name);
+      if (prof.data && prof.data.length) info.avatar = prof.data[0].avatar_url || null;
+      info.email = await connResolveEmail(name);
+      info.counts = await connCounts(name);
 
       if (info.email) {
         info.isMe = !!(info.me && info.me.email === info.email);
         var results = await Promise.all([
-          connCounts(name),
           connIsChannel(info.email),
           (info.me && !info.isMe) ? connFetchStates(info.me.email, [info.email]) : Promise.resolve(null)
         ]);
-        info.counts = results[0];
-        info.channel = results[1];
-        if (results[2] && results[2][info.email]) info.state = results[2][info.email];
+        info.channel = results[0];
+        if (results[1] && results[1][info.email]) info.state = results[1][info.email];
       }
     } catch (e) {
       console.error('Tarjeta de usuario:', e);
