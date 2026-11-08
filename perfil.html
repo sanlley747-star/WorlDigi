@@ -626,7 +626,7 @@
           return `
             <div class="bg-white dark:bg-slate-900 p-4 rounded-xl shadow border border-gray-200 dark:border-slate-800 space-y-3">
               <div class="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 font-semibold">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0 text-green-600"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0 text-gray-400 dark:text-gray-500"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
                 <span data-user-card="${connEscape(author)}" class="hover:underline">${connEscape(author)}</span>${ccProfileHandleHtml(post.author_id, profileById, author)} ${post.quote_text ? 'citó un comentario' : 'reposteó un comentario'}
               </div>
               ${post.quote_text ? `<div>\n  <p data-expandable-post-text class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-line"\n     style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;max-height:4.5em;overflow:hidden;">${linkifyContent(post.quote_text)}</p>\n  <button type="button" data-rm-btn data-expanded="false" class="rm-btn hidden"\n     onclick="event.stopPropagation();togglePostText(this)">Ver más...</button>\n</div>` : ''}
@@ -685,7 +685,7 @@
 
             ${post.repost_of ? `
               <div class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 font-semibold">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0 text-green-600"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 flex-shrink-0 text-gray-400 dark:text-gray-500"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
                 Hiciste repost
               </div>
             ` : ''}
