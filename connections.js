@@ -142,6 +142,11 @@ async function connResolveProfileId(userName) {
   return error ? null : (data?.profile_id || null);
 }
 
+async function connGetMyProfileId() {
+  const { data, error } = await supabaseClient.rpc('mi_perfil_id');
+  return error ? null : (data || null);
+}
+
 // Contadores públicos por nombre; esta función nunca devuelve correos.
 async function connCounts(userName) {
   if (!userName) return { following: 0, followers: 0 };
