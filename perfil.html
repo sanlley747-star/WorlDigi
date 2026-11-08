@@ -274,6 +274,7 @@
        let currentUsername = null;
     let currentUserEmail = null;
     let currentProfileId = null;
+    let viewedProfileId = null;
     let loggedUserName = null;
     let isOwnProfile = false;
 
@@ -292,14 +293,14 @@
       document.getElementById('profileName').setAttribute('data-user-card', username);
 
       const { data: { user } } = await supabaseClient.auth.getUser();
+      const { data: targetProfile, error: profileError } = await supabaseClient
+        .from('profiles').select('profile_id').eq('user_name', username).maybeSingle();
+      viewedProfileId = !profileError ? targetProfile?.profile_id || null : null;
       if (user) {
         currentUserEmail = user.email;
         currentProfileId = await ccGetMyProfileId();
         loggedUserName = user.user_metadata?.full_name || user.email.split('@')[0];
-        const { data: targetProfile, error: profileError } = await supabaseClient
-          .from('profiles').select('profile_id').eq('user_name', username).maybeSingle();
-        isOwnProfile = !profileError && Boolean(targetProfile?.profile_id) &&
-          targetProfile.profile_id === currentProfileId;
+        isOwnProfile = Boolean(viewedProfileId) && viewedProfileId === currentProfileId;
       }
 
       document.getElementById('editProfileBtn').style.display = isOwnProfile ? 'block' : 'none';
@@ -519,10 +520,14 @@
     }
 
     async function loadUserPosts(username) {
+      if (!viewedProfileId) {
+        document.getElementById('userFeed').innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-slate-900 p-6 rounded-xl shadow border border-gray-200 dark:border-slate-800">Este usuario aún no ha realizado publicaciones.</p>';
+        return;
+      }
       const { data: posts, error } = await supabaseClient
         .from('posts')
         .select('id, created_at, user_name, author_id, content, image_url, likes, repost_of, quote_text, repost_of_comment_id, metadata')
-        .eq('user_name', username)
+        .eq('author_id', viewedProfileId)
         .order('created_at', { ascending: false });
 
       const feed = document.getElementById('userFeed');
