@@ -171,21 +171,18 @@ async function connFetchStates(myProfileId, profileIds) {
   return out;
 }
 
-// Nombre y avatar de una lista de correos. `hints` = { correo: nombre guardado en la conexión }.
-async function connFetchPeople(emails, hints) {
+// Nombre y avatar por profile_id. `hints` = { profile_id: nombre guardado en la conexión }.
+async function connFetchPeople(profileIds, hints) {
   const people = {};
-  const list = [...new Set((emails || []).filter(Boolean))];
-  list.forEach(e => {
-    people[e] = { name: (hints && hints[e]) || e.split('@')[0], avatar: null };
-  });
-
+  const list = [...new Set((profileIds || []).filter(Boolean))];
+  list.forEach(id => { people[id] = { name: (hints && hints[id]) || 'Usuario', avatar: null }; });
   for (const chunk of connChunks(list, 50)) {
     const { data } = await supabaseClient
-      .from('profiles').select('user_email, user_name, avatar_url').in('user_email', chunk);
+      .from('profiles').select('profile_id, user_name, avatar_url').in('profile_id', chunk);
     (data || []).forEach(p => {
-      if (!people[p.user_email]) return;
-      if (p.user_name) people[p.user_email].name = p.user_name;
-      people[p.user_email].avatar = p.avatar_url || null;
+      if (!people[p.profile_id]) return;
+      if (p.user_name) people[p.profile_id].name = p.user_name;
+      people[p.profile_id].avatar = p.avatar_url || null;
     });
   }
   return people;
