@@ -1,3 +1,5 @@
+// Colores de hover de acciones sociales.
+(function(){if(document.getElementById('cc-social-action-colors'))return;const s=document.createElement('style');s.id='cc-social-action-colors';s.textContent='button[title="Comentar"]:hover,button[title="Responder"]:hover{color:#3b82f6!important}button[title="Repostear"]:hover{color:#22c55e!important}button[title="Me gusta"]:hover{color:#ef4444!important}button[title="Compartir"]:hover{color:#3b82f6!important}button[data-reposted="true"],button[data-reposted="true"] [data-repost-count]{color:#22c55e!important}button[data-liked="true"] [data-like-count]{color:#ef4444!important}';document.head.appendChild(s)})();
 // Perfil interno del usuario autenticado. No consulta user_email en las tablas de contenido.
 let ccMyProfileIdPromise = null;
 async function ccGetMyProfileId() {
