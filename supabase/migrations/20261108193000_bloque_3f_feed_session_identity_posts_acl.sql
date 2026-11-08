@@ -1,6 +1,8 @@
 -- Bloque 3F: feed_ranking_page usa identidad de sesión y devuelve columnas públicas.
 -- La firma conserva p_user_email por compatibilidad, pero el cuerpo lo ignora.
-CREATE OR REPLACE FUNCTION public.feed_ranking_page(p_user_email text, p_exclude_ids bigint[], p_limit integer, p_cooldown_hours integer DEFAULT 6)
+DROP FUNCTION IF EXISTS public.feed_ranking_page(text, bigint[], integer, integer);
+
+CREATE FUNCTION public.feed_ranking_page(p_user_email text, p_exclude_ids bigint[], p_limit integer, p_cooldown_hours integer DEFAULT 6)
  RETURNS TABLE (
   id bigint,
   created_at timestamptz,
