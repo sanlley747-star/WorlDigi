@@ -312,7 +312,8 @@
     }
 
     // ===== CONEXIONES: contadores Siguiendo / Seguidores y botón Conectar =====
-    let profileEmail = null;
+    let profileId = null;
+    let profileChannelEmail = null;
     let profileUserName = null;
 
     async function refreshConnCounts() {
@@ -332,34 +333,35 @@
 
       try {
         profileUserName = username;
-        profileEmail = await connResolveEmail(username);
+        profileId = await connResolveProfileId(username);
+        // Esta consulta de correo se conserva solo para detectar cuentas de canal; se elimina en la Pieza 2.
+        const channelProfile = await supabaseClient.from('profiles').select('user_email').eq('user_name', username).limit(1).maybeSingle();
+        profileChannelEmail = channelProfile.data?.user_email || null;
 
-        // Cuenta canal: etiqueta "Canal" y solo se muestran seguidores. Lo que ella sigue es
-        // privado: únicamente la propia cuenta puede ver su "Siguiendo".
-        if (profileEmail && await connIsChannel(profileEmail)) {
+        // Cuenta canal: la clasificación y su privacidad se mantienen sin alterar permisos.
+        if (profileChannelEmail && await connIsChannel(profileChannelEmail)) {
           document.getElementById('profileName').insertAdjacentHTML('beforeend', connChannelChip());
-          if (profileEmail !== currentUserEmail) {
+          if (profileId !== currentProfileId) {
             document.getElementById('connFollowingLink').style.display = 'none';
           }
         }
 
         await refreshConnCounts();
 
-        // Sin correo resuelto no se construye botón; los contadores siguen disponibles.
-        if (!profileEmail || isOwnProfile || profileEmail === currentUserEmail) return;
+        if (!profileId || isOwnProfile || profileId === currentProfileId) return;
 
         let state = { iFollow: false, followsMe: false };
-        if (currentUserEmail) {
-          const states = await connFetchStates(currentUserEmail, [profileEmail]);
-          state = states[profileEmail] || state;
+        if (currentProfileId) {
+          const states = await connFetchStates(currentProfileId, [profileId]);
+          state = states[profileId] || state;
         }
 
         const wrap = document.getElementById('connBtnWrap');
         wrap.innerHTML = '';
         wrap.appendChild(connCreateButton({
-          myEmail: currentUserEmail,
+          myProfileId: currentProfileId,
           myName: loggedUserName,
-          otherEmail: profileEmail,
+          otherProfileId: profileId,
           otherName: username,
           iFollow: state.iFollow,
           followsMe: state.followsMe,

@@ -337,7 +337,7 @@ function connNotifState(st) {
         : { data: [] };
 
       const parentIds = [...new Set((comments || []).map(c => c.reply_to).filter(Boolean))];
-      const [parentRes, postRes, profileRes, connStates] = await Promise.all([
+      const [parentRes, postRes, profileRes] = await Promise.all([
         parentIds.length
           ? supabaseClient.from('comments').select('id,author_id,user_name').in('id', parentIds)
           : Promise.resolve({ data: [] }),
@@ -345,13 +345,17 @@ function connNotifState(st) {
           ? supabaseClient.from('posts').select('id,user_name,author_id').in('id', postIds)
           : Promise.resolve({ data: [] }),
         actorEmails.length
-          ? supabaseClient.from('profiles').select('user_email,avatar_url').in('user_email', actorEmails)
-          : Promise.resolve({ data: [] }),
-        connActorEmails.length
-          ? connFetchStates(currentUser.email, [...new Set(connActorEmails)])
-          : Promise.resolve({})
+          ? supabaseClient.from('profiles').select('user_email,profile_id,avatar_url').in('user_email', actorEmails)
+          : Promise.resolve({ data: [] })
       ]);
 
+      const actorProfileByEmail = {};
+      (profileRes.data || []).forEach(p => { actorProfileByEmail[p.user_email] = p; });
+      const currentUserProfileId = await connGetMyProfileId();
+      const connActorProfileIds = [...new Set(connActorEmails.map(email => actorProfileByEmail[email]?.profile_id).filter(Boolean))];
+      const connStates = connActorProfileIds.length
+        ? await connFetchStates(currentUserProfileId, connActorProfileIds)
+        : {};
       window.__bygetherNotifConnStates = connStates;
 
       const commentById = {};
@@ -393,9 +397,10 @@ function connNotifState(st) {
         const unreadClass = n.is_read ? '' : 'bg-blue-50 dark:bg-slate-800/70';
 
         if (n.type === 'connection') {
-          const st = connStates[n.actor_email] || { iFollow: false, followsMe: true };
+          const actorProfileId = actorProfileByEmail[n.actor_email]?.profile_id;
+          const st = connStates[actorProfileId] || { iFollow: false, followsMe: true };
           const connIconHtml = connNotifIconHtml(connNotifState(st))
-            .replace('<span data-conn-icon ', '<span data-notif-conn-icon data-conn-icon data-email="' + connEscape(n.actor_email) + '" ');
+            .replace('<span data-conn-icon ', '<span data-notif-conn-icon data-conn-icon data-profile-id="' + connEscape(actorProfileId || '') + '" ');
           return `
             <div class="w-full p-4 flex items-center gap-3 transition ${unreadClass} min-w-0">
               ${connIconHtml}
@@ -406,7 +411,7 @@ function connNotifState(st) {
                   <p class="text-xs text-gray-400 mt-1">${formatCompactTime(n.created_at)}</p>
                 </div>
               </a>
-              <div class="flex-shrink-0" data-conn-slot data-email="${connEscape(n.actor_email)}" data-name="${safeActorName}"></div>
+              <div class="flex-shrink-0" data-conn-slot data-profile-id="${connEscape(actorProfileId || '')}" data-name="${safeActorName}"></div>
             </div>
           `;
         }
@@ -528,12 +533,13 @@ function connNotifState(st) {
       });
 
       wall.querySelectorAll('[data-conn-slot]').forEach(slot => {
-        const email = slot.dataset.email;
-        const st = connStates[email] || { iFollow: false, followsMe: false };
+        const profileId = slot.dataset.profileId;
+        if (!profileId) return;
+        const st = connStates[profileId] || { iFollow: false, followsMe: false };
         slot.appendChild(connCreateButton({
-          myEmail: currentUser.email,
+          myProfileId: currentUserProfileId,
           myName: currentUser.user_metadata?.full_name || currentUser.email.split('@')[0],
-          otherEmail: email,
+          otherProfileId: profileId,
           otherName: slot.dataset.name,
           iFollow: st.iFollow,
           followsMe: st.followsMe,
@@ -554,15 +560,15 @@ function connNotifState(st) {
     if (!window.__bygetherNotifConnListener) {
       window.__bygetherNotifConnListener = true;
       window.addEventListener('conn:changed', (event) => {
-        const { email, iFollow } = event.detail || {};
-        if (!email) return;
+        const { profileId, iFollow } = event.detail || {};
+        if (!profileId) return;
 
         const states = window.__bygetherNotifConnStates || {};
-        const current = states[email] || { iFollow: false, followsMe: true };
-        states[email] = { ...current, iFollow: !!iFollow };
+        const current = states[profileId] || { iFollow: false, followsMe: true };
+        states[profileId] = { ...current, iFollow: !!iFollow };
 
-        document.querySelectorAll('[data-notif-conn-icon][data-email="' + connEscape(email) + '"]').forEach(icon => {
-          const state = connNotifState(states[email]);
+        document.querySelectorAll('[data-notif-conn-icon][data-profile-id="' + connEscape(profileId) + '"]').forEach(icon => {
+          const state = connNotifState(states[profileId]);
           const labels = {
             mutual: 'Se conectaron mutuamente',
             single: 'Solo una persona se ha conectado',

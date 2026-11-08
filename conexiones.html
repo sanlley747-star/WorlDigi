@@ -176,7 +176,8 @@
 
     let currentUser = null;
     let myName = null;
-    let targetEmail = null;   // de quién estamos viendo las listas (por defecto, yo)
+    let targetProfileId = null; // identidad del perfil cuyas listas se muestran
+    let currentUserProfileId = null;
     let targetName = null;
     let activeTab = 'siguiendo';
     let listRequestId = 0;
@@ -186,6 +187,7 @@
       currentUser = user || null;
       myName = user ? (user.user_metadata?.full_name || user.email.split('@')[0]) : null;
       if (user) {
+        currentUserProfileId = await connGetMyProfileId();
         document.getElementById('myProfileLink').href = connProfileUrl(myName);
         document.getElementById('mobileMyProfileLink').href = connProfileUrl(myName);
       } else {
@@ -221,10 +223,9 @@
         return;
       }
 
-      targetEmail = currentUser && targetName === myName ? currentUser.email :
-        (currentUser ? await connResolveEmail(targetName) : null);
+      targetProfileId = await connResolveProfileId(targetName);
 
-      if (currentUser && targetEmail === currentUser.email) owner.textContent = 'Tus conexiones';
+      if (currentUser && targetProfileId && targetProfileId === currentUserProfileId) owner.textContent = 'Tus conexiones';
       else owner.innerHTML = 'Conexiones de <a class="font-semibold hover:underline" href="' + connProfileUrl(targetName) + '">' + connEscape(targetName) + '</a>';
 
       await refreshCounts();
@@ -289,15 +290,15 @@
       }
       const people = await Promise.all(data.map(async p => ({
         name: p.user_name, avatar: p.avatar_url,
-        email: currentUser ? await connResolveEmail(p.user_name) : null
+        profileId: currentUser ? await connResolveProfileId(p.user_name) : null
       })));
-      const emails = people.map(p => p.email).filter(Boolean);
-      const states = currentUser && emails.length ? await connFetchStates(currentUser.email, emails) : {};
+      const profileIds = people.map(p => p.profileId).filter(Boolean);
+      const states = currentUser && profileIds.length ? await connFetchStates(currentUserProfileId, profileIds) : {};
       if (requestId !== listRequestId) return;
       list.innerHTML = people.map(p => {
         const avatar = safeUrl(p.avatar) || connAvatarFallback(p.name);
-        const isMe = !!currentUser && p.email === currentUser.email;
-        const canConnect = !!currentUser && !!p.email && !isMe;
+        const isMe = !!currentUser && p.profileId === currentUserProfileId;
+        const canConnect = !!currentUser && !!p.profileId && !isMe;
         return `
           <div class="p-4 flex items-center gap-3">
             <a href="${connProfileUrl(p.name)}" class="flex items-center gap-3 flex-1 min-w-0">
@@ -305,14 +306,14 @@
               <span class="font-semibold text-sm text-gray-900 dark:text-white truncate" data-user-card="${connEscape(p.name)}">${connEscape(p.name)}</span>
             </a>
             ${isMe ? '<span class="text-xs text-gray-400 flex-shrink-0">Tú</span>' :
-              (canConnect ? '<div class="flex-shrink-0" data-conn-slot data-email="' + connEscape(p.email) + '" data-name="' + connEscape(p.name) + '"></div>' : '')}
+              (canConnect ? '<div class="flex-shrink-0" data-conn-slot data-profile-id="' + connEscape(p.profileId) + '" data-name="' + connEscape(p.name) + '"></div>' : '')}
           </div>
         `;
       }).join('');
       list.querySelectorAll('[data-conn-slot]').forEach(slot => {
-        const email = slot.dataset.email, st = states[email] || { iFollow: false, followsMe: false };
+        const profileId = slot.dataset.profileId, st = states[profileId] || { iFollow: false, followsMe: false };
         slot.appendChild(connCreateButton({
-          myEmail: currentUser.email, myName: myName, otherEmail: email, otherName: slot.dataset.name,
+          myProfileId: currentUserProfileId, myName: myName, otherProfileId: profileId, otherName: slot.dataset.name,
           iFollow: st.iFollow, followsMe: st.followsMe, compact: true,
           onChange: () => { if (isMine) refreshCounts(); }
         }));

@@ -134,14 +134,17 @@ function connChunks(list, size) {
 
 // ---------- Consultas ----------
 
-// El perfil se abre por nombre (perfil.html?user=Nombre): buscamos el correo de ese nombre.
-async function connResolveEmail(userName) {
+// El perfil se abre por nombre: resolvemos su identificador público interno.
+async function connResolveProfileId(userName) {
   if (!userName) return null;
-  const prof = await supabaseClient
-    .from('profiles').select('user_email').eq('user_name', userName).limit(1);
-  if (prof.data && prof.data.length) return prof.data[0].user_email;
+  const { data, error } = await supabaseClient
+    .from('profiles').select('profile_id').eq('user_name', userName).limit(1).maybeSingle();
+  return error ? null : (data?.profile_id || null);
+}
 
-  return null;
+async function connGetMyProfileId() {
+  const { data, error } = await supabaseClient.rpc('mi_perfil_id');
+  return error ? null : (data || null);
 }
 
 // Contadores públicos por nombre; esta función nunca devuelve correos.
@@ -153,41 +156,38 @@ async function connCounts(userName) {
   return { following: Number(row?.following || 0), followers: Number(row?.followers || 0) };
 }
 
-// Para cada correo: { iFollow: yo lo sigo, followsMe: él me sigue }
-async function connFetchStates(myEmail, emails) {
+// Para cada profile_id: { iFollow: yo lo sigo, followsMe: él me sigue }
+async function connFetchStates(myProfileId, profileIds) {
   const out = {};
-  const list = [...new Set((emails || []).filter(e => e && e !== myEmail))];
-  list.forEach(e => { out[e] = { iFollow: false, followsMe: false }; });
-  if (!myEmail || !list.length) return out;
+  const list = [...new Set((profileIds || []).filter(id => id && id !== myProfileId))];
+  list.forEach(id => { out[id] = { iFollow: false, followsMe: false }; });
+  if (!myProfileId || !list.length) return out;
 
   for (const chunk of connChunks(list, 50)) {
     const [a, b] = await Promise.all([
-      supabaseClient.from('connections').select('following_email')
-        .eq('follower_email', myEmail).in('following_email', chunk),
-      supabaseClient.from('connections').select('follower_email')
-        .eq('following_email', myEmail).in('follower_email', chunk)
+      supabaseClient.from('connections').select('following_id')
+        .eq('follower_id', myProfileId).in('following_id', chunk),
+      supabaseClient.from('connections').select('follower_id')
+        .eq('following_id', myProfileId).in('follower_id', chunk)
     ]);
-    (a.data || []).forEach(r => { if (out[r.following_email]) out[r.following_email].iFollow = true; });
-    (b.data || []).forEach(r => { if (out[r.follower_email]) out[r.follower_email].followsMe = true; });
+    (a.data || []).forEach(r => { if (out[r.following_id]) out[r.following_id].iFollow = true; });
+    (b.data || []).forEach(r => { if (out[r.follower_id]) out[r.follower_id].followsMe = true; });
   }
   return out;
 }
 
-// Nombre y avatar de una lista de correos. `hints` = { correo: nombre guardado en la conexión }.
-async function connFetchPeople(emails, hints) {
+// Nombre y avatar por profile_id. `hints` = { profile_id: nombre guardado en la conexión }.
+async function connFetchPeople(profileIds, hints) {
   const people = {};
-  const list = [...new Set((emails || []).filter(Boolean))];
-  list.forEach(e => {
-    people[e] = { name: (hints && hints[e]) || e.split('@')[0], avatar: null };
-  });
-
+  const list = [...new Set((profileIds || []).filter(Boolean))];
+  list.forEach(id => { people[id] = { name: (hints && hints[id]) || 'Usuario', avatar: null }; });
   for (const chunk of connChunks(list, 50)) {
     const { data } = await supabaseClient
-      .from('profiles').select('user_email, user_name, avatar_url').in('user_email', chunk);
+      .from('profiles').select('profile_id, user_name, avatar_url').in('profile_id', chunk);
     (data || []).forEach(p => {
-      if (!people[p.user_email]) return;
-      if (p.user_name) people[p.user_email].name = p.user_name;
-      people[p.user_email].avatar = p.avatar_url || null;
+      if (!people[p.profile_id]) return;
+      if (p.user_name) people[p.profile_id].name = p.user_name;
+      people[p.profile_id].avatar = p.avatar_url || null;
     });
   }
   return people;
@@ -271,9 +271,9 @@ function connCreateButton(opts) {
 
   async function follow() {
     const { error } = await supabaseClient.from('connections').insert({
-      follower_email: opts.myEmail,
+      follower_id: opts.myProfileId,
       follower_name: opts.myName || null,
-      following_email: opts.otherEmail,
+      following_id: opts.otherProfileId,
       following_name: opts.otherName || null
     });
     // 23505 = ya estaban conectados (por ejemplo, desde otra pestaña): se toma como éxito
@@ -287,8 +287,8 @@ function connCreateButton(opts) {
 
   async function unfollow() {
     const { error } = await supabaseClient.from('connections').delete()
-      .eq('follower_email', opts.myEmail)
-      .eq('following_email', opts.otherEmail);
+      .eq('follower_id', opts.myProfileId)
+      .eq('following_id', opts.otherProfileId);
     if (error) {
       alert('No se pudo desconectar: ' + error.message);
       return false;
@@ -302,7 +302,7 @@ function connCreateButton(opts) {
     e.stopPropagation();
     if (busy) return;
 
-    if (!opts.myEmail) { window.location.href = 'index.html'; return; }
+    if (!opts.myProfileId) { window.location.href = 'index.html'; return; }
 
     if (iFollow) {
       // Con mouse el botón ya muestra "Desconectar" al pasar el cursor: un clic basta.
@@ -320,7 +320,7 @@ function connCreateButton(opts) {
       // Avisa a los demás botones de esta misma persona (por ejemplo el del perfil y el de la tarjeta
       // que aparece al pasar el cursor sobre un nombre) para que todos muestren el mismo estado.
       window.dispatchEvent(new CustomEvent('conn:changed', {
-        detail: { email: opts.otherEmail, iFollow: iFollow, source: btn }
+        detail: { profileId: opts.otherProfileId, iFollow: iFollow, source: btn }
       }));
       if (typeof opts.onChange === 'function') {
         opts.onChange({ iFollow: iFollow, followsMe: followsMe, mutual: iFollow && followsMe });
@@ -332,7 +332,7 @@ function connCreateButton(opts) {
   function onConnChanged(ev) {
     if (!btn.isConnected) { window.removeEventListener('conn:changed', onConnChanged); return; }
     const d = (ev && ev.detail) || {};
-    if (d.source === btn || d.email !== opts.otherEmail) return;
+    if (d.source === btn || d.profileId !== opts.otherProfileId) return;
     iFollow = !!d.iFollow;
     disarm();
     render();

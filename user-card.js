@@ -96,10 +96,8 @@
     try {
       var res = await supabaseClient.auth.getSession();
       var u = res && res.data && res.data.session && res.data.session.user;
-      meCache = u ? {
-        email: u.email,
-        name: (u.user_metadata && u.user_metadata.full_name) || (u.email || '').split('@')[0]
-      } : null;
+      var name = u ? ((u.user_metadata && u.user_metadata.full_name) || (u.email || '').split('@')[0]) : null;
+      meCache = u ? { profileId: await connGetMyProfileId(), name: name } : null;
     } catch (e) {
       meCache = null;
     }
@@ -111,29 +109,34 @@
     if (hit && Date.now() - hit.t < CACHE_MS) return hit.info;
 
     var info = {
-      name: name, email: null, avatar: null, me: null, isMe: false, channel: false,
+      name: name, profileId: null, email: null, avatar: null, me: null, isMe: false, channel: false,
       counts: { following: 0, followers: 0 }, state: { iFollow: false, followsMe: false }
     };
     try {
       // Sesión y perfil son consultas independientes: arrancan al mismo tiempo.
       var mePromise = getMe();
       var profPromise = supabaseClient.from('profiles')
-        .select('avatar_url').eq('user_name', name).limit(1);
+        .select('profile_id, avatar_url').eq('user_name', name).limit(1);
       info.me = await mePromise;
 
       var prof = await profPromise;
-      if (prof.data && prof.data.length) info.avatar = prof.data[0].avatar_url || null;
-      info.email = await connResolveEmail(name);
+      if (prof.data && prof.data.length) {
+        info.profileId = prof.data[0].profile_id || null;
+        info.avatar = prof.data[0].avatar_url || null;
+      }
+      // Este correo se conserva temporalmente solo para la detección de canal; la Pieza 2 lo elimina.
+      var channelProfile = await supabaseClient.from('profiles').select('user_email').eq('user_name', name).limit(1).maybeSingle();
+      info.email = channelProfile.data?.user_email || null;
       info.counts = await connCounts(name);
 
-      if (info.email) {
-        info.isMe = !!(info.me && info.me.email === info.email);
+      if (info.profileId) {
+        info.isMe = !!(info.me && info.me.profileId === info.profileId);
         var results = await Promise.all([
           connIsChannel(info.email),
-          (info.me && !info.isMe) ? connFetchStates(info.me.email, [info.email]) : Promise.resolve(null)
+          (info.me && !info.isMe) ? connFetchStates(info.me.profileId, [info.profileId]) : Promise.resolve(null)
         ]);
         info.channel = results[0];
-        if (results[1] && results[1][info.email]) info.state = results[1][info.email];
+        if (results[1] && results[1][info.profileId]) info.state = results[1][info.profileId];
       }
     } catch (e) {
       console.error('Tarjeta de usuario:', e);
@@ -182,12 +185,12 @@
     statFollowers = card.querySelector('[data-uc-followers]');
 
     // Botón de conexión (no en tu propia cuenta)
-    if (info && info.email && !info.isMe) {
+    if (info && info.profileId && !info.isMe) {
       var slot = card.querySelector('[data-uc-action]');
       slot.appendChild(connCreateButton({
-        myEmail: info.me ? info.me.email : null,
+        myProfileId: info.me ? info.me.profileId : null,
         myName: info.me ? info.me.name : null,
-        otherEmail: info.email,
+        otherProfileId: info.profileId,
         otherName: name,
         iFollow: info.state.iFollow,
         followsMe: info.state.followsMe,
