@@ -69,7 +69,7 @@
     wrap.className = 'hidden fixed inset-0 bg-black/70 z-[100] items-start md:items-center justify-center p-4 overflow-y-auto';
     wrap.innerHTML =
       '<div class="relative bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-xl shadow-lg w-full max-w-xl p-4 my-auto">' +
-        '<button type="button" data-cm="close" aria-label="Cerrar" class="absolute top-3 right-3 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-gray-500/20 hover:bg-gray-700/40 text-[38px] text-gray-500 hover:text-gray-800 dark:hover:text-white leading-none"><span class="relative -translate-y-px">&times;</span></button>' +
+        '<button type="button" data-cm="close" aria-label="Cerrar" class="absolute top-3 right-3 z-10 flex h-11 w-11 items-center justify-center text-[38px] text-gray-500 hover:text-gray-800 dark:hover:text-white leading-none"><span class="relative -translate-y-px">&times;</span></button>' +
 
         // La publicación
         '<div data-cm="post" class="pr-8 cm-thread-post"></div>' +
