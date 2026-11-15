@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <link rel="canonical" href="https://tunetfy.com/inicio">
+  <link rel="canonical" href="https://tunetfy.com/dashboard">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TuNetFy</title>
@@ -21,10 +21,6 @@
   <script>
     (function () {
       'use strict';
-      if (/Googlebot|bingbot|DuckDuckBot|Slurp|YandexBot|Baiduspider/i.test(navigator.userAgent)) {
-        window.location.replace('/inicio');
-        return;
-      }
       var dashboard = 'dashboard.html' + window.location.search + window.location.hash;
       function go(destination) {
         window.location.replace(destination);
@@ -61,14 +57,8 @@
           return;
         }
 
-        // 3. Solo una búsqueda de Google muestra la portada a visitantes sin sesión.
-        var referrer = document.referrer || '';
-        var fromGoogleSearch = referrer.indexOf('android-app://com.google.android.googlequicksearchbox') === 0;
-        if (!fromGoogleSearch && referrer) {
-          var hostname = new URL(referrer).hostname.toLowerCase();
-          fromGoogleSearch = hostname === 'google.com' || hostname.indexOf('www.google.') === 0;
-        }
-        go(fromGoogleSearch ? 'inicio.html' : dashboard);
+        // 3. Todo visitante sin sesión entra al dashboard como invitado.
+        go(dashboard);
       } catch (error) {
         // 4. Ante cualquier error inesperado, entrar al muro.
         try {
@@ -81,14 +71,10 @@
   </script>
 </head>
 <body>
-  <p>Entrando a TuNetFy… <a id="continue" href="/inicio">Continuar</a></p>
+  <p>Entrando a TuNetFy… <a id="continue" href="dashboard.html">Continuar</a></p>
   <script>
-    var continueLink = document.getElementById('continue');
-    if (/Googlebot|bingbot|DuckDuckBot|Slurp|YandexBot|Baiduspider/i.test(navigator.userAgent)) {
-      continueLink.href = '/inicio';
-    } else {
-      continueLink.href = 'dashboard.html' + window.location.search + window.location.hash;
-    }
+    document.getElementById('continue').href =
+      'dashboard.html' + window.location.search + window.location.hash;
   </script>
 </body>
 </html>
