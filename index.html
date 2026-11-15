@@ -81,10 +81,14 @@
   </script>
 </head>
 <body>
-  <p>Entrando a TuNetFy… <a id="continue" href="dashboard.html">Continuar</a></p>
+  <p>Entrando a TuNetFy… <a id="continue" href="/inicio">Continuar</a></p>
   <script>
-    document.getElementById('continue').href =
-      'dashboard.html' + window.location.search + window.location.hash;
+    var continueLink = document.getElementById('continue');
+    if (/Googlebot|bingbot|DuckDuckBot|Slurp|YandexBot|Baiduspider/i.test(navigator.userAgent)) {
+      continueLink.href = '/inicio';
+    } else {
+      continueLink.href = 'dashboard.html' + window.location.search + window.location.hash;
+    }
   </script>
 </body>
 </html>
