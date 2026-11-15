@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <link rel="canonical" href="https://tunetfy.com/">
+  <link rel="canonical" href="https://tunetfy.com/inicio">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TuNetFy</title>
@@ -21,6 +21,10 @@
   <script>
     (function () {
       'use strict';
+      if (/Googlebot|bingbot|DuckDuckBot|Slurp|YandexBot|Baiduspider/i.test(navigator.userAgent)) {
+        window.location.replace('/inicio');
+        return;
+      }
       var dashboard = 'dashboard.html' + window.location.search + window.location.hash;
       function go(destination) {
         window.location.replace(destination);
