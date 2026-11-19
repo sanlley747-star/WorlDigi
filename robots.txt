@@ -1,5 +1,3 @@
 User-agent: *
 Allow: /
-Disallow: /reset-password
-Disallow: /reset-password.html
 Sitemap: https://tunetfy.com/sitemap.xml
