@@ -4,6 +4,12 @@
 /
   ! X-Robots-Tag
 
+/index.html
+  ! X-Robots-Tag
+
+/index
+  ! X-Robots-Tag
+
 /dashboard
   ! X-Robots-Tag
 
