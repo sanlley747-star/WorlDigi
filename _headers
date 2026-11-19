@@ -1,23 +1,35 @@
-/*
+/perfil*
   X-Robots-Tag: noindex, nofollow
 
-/
-  ! X-Robots-Tag
+/conexiones*
+  X-Robots-Tag: noindex, nofollow
 
-/index.html
-  ! X-Robots-Tag
+/notificaciones*
+  X-Robots-Tag: noindex, nofollow
 
-/index
-  ! X-Robots-Tag
+/publicacion*
+  X-Robots-Tag: noindex, nofollow
 
-/dashboard
-  ! X-Robots-Tag
+/settings*
+  X-Robots-Tag: noindex, nofollow
 
-/dashboard.html
-  ! X-Robots-Tag
+/admin-metricas*
+  X-Robots-Tag: noindex, nofollow
 
-/inicio
-  ! X-Robots-Tag
+/reset-password*
+  X-Robots-Tag: noindex, nofollow
 
-/inicio.html
-  ! X-Robots-Tag
+/terminos*
+  X-Robots-Tag: noindex, nofollow
+
+/privacidad*
+  X-Robots-Tag: noindex, nofollow
+
+/cookies*
+  X-Robots-Tag: noindex, nofollow
+
+/acerca*
+  X-Robots-Tag: noindex, nofollow
+
+/googleff24604c09c5b818.html
+  X-Robots-Tag: noindex, nofollow
